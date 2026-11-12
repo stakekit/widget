@@ -369,8 +369,43 @@ type PositionDetailsPendingActionView = {
   /** Whether the prices that value `amount` are in, so `amountUsd` is too. */
   readonly amountUsdStatus: PricesStatus;
   readonly pendingAction: PendingAction;
+  /**
+   * Several balances offer this action, so no one balance's amount is its
+   * amount: see `getPendingActionOffers`.
+   */
+  readonly sharedByBalances: boolean;
   readonly validation: PendingActionAmountValidation;
   readonly yieldBalance: PricedEarnBalance;
+};
+
+/**
+ * A position's pending actions, each once. An action is one transaction,
+ * named by its type and passthrough, and the API can offer the same one on
+ * several balances, such as a claim on both the staked balance and the
+ * rewards it claims. Each keeps the first balance that offers it.
+ */
+const getPendingActionOffers = (balancesByType: PositionBalancesByType) => {
+  const offers = new Map<
+    string,
+    {
+      readonly balance: PricedEarnBalance;
+      readonly pendingAction: PendingAction;
+      readonly sharedByBalances: boolean;
+    }
+  >();
+  for (const balance of [...balancesByType.values()].flat()) {
+    for (const pendingAction of balance.pendingActions) {
+      const id = `${pendingAction.type}-${pendingAction.passthrough}`;
+      const offer = offers.get(id);
+      offers.set(
+        id,
+        offer
+          ? { ...offer, sharedByBalances: true }
+          : { balance, pendingAction, sharedByBalances: false }
+      );
+    }
+  }
+  return [...offers.values()];
 };
 
 export const positionDetailsPricesAtom = Atom.family(
@@ -411,43 +446,41 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
       const amountUsdStatus = toPresentable(pricesResult)._tag;
       const prices = pricesResult.pipe(AsyncResult.value, Option.getOrNull);
       return view.positionBalancesByType
-        ? [...view.positionBalancesByType.values()].flatMap((balances) =>
-            balances.flatMap((balance) =>
-              balance.pendingActions.map((pendingAction) => {
-                const pendingKey = getPendingActionStateKey({
-                  actionType: pendingAction.type,
-                  balanceType: balance.type,
-                  passthrough: pendingAction.passthrough,
-                  token: balance.token,
-                });
-                const projection =
-                  view.pendingActionProjections.get(pendingKey);
-                const amount = projection?.amount ?? null;
-                // Encrypted rows carry the unpriced confidential asset.
-                const amountUsd =
-                  prices && amount && baseToken
-                    ? getTokenPriceInUSD({
-                        amount,
-                        baseToken,
-                        pricePerShare: null,
-                        prices,
-                        token:
-                          getYieldEntryPriceToken(
-                            view.integrationData,
-                            balance.token
-                          ) ?? balance.token,
-                      })
-                    : null;
-                return {
-                  amount,
-                  amountUsd,
-                  amountUsdStatus,
-                  pendingAction,
-                  validation: projection?.validation ?? null,
-                  yieldBalance: balance,
-                };
-              })
-            )
+        ? getPendingActionOffers(view.positionBalancesByType).map(
+            ({ balance, pendingAction, sharedByBalances }) => {
+              const pendingKey = getPendingActionStateKey({
+                actionType: pendingAction.type,
+                balanceType: balance.type,
+                passthrough: pendingAction.passthrough,
+                token: balance.token,
+              });
+              const projection = view.pendingActionProjections.get(pendingKey);
+              const amount = projection?.amount ?? null;
+              // Encrypted rows carry the unpriced confidential asset.
+              const amountUsd =
+                prices && amount && baseToken
+                  ? getTokenPriceInUSD({
+                      amount,
+                      baseToken,
+                      pricePerShare: null,
+                      prices,
+                      token:
+                        getYieldEntryPriceToken(
+                          view.integrationData,
+                          balance.token
+                        ) ?? balance.token,
+                    })
+                  : null;
+              return {
+                amount,
+                amountUsd,
+                amountUsdStatus,
+                pendingAction,
+                sharedByBalances,
+                validation: projection?.validation ?? null,
+                yieldBalance: balance,
+              };
+            }
           )
         : null;
     }).pipe(Atom.withLabel("positionDetailsPendingActionsViewAtom"))

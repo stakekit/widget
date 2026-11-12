@@ -585,6 +585,62 @@ describe("Position Details action model", () => {
     registry.dispose();
   });
 
+  it("offers an action several balances share once, with no one balance as its amount", () => {
+    const claim = {
+      amount: null,
+      arguments: null,
+      intent: "manage",
+      passthrough: "claim-all",
+      type: "CLAIM_REWARDS",
+    } as const;
+    const withClaim = (
+      type: "active" | "claimable",
+      amount: string,
+      pendingActions: ReadonlyArray<typeof claim>
+    ) =>
+      Schema.decodeSync(EarnBalance)(
+        yieldBalanceFixture({
+          amount,
+          amountUsd: amount,
+          pendingActions: [...pendingActions],
+          token: selectedYield.token,
+          type,
+        })
+      );
+    const read = (balances: ReadonlyArray<EarnBalance>) => {
+      const { registry, workflowKey } = makeWorkflowRegistry(
+        "default",
+        balances
+      );
+      const view = registry
+        .get(positionDetailsPendingActionsViewAtom(workflowKey))
+        ?.map(({ pendingAction, sharedByBalances, yieldBalance }) => ({
+          passthrough: pendingAction.passthrough,
+          sharedByBalances,
+          type: yieldBalance.type,
+        }));
+      registry.dispose();
+      return view;
+    };
+
+    expect(
+      read([
+        withClaim("active", "1.5", [claim]),
+        withClaim("claimable", "0.000001", [claim]),
+      ])
+    ).toEqual([
+      { passthrough: "claim-all", sharedByBalances: true, type: "active" },
+    ]);
+    expect(
+      read([
+        withClaim("active", "1.5", []),
+        withClaim("claimable", "0.000001", [claim]),
+      ])
+    ).toEqual([
+      { passthrough: "claim-all", sharedByBalances: false, type: "claimable" },
+    ]);
+  });
+
   it("withdraws a confidential position in its revealed vault shares, valued in the underlying", () => {
     const { cShare, cUsdc } = confidentialFixture;
     const view = readWorkflowView(
