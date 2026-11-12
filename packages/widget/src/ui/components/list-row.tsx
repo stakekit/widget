@@ -26,7 +26,7 @@ import {
 import { space } from "../tokens/space.stylex";
 import { CopyButton } from "./copy-button";
 import { interactiveStyles } from "./interactive-styles";
-import { createSearchHighlighter } from "./search-highlight";
+import { highlightMatches } from "./search-highlight";
 import { Spinner } from "./spinner";
 import { toneTextStyles } from "./tone-styles";
 import { useCopy } from "./use-copy";
@@ -281,7 +281,6 @@ export const ListRow = ({
   option,
   link,
 }: ListRowProps) => {
-  const markSearchMatches = createSearchHighlighter(highlight);
   const group = use(InListGroup);
   const condensed = (density ?? group?.density) === "condensed";
   const flat = condensed || variant === "flat";
@@ -353,7 +352,7 @@ export const ListRow = ({
     <span {...stylex.props(styles.secondLine)}>
       {subtitle !== undefined && (
         <Text variant="caption" tone="muted" truncate>
-          {markSearchMatches(subtitle)}
+          {highlightMatches(subtitle, highlight)}
         </Text>
       )}
       {subtitle !== undefined && status !== undefined && (
@@ -394,7 +393,7 @@ export const ListRow = ({
       >
         <span {...stylex.props(styles.title)}>
           <Text weight="medium" truncate>
-            {markSearchMatches(title)}
+            {highlightMatches(title, highlight)}
           </Text>
         </span>
         {badges !== undefined && (
