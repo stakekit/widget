@@ -6,7 +6,7 @@ import {
   TolerantArray,
   TolerantNullOr,
 } from "../decoding/response-schema";
-import { ExactDecimal } from "../finance/scalars";
+import { ExactDecimal, NonNegativeExactDecimal } from "../finance/scalars";
 import { ContractAddress, ProviderId, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
 import { EarnYieldArguments } from "./mechanic-arguments";
@@ -35,8 +35,20 @@ const EarnPricePerShareState = Schema.Struct({
   shareToken: Token,
 });
 
+const EarnCapacityState = Schema.Struct({
+  current: NonNegativeExactDecimal,
+  max: Schema.optionalKey(Schema.NullOr(NonNegativeExactDecimal)),
+  remaining: Schema.optionalKey(Schema.NullOr(NonNegativeExactDecimal)),
+});
+
 // A malformed price-per-share state only drops share pricing.
 const EarnYieldState = Schema.Struct({
+  capacityState: Schema.optionalKey(
+    TolerantNullOr(EarnCapacityState, {
+      operation: "yield-state",
+      field: "capacityState",
+    })
+  ),
   pricePerShareState: Schema.optionalKey(
     TolerantNullOr(EarnPricePerShareState, {
       operation: "yield-state",

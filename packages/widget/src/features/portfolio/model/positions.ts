@@ -16,6 +16,7 @@ import {
 } from "../../../domain/portfolio/position-callout";
 import {
   type BalanceDataKey,
+  getEarningPositionBalances,
   getPositionValueTotal,
   getTokenSumsUsd,
   type PositionData,
@@ -33,6 +34,8 @@ export type PositionItem = PositionAttention & {
   readonly allBalances: EarnBalance[];
   readonly balanceId: BalanceDataKey;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
+  /** Whether any balance earns the rate; without one, the row shows none. */
+  readonly hasEarningBalances: boolean;
   /**
    * Every balance with an amount: one sum in the primary Value Token when all
    * are priced, else one per Value Token.
@@ -76,6 +79,8 @@ export const toPositionItems = (
           balanceId,
           allBalances: value.balances,
           total: getPositionValueTotal(balancesWithAmount),
+          hasEarningBalances:
+            getEarningPositionBalances(balancesWithAmount).length > 0,
           pointsRewardTokenBalances: balancesWithAmount.filter(
             (balance) => !!balance.token.isPoints
           ),

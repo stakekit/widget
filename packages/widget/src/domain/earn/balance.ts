@@ -109,6 +109,12 @@ const EarnBalanceWire = Schema.Struct({
   amountUsd: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
   /** The Campaign whose unpaid rewards a `locked` balance holds. */
   campaignId: Schema.optionalKey(CampaignId),
+  isEarning: Schema.optionalKey(
+    TolerantNullOr(Schema.Boolean, {
+      operation: "yield-balance",
+      field: "isEarning",
+    })
+  ),
   date: Schema.optionalKey(
     TolerantOptionalUtcDateTimeFromString({
       operation: "yield-balance",

@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { type DateTime, Option } from "effect";
+import { Option } from "effect";
 import type { TFunction } from "i18next";
 
 import type {
@@ -20,6 +20,7 @@ import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldRewardsSummary } from "../../../domain/portfolio/models";
 import {
+  getEarningPositionBalances,
   getPositionValueTotal,
   getTokenSumsUsd,
   groupPositionBalanceRows,
@@ -28,6 +29,7 @@ import {
   sortBalancesByPriority,
 } from "../../../domain/portfolio/positions";
 import type { Presentable } from "../../../shared/effect/async-result";
+import type { PresentationTime } from "../../../shared/effect/presentation-clock";
 import {
   formatRoundedPercent,
   formatTokenAmountWithSymbol,
@@ -86,6 +88,7 @@ type PositionOverviewDetailRow = {
 export type PositionOverviewModel = {
   breakdownRows: PositionOverviewBreakdownRow[];
   detailRows: PositionOverviewDetailRow[];
+  hasEarningBalances: boolean;
   /** The yield's facts the page already shows, left out of its facts section. */
   omittedYieldFacts: YieldFactId[];
   summary: PositionOverviewSummary;
@@ -106,7 +109,7 @@ export const getPositionOverviewModel = ({
   cancellingHandles = new Set(),
   integrationData,
   locale,
-  now = null,
+  presentationTime = null,
   positionBalancesByType,
   rate,
   rewardsSummary,
@@ -116,8 +119,8 @@ export const getPositionOverviewModel = ({
   cancellingHandles?: ReadonlySet<ConfidentialHandle>;
   integrationData: EarnYieldWithProvider;
   locale: string;
-  /** Presentation time; batch timing is omitted without it. */
-  now?: DateTime.Utc | null;
+  /** Presentation time; pending balance timing is omitted without it. */
+  presentationTime?: PresentationTime | null;
   positionBalancesByType: PositionBalancesByType;
   /** The rate the summary leads with and projects. */
   rate: PositionRate;
@@ -130,9 +133,11 @@ export const getPositionOverviewModel = ({
     | undefined;
   t: TFunction;
 }): PositionOverviewModel => {
-  const balanceRows = groupPositionBalanceRows(
-    getBalancesByPriority(positionBalancesByType),
-    (balance) => isCancellingBalance(balance, cancellingHandles)
+  const balances = getBalancesByPriority(positionBalancesByType);
+  const earningBalances = getEarningPositionBalances(balances);
+  const hasEarningBalances = earningBalances.length > 0;
+  const balanceRows = groupPositionBalanceRows(balances, (balance) =>
+    isCancellingBalance(balance, cancellingHandles)
   );
   // Shown only from a current success: while loading, and whenever the
   // latest attempt failed, even after an earlier success, the figure hides
@@ -147,9 +152,10 @@ export const getPositionOverviewModel = ({
         : undefined,
   });
   const summary = getPositionSummary({
+    balances,
     earned,
+    earningBalances,
     locale,
-    positionBalancesByType,
     rate,
     t,
   });
@@ -159,7 +165,7 @@ export const getPositionOverviewModel = ({
       balanceRows,
       integrationData,
       locale,
-      now,
+      presentationTime,
       t,
     }),
     detailRows: getDetailRows({
@@ -167,7 +173,9 @@ export const getPositionOverviewModel = ({
       positionBalancesByType,
       t,
     }),
-    omittedYieldFacts: summary.rate === undefined ? [] : ["reward-rate"],
+    hasEarningBalances,
+    omittedYieldFacts:
+      hasEarningBalances && summary.rate === undefined ? [] : ["reward-rate"],
     summary,
   };
 };
@@ -180,19 +188,21 @@ export const getPositionOverviewModel = ({
  * nothing, as for a dust or unpriced position.
  */
 const getPositionSummary = ({
+  balances,
   earned,
+  earningBalances,
   locale,
-  positionBalancesByType,
   rate,
   t,
 }: {
+  balances: PricedBalances;
   earned: PositionEarned | null;
+  /** The balances that earn the rate, which alone project rewards. */
+  earningBalances: PricedBalances;
   locale: string;
-  positionBalancesByType: PositionBalancesByType;
   rate: PositionRate;
   t: TFunction;
 }): PositionOverviewSummary => {
-  const balances = getBalancesByPriority(positionBalancesByType);
   // The same total Manage shows, in the primary Value Token when priced.
   const sums = getPositionValueTotal(balances).filter((sum) =>
     sum.amount.isGreaterThan(0)
@@ -216,9 +226,13 @@ const getPositionSummary = ({
   };
 
   const { headline } = rate;
-  const hasRate = headline.rate.isFinite() && !headline.rate.isZero();
+  // The rate is only earned on earning balances; without any it is not shown.
+  const hasRate =
+    earningBalances.length > 0 &&
+    headline.rate.isFinite() &&
+    !headline.rate.isZero();
   const yearly = getEstimatedRewardsUsd({
-    amountUsd: totalUsd,
+    amountUsd: getTokenSumsUsd(getPositionValueTotal(earningBalances)),
     estimatedRewards: { rewardRateAverage: headline.rate },
   })?.yearly;
   const rateLabel = rate.personalized
@@ -315,13 +329,13 @@ const getBreakdownRows = ({
   balanceRows,
   integrationData,
   locale,
-  now,
+  presentationTime,
   t,
 }: {
   balanceRows: ReadonlyArray<PositionBalanceRow>;
   integrationData: EarnYieldWithProvider;
   locale: string;
-  now: DateTime.Utc | null;
+  presentationTime: PresentationTime | null;
   t: TFunction;
 }): PositionOverviewBreakdownRow[] => {
   const deposit = isDepositYieldType(getExtendedYieldType(integrationData));
@@ -332,7 +346,8 @@ const getBreakdownRows = ({
       : formatUsdSubValue(row.amountUsd, locale);
     const batchTiming = formatPendingBalanceTiming({
       integrationData,
-      now,
+      locale,
+      presentationTime,
       row,
       t,
     });
@@ -390,6 +405,9 @@ const getDetailRows = ({
 const getBalancesByPriority = (
   positionBalancesByType: PositionBalancesByType
 ) => sortBalancesByPriority([...positionBalancesByType.values()].flat());
+
+/** A position's balances with their token prices, in display priority. */
+type PricedBalances = ReturnType<typeof getBalancesByPriority>;
 
 const formatBalanceTypeLabel = (
   type: YieldBalanceType,

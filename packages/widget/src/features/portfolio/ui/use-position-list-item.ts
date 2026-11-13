@@ -37,9 +37,12 @@ export const usePositionListItem = (item: PositionItem) => {
 
   // The rate as shown with its type ("4.52% APY"), and whether it is a gain:
   // only a positive rate reads in the success tone, not zero or an unknown
-  // rate, the same rule as the yield picker's.
+  // rate, the same rule as the yield picker's. A row with nothing earning
+  // shows no rate.
   const getRewardRateAverage = () => {
-    if (!providersDetails || !integrationData) return null;
+    if (!providersDetails || !integrationData || !item.hasEarningBalances) {
+      return null;
+    }
     const average = providersDetails
       .reduce(
         (acc, val) => acc.plus(val.rewardRate ?? exactZero()),

@@ -14,6 +14,7 @@ import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
 import {
   YieldCategory,
   type YieldCategory as YieldCategoryType,
+  YieldProviderId,
 } from "./contract";
 import type { EarnProvider } from "./provider";
 import {
@@ -358,6 +359,14 @@ const hasPositivePricePerShare = (yieldDto: EarnYieldWithProvider) =>
 
 export const hasYieldBearingOutputToken = (yieldDto: EarnYieldWithProvider) =>
   getYieldOutputToken(yieldDto) !== null && hasPositivePricePerShare(yieldDto);
+
+/**
+ * A Makina vault: its withdrawal dates are estimates that wait on the
+ * provider's finalization, and it reports a deposit capacity.
+ */
+export const isMakinaYield = (
+  yieldDto: Pick<EarnYieldWithProvider, "providerId">
+) => yieldDto.providerId === YieldProviderId.Makina;
 
 const isStakingYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "staking" ||

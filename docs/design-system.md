@@ -144,9 +144,13 @@ One look per concept:
   (both are left out, silently, when the API does not track the yield, every
   window is zero or the request fails); then "Projected · per year", muted
   with "≈", left out under a cent a year, as for a dust or unpriced
-  position. Every row has one alignment: labels at the start, values at the
-  end. One-click `ActionCard`s (claim, withdraw what is unlocked,
-  other pending actions) come next, only when the position has them, so a
+  position. The rate and projection count only the balances the API says
+  earn: a position with none (only funds on their way out, say) keeps its
+  value but shows no rate, no projection and no rate composition, and its
+  Manage row shows no rate either. Every row has one alignment: labels at
+  the start, values at the end. One-click `ActionCard`s (claim, withdraw
+  what is unlocked, other pending actions) come next, only when the
+  position has them, so a
   required action stays in view. The amount actions follow as `Tabs`
   (Unstake or Withdraw, selected first, and Stake or Deposit where the Layout
   offers entering; with one action, no tabs, its form alone), the selected
@@ -178,11 +182,14 @@ One look per concept:
 - **Yield facts.** What a yield is reads the same wherever it shows: one
   `YieldFactsSection` (yield-summary), an "About" `Disclosure`, open, with
   the yield's description and documentation link, then its facts (reward
-  rate, reward token, price per share, risk, minimum, cooldown, warmup,
-  lockup, withdrawal, TVL, fees, status, average position, type, reward
-  schedule and claiming, website) and its copyable contracts. The Earn
-  details pane and a position's page both end with it, each leaving out the
-  facts it already shows: Earn's metric cards, a position's summary rate.
+  rate, reward token, price per share, capacity, risk, minimum, cooldown,
+  warmup, lockup, withdrawal, TVL, fees, status, average position, type,
+  reward schedule and claiming, website) and its copyable contracts. A fact
+  with a `caption` reads it as a muted line under its value, such as a
+  vault's capacity ("1.5 wBTC / 2 wBTC") over what is still available. The
+  Earn details pane and a position's page both end with it, each leaving out
+  the facts it already shows: Earn's metric cards, a position's summary rate
+  (and its rate altogether when none of its balances earns).
   The header names the provider and the network, so the facts never do.
 - **Named entities in rows.** A label-value row whose value names a
   network, a token, a provider, a yield or one validator leads the value

@@ -99,6 +99,7 @@ export const YieldFactsSection = ({
             <DetailRow
               key={fact.id}
               label={fact.label}
+              {...(fact.caption ? { caption: fact.caption } : {})}
               logo={
                 fact.token === undefined
                   ? undefined
