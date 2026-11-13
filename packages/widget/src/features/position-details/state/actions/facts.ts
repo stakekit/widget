@@ -63,7 +63,6 @@ export const positionDetailsFlowFactsAtom = Atom.family(
             : null,
         integration,
         kycBlocking: kyc.isBlocking,
-        positionBalancesByType: workflow.positionBalancesByType,
         providers: providers ?? [],
         receiveToken,
         stakedOrLiquidBalances,

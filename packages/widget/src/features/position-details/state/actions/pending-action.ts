@@ -60,27 +60,18 @@ const getAutomaticPendingActionModalState = (
   key: PositionDetailsWorkflowKey
 ): PendingActionModalState => {
   if (!key.pendingActionType) return closedPendingActionModalState;
-
-  const positionBalancesByType = get(
+  const offer = get(
     positionDetailsFlowFactsAtom(key)
-  ).positionBalancesByType;
-  const pendingAction = positionBalancesByType
-    ? [...positionBalancesByType.values()]
-        .flat()
-        .flatMap((balance) =>
-          balance.pendingActions.map((pendingAction) => ({
-            pendingAction,
-            yieldBalance: balance,
-          }))
-        )
-        .find(
-          (candidate) =>
-            candidate.pendingAction.type === key.pendingActionType &&
-            pendingActionNeedsValidatorSelection(candidate.pendingAction)
-        )
-    : null;
-  return pendingAction
-    ? makeAutomaticPendingActionModalState(pendingAction)
+  ).workflow.pendingActionOffers.find(
+    (candidate) =>
+      candidate.pendingAction.type === key.pendingActionType &&
+      pendingActionNeedsValidatorSelection(candidate.pendingAction)
+  );
+  return offer
+    ? makeAutomaticPendingActionModalState({
+        pendingAction: offer.pendingAction,
+        yieldBalance: offer.yieldBalance,
+      })
     : closedPendingActionModalState;
 };
 
@@ -219,13 +210,8 @@ const runPositionPendingActionAtom = Atom.family(
           command,
           integration: facts.integration,
           modal,
-          pendingActionIndex: facts.workflow.pendingActionIndex,
+          pendingActionOffers: facts.workflow.pendingActionOffers,
           pendingActionsState: facts.workflow.pendingActions,
-          pendingActionValidations: new Map(
-            [...facts.workflow.pendingActionProjections].map(
-              ([pendingKey, projection]) => [pendingKey, projection.validation]
-            )
-          ),
           wallet:
             facts.wallet.status === "connected"
               ? {

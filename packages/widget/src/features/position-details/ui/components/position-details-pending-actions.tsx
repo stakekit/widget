@@ -40,14 +40,14 @@ export const PositionDetailsPendingActions = () => {
   return (
     <Stack gap={8}>
       {ordered.map((val) => {
-        const key = `${val.pendingAction.type}-${val.pendingAction.passthrough}`;
         const primary = val === leading;
 
         if (!val.amount) {
           return (
             <StaticActionBlock
-              {...val}
-              key={key}
+              key={val.id}
+              pendingAction={val.pendingAction}
+              yieldBalance={val.yieldBalance}
               onPendingActionClick={onPendingActionClick}
               integration={integrationData}
               primary={primary}
@@ -73,7 +73,7 @@ export const PositionDetailsPendingActions = () => {
 
         return (
           <AmountBlock
-            key={key}
+            key={val.id}
             variant="action"
             primary={primary}
             onAmountChange={(amount) =>

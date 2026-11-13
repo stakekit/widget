@@ -3,7 +3,6 @@ import { Data, Array as EArray, Option, Result } from "effect";
 
 import {
   getPendingActionStateKey,
-  type PendingActionStateKey,
   preparePendingActionCommand,
 } from "../../../domain/action/action-command";
 import {
@@ -36,6 +35,7 @@ import type {
 import type { Token } from "../../../domain/token/token";
 import type { AdditionalAddresses } from "../../../domain/wallet/address";
 import { compositeKey } from "../../../shared/lib/composite-key";
+import type { PendingActionOffer } from "./pending-action-offers";
 
 class PendingActionAttemptId extends Data.Class<{
   readonly value: string;
@@ -433,29 +433,18 @@ export const resolvePositionPendingActionDecision = ({
   command,
   integration,
   modal,
-  pendingActionIndex,
+  pendingActionOffers,
   pendingActionsState,
-  pendingActionValidations,
   wallet,
 }: {
   readonly canMount: boolean;
   readonly command: PositionPendingActionCommand;
   readonly integration: EarnYieldWithProvider | null;
   readonly modal: PendingActionModalState;
-  readonly pendingActionIndex: ReadonlyMap<
-    PendingActionStateKey,
-    Readonly<{
-      readonly balance: EarnBalance;
-      readonly pendingAction: PendingAction;
-    }>
-  >;
+  readonly pendingActionOffers: ReadonlyArray<PendingActionOffer<EarnBalance>>;
   readonly pendingActionsState: Parameters<
     typeof preparePendingActionCommand
   >[0]["pendingActionsState"];
-  readonly pendingActionValidations: ReadonlyMap<
-    PendingActionStateKey,
-    "AboveMaximum" | "BelowMinimum" | "Required" | null
-  >;
   readonly wallet: ConnectedPendingActionWallet | null;
 }) => {
   if (!integration) return { _tag: "Unavailable" } as const;
@@ -485,14 +474,16 @@ export const resolvePositionPendingActionDecision = ({
     passthrough: requestedSelection.pendingAction.passthrough,
     token: requestedSelection.yieldBalance.token,
   });
-  const current = pendingActionIndex.get(pendingActionKey);
-  if (!current || pendingActionValidations.get(pendingActionKey)) {
+  const offer = pendingActionOffers.find(
+    (candidate) => candidate.key === pendingActionKey
+  );
+  if (!offer || offer.validation) {
     return { _tag: "Unavailable" } as const;
   }
   const selection = {
     ...requestedSelection,
-    pendingAction: current.pendingAction,
-    yieldBalance: current.balance,
+    pendingAction: offer.pendingAction,
+    yieldBalance: offer.yieldBalance,
   };
 
   const telemetry: PendingActionTelemetry =
