@@ -1,6 +1,8 @@
 import { Context, Data, Effect, Layer } from "effect";
+import type { DataRouter } from "react-router";
 
 import { ApplicationRouter } from "./application-router";
+import type { ScrollReset } from "./scroll-reset";
 import {
   type WidgetNavigationTarget,
   widgetTargetPath,
@@ -40,15 +42,6 @@ export class WidgetNavigationError extends Data.TaggedError(
   readonly cause: unknown;
 }> {}
 
-const resetScroll = (
-  options: WidgetNavigationOptions,
-  canResetScroll: () => boolean
-): void => {
-  if (options.scroll !== "preserve" && canResetScroll()) {
-    globalThis.window?.scrollTo(0, 0);
-  }
-};
-
 const runNavigation = (
   operation: () => Promise<void> | void
 ): Effect.Effect<void, WidgetNavigationError> =>
@@ -56,6 +49,34 @@ const runNavigation = (
     try: () => Promise.resolve(operation()),
     catch: (cause) => new WidgetNavigationError({ cause }),
   });
+
+/** A blocker holds a navigation while it waits for the user, then proceeds. */
+const blockerHoldsNavigation = (state: DataRouter["state"]): boolean =>
+  Array.from(state.blockers.values()).some(
+    (blocker) => blocker.state === "blocked" || blocker.state === "proceeding"
+  );
+
+/**
+ * Drops the reset requested from `from` once its navigation settles there.
+ * A blocked navigation keeps it until the user leaves, which commits the
+ * next page, or stays.
+ */
+const settleScrollReset = (
+  router: DataRouter,
+  scrollReset: ScrollReset,
+  from: string
+): void => {
+  if (router.state.location.key !== from) return;
+  if (!blockerHoldsNavigation(router.state)) {
+    scrollReset.cancel(from);
+    return;
+  }
+  const unsubscribe = router.subscribe((state) => {
+    if (blockerHoldsNavigation(state)) return;
+    unsubscribe();
+    if (state.location.key === from) scrollReset.cancel(from);
+  });
+};
 
 export type WidgetNavigationService = Readonly<{
   readonly back: (
@@ -97,30 +118,44 @@ export class WidgetNavigation extends Context.Service<
   static readonly layer = (canResetScroll: () => boolean = () => true) =>
     Layer.effect(
       WidgetNavigation,
-      ApplicationRouter.useSync(({ router }) => {
+      ApplicationRouter.useSync(({ router, scrollReset }) => {
+        // The reset runs when the next page commits; a navigation that keeps
+        // the location drops it.
+        const navigateWithScroll = (
+          options: WidgetNavigationOptions,
+          routerNavigation: () => Promise<void>
+        ) =>
+          Effect.suspend(() => {
+            const from = router.state.location.key;
+            if (options.scroll !== "preserve" && canResetScroll()) {
+              scrollReset.request(from);
+            }
+            return runNavigation(routerNavigation).pipe(
+              Effect.ensuring(
+                Effect.sync(() => settleScrollReset(router, scrollReset, from))
+              )
+            );
+          });
         const back: WidgetNavigation["Service"]["back"] = (options = {}) =>
-          runNavigation(() => {
-            resetScroll(options, canResetScroll);
-            return router.navigate(-(options.steps ?? 1));
-          });
+          navigateWithScroll(options, () =>
+            router.navigate(-(options.steps ?? 1))
+          );
         const push: WidgetNavigation["Service"]["push"] = (to, options = {}) =>
-          runNavigation(() => {
-            resetScroll(options, canResetScroll);
-            return router.navigate(widgetTargetPath(to), {
+          navigateWithScroll(options, () =>
+            router.navigate(widgetTargetPath(to), {
               state: widgetTargetState(to),
-            });
-          });
+            })
+          );
         const replace: WidgetNavigation["Service"]["replace"] = (
           to,
           options = {}
         ) =>
-          runNavigation(() => {
-            resetScroll(options, canResetScroll);
-            return router.navigate(widgetTargetPath(to), {
+          navigateWithScroll(options, () =>
+            router.navigate(widgetTargetPath(to), {
               replace: true,
               state: widgetTargetState(to),
-            });
-          });
+            })
+          );
         return makeWidgetNavigation({ back, push, replace });
       })
     );
