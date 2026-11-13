@@ -225,7 +225,7 @@ const createTonConnector = (
 export const getTonConnectors = (
   options: TonConnectorOptions
 ): WalletList[number] => ({
-  groupName: "Ton",
+  groupName: "TON",
   wallets: [
     () => ({
       id: "tonconnect",
@@ -235,7 +235,7 @@ export const getTonConnectors = (
       availability: { _tag: "Remote" },
       chainGroup: {
         id: "ton",
-        title: "Ton",
+        title: "TON",
         iconUrl: getWalletNetworkLogo("ton"),
       },
       createConnector: (walletDetailsParams) =>
