@@ -17,7 +17,7 @@ const token = yieldApiYieldFixture().token;
 
 const component = (
   rate: number,
-  yieldSource: string,
+  yieldSource: YieldRewardRate["components"][number]["yieldSource"],
   rateType = "APY"
 ): YieldRewardRate["components"][number] => ({
   rate: exactDecimal(rate),

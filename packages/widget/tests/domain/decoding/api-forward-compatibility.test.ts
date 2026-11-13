@@ -107,7 +107,35 @@ describe("API responses with values added after client generation", () => {
         expect(result.inputTokens).toEqual([yieldDto.token]);
         expect(
           result.rewardRate.components.map(({ yieldSource }) => yieldSource)
-        ).toEqual(["staking", UNKNOWN]);
+        ).toEqual(["staking", "unknown"]);
+      })
+  );
+
+  it.effect(
+    "reads a schedule path's unknown cadence, kind and status as unknown",
+    () =>
+      Effect.gen(function* () {
+        const path = {
+          kind: "standard",
+          cadence: "daily_cutoff",
+          status: "open",
+          cutoffTime: "16:00",
+        };
+        const result = yield* decode(EarnYield, {
+          ...yieldApiYieldDtoFixture(),
+          investmentSchedule: {
+            timezone: "America/New_York",
+            subscription: { paths: [path] },
+            redemption: {
+              paths: [{ kind: UNKNOWN, cadence: UNKNOWN, status: UNKNOWN }],
+            },
+          },
+        });
+
+        expect(result.investmentSchedule?.subscription.paths).toEqual([path]);
+        expect(result.investmentSchedule?.redemption.paths).toEqual([
+          { kind: "unknown", cadence: "unknown", status: "unknown" },
+        ]);
       })
   );
 

@@ -161,3 +161,25 @@ export const TolerantNullOr = <Value extends Schema.ConstraintDecoder<unknown>>(
       ),
     })
   );
+
+/**
+ * An enum field the API can extend: a value outside `known` decodes to
+ * `"unknown"`, so new values never fail decoding while the widget compares
+ * only against the values it knows.
+ */
+export const OpenLiterals = <Literals extends ReadonlyArray<string>>(
+  known: Schema.Literals<Literals>
+) => {
+  const isKnown = Schema.is(known);
+
+  return Schema.String.pipe(
+    Schema.decodeTo(Schema.Union([known, Schema.Literal("unknown")]), {
+      decode: SchemaGetter.transform((value) =>
+        isKnown(value) ? value : ("unknown" as const)
+      ),
+      encode: SchemaGetter.forbidden(
+        () => "Cannot encode an open enum response field"
+      ),
+    })
+  );
+};

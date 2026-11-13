@@ -1,7 +1,11 @@
 import { Schema, Struct } from "effect";
 
 import * as YieldApi from "../../generated/api/yield-schema";
-import { TolerantArray, TolerantNullOr } from "../decoding/response-schema";
+import {
+  OpenLiterals,
+  TolerantArray,
+  TolerantNullOr,
+} from "../decoding/response-schema";
 import { ExactDecimal } from "../finance/scalars";
 import { Token } from "../token/token";
 
@@ -12,13 +16,11 @@ import { Token } from "../token/token";
 export const TolerantExactDecimal = (operation: string, field: string) =>
   TolerantNullOr(ExactDecimal, { operation, field });
 
-// `yieldSource` stays open: reward-rate breakdowns already fall back for
-// sources they do not group.
 const EarnReward = Schema.Struct({
   ...Struct.pick(YieldApi.RewardDto.fields, ["rateType"]),
   rate: ExactDecimal,
   token: Token,
-  yieldSource: Schema.String,
+  yieldSource: OpenLiterals(YieldApi.RewardDto.fields.yieldSource),
 });
 
 export const EarnRewardRate = Schema.Struct({

@@ -566,12 +566,13 @@ describe("getPositionOverviewModel", () => {
       ...makeBalance(overrides),
       tokenPriceInUsd: new BigNumber(1),
     });
-    const dailyPath = (cutoffTime: string) => ({
-      cadence: "daily_cutoff",
-      cutoffTime,
-      kind: "standard",
-      status: "open",
-    });
+    const dailyPath = (cutoffTime: string) =>
+      ({
+        cadence: "daily_cutoff",
+        cutoffTime,
+        kind: "standard",
+        status: "open",
+      }) as const;
 
     const model = positionOverview({
       locale: "en",

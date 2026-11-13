@@ -7,6 +7,7 @@ import type { EarnYieldWithProvider } from "./yield-schema";
 
 export type YieldRewardRate = NonNullable<EarnYieldWithProvider["rewardRate"]>;
 type YieldRewardDto = YieldRewardRate["components"][number];
+type YieldSource = YieldRewardDto["yieldSource"];
 type YieldWithRewardRate = Pick<EarnYieldWithProvider, "rewardRate">;
 type ValidatorRewardRateDto = NonNullable<EarnValidator["rewardRate"]>;
 export type SelectedValidators =
@@ -105,7 +106,7 @@ export type RateComposition = {
   readonly total: RatePart;
 };
 
-const isIncentive = (yieldSource: string) =>
+const isIncentive = (yieldSource: YieldSource) =>
   yieldSource === "protocol_incentive" || yieldSource === "campaign_incentive";
 
 // The components summed in the first one's rate type; null when they add
@@ -126,7 +127,7 @@ export const getRateComposition = (
   rewardRate: YieldRewardRate
 ): RateComposition => {
   const { components, total } = rewardRate;
-  const from = (yieldSource: string) =>
+  const from = (yieldSource: YieldSource) =>
     sumComponents(
       components.filter((component) => component.yieldSource === yieldSource)
     );
