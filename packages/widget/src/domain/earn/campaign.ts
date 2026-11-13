@@ -218,6 +218,10 @@ export const getEarningCampaign = (
     : null;
 };
 
+// How far listed parts may sum from their total and still make it up: the
+// API rounds some yields' parts by up to ~1e-10, far below any campaign rate.
+const partsSumTolerance = exactDecimal("1e-8");
+
 /**
  * A yield with its earning campaign's Campaign Incentive Rate added when its
  * own rate doesn't list one yet: the API serves yields from a longer cache
@@ -238,7 +242,10 @@ export const withCampaignRate = <Y extends Pick<EarnYield, "rewardRate">>(
   );
   if (
     !campaignRate?.total.isGreaterThan(0) ||
-    !listedTotal.isEqualTo(rewardRate.total) ||
+    listedTotal
+      .minus(rewardRate.total)
+      .abs()
+      .isGreaterThan(partsSumTolerance) ||
     rewardRate.components.some(
       (component) => component.yieldSource === "campaign_incentive"
     )

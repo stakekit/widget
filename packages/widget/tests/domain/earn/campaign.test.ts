@@ -283,6 +283,25 @@ describe("withCampaignRate", () => {
     });
   });
 
+  it("reads parts the API rounds a hair off its total as making it up", () => {
+    // As base-usdc-pusdc lists: parts 0.04041282942103987, total
+    // 0.04041282941447777.
+    const rounded = yieldApiYieldFixture({
+      id: "campaign-vault",
+      rewardRate: {
+        rateType: "APY",
+        total: 0.04041282941447777,
+        components: [{ ...vaultRate, rate: 0.04041282942103987, token }],
+      },
+    });
+
+    expect(
+      rates(withCampaignRate(rounded, running)).components.map(
+        ([source]) => source
+      )
+    ).toEqual(["vault", "campaign_incentive"]);
+  });
+
   it("keeps the campaign part the yield's rate already lists", () => {
     const listed = vaultYield([
       vaultRate,
