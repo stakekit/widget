@@ -21,6 +21,18 @@ export type PositionBalancesByType = Map<
 >;
 export type PositionValidators = ReadonlyArray<EarnValidator>;
 
+/** Explicitly non-earning balances contribute no rate or projected rewards. */
+export const getEarningPositionBalances = <
+  Balance extends Pick<EarnBalance, "amount" | "isEarning" | "isEncrypted">,
+>(
+  balances: ReadonlyArray<Balance>
+): ReadonlyArray<Balance> =>
+  balances.filter(
+    (balance) =>
+      balance.isEarning !== false &&
+      (balance.isEncrypted === true || balance.amount.isGreaterThan(0))
+  );
+
 /**
  * Identifies one balance group of a position: `default`, `validators` (a
  * balance spread over several validators), or `validator::<validator key>`.

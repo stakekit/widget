@@ -10,6 +10,7 @@ import { EarnBalance } from "../../../src/domain/earn/balance";
 import { ConfidentialTokenBalanceKey } from "../../../src/domain/earn/confidential-balance";
 import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
+import { Token } from "../../../src/domain/token/token";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import { tokenBalancesScanAtom } from "../../../src/features/portfolio/index";
 import { PositionDetailsEnterKey } from "../../../src/features/position-details/state/enter-entry";
@@ -85,7 +86,12 @@ const addTokenBalanceAtom = appRuntime.fn(
     RevealedBalances.use((values) => values.addTokenBalance(key, balance))
 );
 
-const makeRegistry = (selectedYield: EarnYield) => {
+const makeRegistry = (
+  selectedYield: EarnYield,
+  initialValues: NonNullable<
+    NonNullable<Parameters<typeof AtomRegistry.make>[0]>["initialValues"]
+  > = []
+) => {
   const reveals: Array<{ chainId: number; owner: string; token: string }> = [];
   const entryKey = new PositionDetailsEnterKey({
     balanceId: "default",
@@ -121,6 +127,7 @@ const makeRegistry = (selectedYield: EarnYield) => {
             }),
         }) as never
       ),
+      ...initialValues,
     ],
   });
   return { entryKey, registry, reveals };
@@ -187,6 +194,87 @@ describe("Position details stake token", () => {
         { hiddenBalance: false, selected: true, symbol: "USDC" },
         { hiddenBalance: true, selected: false, symbol: "cUSDC" },
       ]);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  // Symbols differ between the Yield API and the wallet scan (WBTC, wBTC).
+  const wbtc = {
+    address: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+    decimals: 8,
+    name: "Wrapped Bitcoin",
+    network: "ethereum-sepolia" as const,
+    symbol: "wBTC",
+  };
+  const scannedWbtc = {
+    ...wbtc,
+    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    name: "Wrapped BTC",
+    symbol: "WBTC",
+  };
+  it.each([
+    {
+      name: "reads a scanned token's balance by contract when its symbol differs",
+      scannedToken: scannedWbtc,
+      expectedAmount: "0.00000609",
+    },
+    {
+      name: "does not read another contract with the same symbol",
+      scannedToken: {
+        ...wbtc,
+        address: "0x0000000000000000000000000000000000000001",
+      },
+      expectedAmount: "0",
+    },
+    {
+      name: "does not read the same address on another network",
+      scannedToken: { ...scannedWbtc, network: "base" },
+      expectedAmount: "0",
+    },
+  ])("$name", async ({ scannedToken, expectedAmount }) => {
+    const selectedYield = yieldApiYieldFixture({
+      id: "ethereum-wbtc-dbit-makina-vault",
+      token: wbtc,
+      inputTokens: [wbtc],
+    });
+    const { entryKey, registry } = makeRegistry(selectedYield, [
+      Atom.initialValue(tokenBalancesScanAtom, {
+        enabled: true,
+        result: AsyncResult.success([
+          {
+            amount: new BigNumber("0.00000609"),
+            availableYields: [selectedYield.id],
+            token: Schema.decodeUnknownSync(Token)(scannedToken),
+          },
+        ]),
+      }),
+      Atom.initialValue(
+        positionBalancesByTypeAtom(
+          new PositionBalancesKey({
+            balanceId: "default",
+            scope: walletScope,
+            yieldId: selectedYield.id,
+          })
+        ),
+        AsyncResult.success(new Map())
+      ),
+    ]);
+    const { viewAtom } = registry.get(positionDetailsEnterAtoms(entryKey));
+    const unmount = registry.mount(viewAtom);
+
+    try {
+      await vi.waitFor(() => {
+        expect(registry.get(viewAtom).ownerCurrent).toBe(true);
+      });
+      const view = registry.get(viewAtom);
+      expect(view.selectedTokenAvailableAmount?.amount.toFixed()).toBe(
+        expectedAmount
+      );
+      expect(view.tokenSelection.options[0]?.amount?.toFixed()).toBe(
+        expectedAmount
+      );
     } finally {
       unmount();
       registry.dispose();

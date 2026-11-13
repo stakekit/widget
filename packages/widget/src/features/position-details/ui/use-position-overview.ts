@@ -33,7 +33,7 @@ export const usePositionOverview = (): PositionOverviewModel | null => {
     cancellingHandles: position.cancellingHandles,
     integrationData,
     locale,
-    now: presentationTime?.now ?? null,
+    presentationTime,
     personalizedRewardRate: position.personalizedRewardRate,
     positionBalancesByType,
     rewardsSummary,

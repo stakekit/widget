@@ -41,6 +41,10 @@ export const PositionDetailsDisclosure = () => {
   const stakeType = t(
     `position_details.stake_type.${getExtendedYieldType(integrationData)}`
   );
+  // Validators show their own rates only when they set what the position
+  // earns: not over a Personalized Reward Rate, nor with nothing earning.
+  const showValidatorRates =
+    overview.hasEarningBalances && !personalizedRewardRate;
 
   return (
     <Disclosure
@@ -96,16 +100,18 @@ export const PositionDetailsDisclosure = () => {
           </Stack>
         ) : null}
 
-        <RewardRateBreakdown
-          rewardRate={positionDetails.apyCompositionRewardRate}
-          showUpToCampaign={positionDetails.apyCompositionShowsUpToCampaign}
-          title={t("details.apy_composition.title")}
-          testId={
-            personalizedRewardRate
-              ? "personalized-reward-rate-breakdown"
-              : "reward-rate-breakdown"
-          }
-        />
+        {overview.hasEarningBalances ? (
+          <RewardRateBreakdown
+            rewardRate={positionDetails.apyCompositionRewardRate}
+            showUpToCampaign={positionDetails.apyCompositionShowsUpToCampaign}
+            title={t("details.apy_composition.title")}
+            testId={
+              personalizedRewardRate
+                ? "personalized-reward-rate-breakdown"
+                : "reward-rate-breakdown"
+            }
+          />
+        ) : null}
 
         {positionDetails.positionSource === "validator" ? (
           <Stack gap={8}>
@@ -114,10 +120,10 @@ export const PositionDetailsDisclosure = () => {
                 {...provider}
                 key={provider.address ?? index}
                 rewardRate={
-                  personalizedRewardRate ? undefined : provider.rewardRate
+                  showValidatorRates ? provider.rewardRate : undefined
                 }
                 rewardType={
-                  personalizedRewardRate ? undefined : provider.rewardType
+                  showValidatorRates ? provider.rewardType : undefined
                 }
                 stakeType={stakeType}
                 integrationData={integrationData}
