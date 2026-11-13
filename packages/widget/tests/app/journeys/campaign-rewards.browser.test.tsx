@@ -279,6 +279,29 @@ describe("Campaign rewards on positions", () => {
     await app.unmount();
   });
 
+  it("reads the yield's rate, not a personal one, once its campaign ends", async ({
+    worker,
+  }) => {
+    // The widget no longer shows an ended campaign, so it can't tell whether
+    // the balance's campaign part was the wallet's own.
+    const { openPositions } = await campaignSetup(worker, {
+      rewards: {},
+      campaign: { endTime: "2026-02-01T00:00:00.000Z" },
+    });
+    const app = await openPositions();
+    await userEvent.click(app.getByText("Trust USDA Earn").first());
+
+    const summary = app.getByTestId("position-summary");
+    await expect
+      .element(summary.getByText("4.55% APY", { exact: true }))
+      .toBeVisible();
+    await expect
+      .element(summary.getByText(/Personalized APY/))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
   it("says how much more a position below the minimum needs", async ({
     worker,
   }) => {

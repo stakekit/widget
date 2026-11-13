@@ -62,6 +62,7 @@ describe("Position details actions", () => {
     worker,
   }) => {
     const { account, customConnectors, yieldId, setUrl } = await setup(worker, {
+      cappedCampaign: true,
       editableAmounts: true,
     });
     setUrl({

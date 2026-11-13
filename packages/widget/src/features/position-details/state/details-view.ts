@@ -129,17 +129,14 @@ export const positionDetailsViewAtom = Atom.family(
       const positionRate = integration
         ? getPositionRate({
             balanceRewardRate: workflow.positionBalances?.rewardRate ?? null,
-            // Without a per-wallet cap every wallet earns the same campaign
-            // rate, so a balance's rate isn't its own.
-            balanceRateIsPersonal: () => {
-              const campaign = get(yieldCampaignAtom(integration.id));
-              return (
-                !campaign ||
-                Boolean(
-                  campaign.campaign.qualificationConfig?.maxIncentivizedTvlToken
-                )
-              );
-            },
+            // A balance's rate is its own only under a per-wallet cap: without
+            // one every wallet earns the same campaign rate, and without a
+            // shown campaign (loading, or ended) the widget can't tell.
+            balanceRateIsPersonal: () =>
+              Boolean(
+                get(yieldCampaignAtom(integration.id))?.campaign
+                  .qualificationConfig?.maxIncentivizedTvlToken
+              ),
             canEarnCampaign: () =>
               get(
                 positionCanEarnCampaignAtom(

@@ -19,8 +19,8 @@ export type PositionRateInput = {
   /** The rate the balances endpoint gives the wallet's position. */
   readonly balanceRewardRate: YieldRewardRate | null;
   /**
-   * Whether the balance's campaign part can be the wallet's own: false for a
-   * campaign without a per-wallet cap, where every wallet earns the same.
+   * Whether the balance's campaign part is the wallet's own: true only under
+   * a known campaign's per-wallet cap; without one every wallet earns the same.
    * Asked only of a balance rate with a campaign part.
    */
   readonly balanceRateIsPersonal: () => boolean;

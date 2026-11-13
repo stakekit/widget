@@ -241,7 +241,7 @@ of the total.
 **Position Reward Rate**: The one rate a position's page shows: its balance's
 rate when that rate's campaign part is the wallet's own (personalized), else
 its Effective Reward Rate. A campaign part is the wallet's own only under a
-per-wallet cap, or for a Campaign the widget doesn't know.
+shown Campaign's per-wallet cap: not while Campaigns load, nor after it ends.
 
 **Reward Rate History**: A yield-scoped time series of Yield Reward Rate
 snapshots, not validator or Effective Reward Rates.
