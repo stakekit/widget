@@ -254,3 +254,19 @@ export const Reveal: Story = {
     await expect(canvas.getByTestId("frame").scrollTop).toBe(0);
   },
 };
+
+/**
+ * Mounted with a reveal already asked, as when its section renders after
+ * the request, the section starts open, focused.
+ */
+export const RevealedOnMount: Story = {
+  args: { revealKey: 1 },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("button", {
+      name: "More details",
+    });
+
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(trigger).toHaveFocus();
+  },
+};

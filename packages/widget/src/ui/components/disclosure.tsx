@@ -72,7 +72,8 @@ export const Disclosure = ({
 }: DisclosureProps) => {
   const trigger = useRef<HTMLButtonElement>(null);
   const reducedMotion = useReducedMotion();
-  const [ownOpen, setOwnOpen] = useState(defaultOpen);
+  // Mounted with a reveal already asked, it starts open.
+  const [ownOpen, setOwnOpen] = useState(defaultOpen || Boolean(revealKey));
   const [revealedKey, setRevealedKey] = useState(revealKey);
   // A new reveal opens the section in the same render, not after it.
   if (revealKey !== revealedKey) {
