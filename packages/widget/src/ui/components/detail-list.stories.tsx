@@ -72,35 +72,6 @@ export const WithCaptionDark: Story = {
 };
 
 /**
- * A struck value no longer holds, such as a cap a later step replaced: it
- * reads muted and struck through, so the current row stands out.
- */
-export const Struck: Story = {
-  args: {
-    children: (
-      <>
-        <DetailRow
-          label="After deposits average 10M USDC"
-          value="7.50%"
-          valueStruck
-        />
-        <DetailRow
-          label="After deposits average 25M USDC"
-          value="6.00%"
-          caption="Now"
-        />
-      </>
-    ),
-  },
-  play: async ({ canvasElement }) => {
-    const struck = within(canvasElement).getByText("7.50%");
-    await expect(getComputedStyle(struck).textDecorationLine).toBe(
-      "line-through"
-    );
-  },
-};
-
-/**
  * The copy button copies the full value, shows a check and announces the
  * outcome. The story replaces the clipboard, so nothing leaves the page.
  */

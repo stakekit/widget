@@ -72,20 +72,6 @@ export type DetailRowLogo = {
   readonly shape?: "round" | "square";
 };
 
-const DetailValue = ({
-  value,
-  struck,
-  tone,
-}: {
-  readonly value: ReactNode;
-  readonly struck: boolean;
-  readonly tone: DetailRowTone;
-}) => (
-  <Text numeric truncate tone={struck ? "muted" : tone}>
-    {struck ? <s {...stylex.props(styles.struck)}>{value}</s> : value}
-  </Text>
-);
-
 /**
  * One row of a `DetailList`: the label, and the value at the end. With
  * `copyable` a button beside the value copies it and announces the outcome.
@@ -104,7 +90,6 @@ export const DetailRow = ({
   info,
   tone = "default",
   meter,
-  valueStruck = false,
   testId,
   hostHook,
 }: {
@@ -118,11 +103,6 @@ export const DetailRow = ({
   readonly info?: DetailRowInfo | undefined;
   readonly tone?: DetailRowTone | undefined;
   readonly meter?: DetailRowMeter | undefined;
-  /**
-   * The value no longer holds, such as a cap a later step replaced: it reads
-   * muted and struck through.
-   */
-  readonly valueStruck?: boolean | undefined;
   /** Renders as the row's `data-testid`. */
   readonly testId?: string | undefined;
   /** Renders as the row's `data-rk`, for hosts to locate it. */
@@ -151,10 +131,14 @@ export const DetailRow = ({
         />
       )}
       {caption === undefined ? (
-        <DetailValue value={value} struck={valueStruck} tone={tone} />
+        <Text numeric truncate tone={tone}>
+          {value}
+        </Text>
       ) : (
         <span {...stylex.props(styles.values)}>
-          <DetailValue value={value} struck={valueStruck} tone={tone} />
+          <Text numeric truncate tone={tone}>
+            {value}
+          </Text>
           <Text variant="caption" tone="muted" numeric>
             {caption}
           </Text>
@@ -235,7 +219,6 @@ export const DetailRows = ({
 );
 
 const styles = stylex.create({
-  struck: { textDecorationLine: "line-through" },
   list: {
     margin: 0,
     gap: space[12],
