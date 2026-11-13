@@ -59,29 +59,34 @@ import {
   reducePositionDetailsWorkflow,
 } from "./workflow";
 
+/**
+ * Each pending action by its state key, with the first balance offering it,
+ * as its row shows (see `getPendingActionOffers`): balances can share a key
+ * while differing by date or campaign.
+ */
 const getPendingActionIndex = (
   positionBalancesByType: PositionBalancesByType | null
-) =>
-  new Map(
-    positionBalancesByType
-      ? [...positionBalancesByType.values()].flatMap((balances) =>
-          balances.flatMap((balance) =>
-            balance.pendingActions.map(
-              (pendingAction) =>
-                [
-                  getPendingActionStateKey({
-                    actionType: pendingAction.type,
-                    balanceType: balance.type,
-                    passthrough: pendingAction.passthrough,
-                    token: balance.token,
-                  }),
-                  { balance, pendingAction },
-                ] as const
-            )
-          )
-        )
-      : []
-  );
+) => {
+  const index = new Map<
+    PendingActionStateKey,
+    {
+      readonly balance: PricedEarnBalance;
+      readonly pendingAction: PendingAction;
+    }
+  >();
+  for (const balance of [...(positionBalancesByType?.values() ?? [])].flat()) {
+    for (const pendingAction of balance.pendingActions) {
+      const key = getPendingActionStateKey({
+        actionType: pendingAction.type,
+        balanceType: balance.type,
+        passthrough: pendingAction.passthrough,
+        token: balance.token,
+      });
+      if (!index.has(key)) index.set(key, { balance, pendingAction });
+    }
+  }
+  return index;
+};
 
 type PendingActionAmountValidation =
   | "AboveMaximum"
