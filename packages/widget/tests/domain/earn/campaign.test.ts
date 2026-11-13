@@ -12,7 +12,10 @@ import {
   withCampaignRate,
   YieldCampaign,
 } from "../../../src/domain/earn/campaign";
-import type { EarnYield } from "../../../src/domain/earn/yield-schema";
+import {
+  EarnYield as EarnYieldSchema,
+  type EarnYield,
+} from "../../../src/domain/earn/yield-schema";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import {
@@ -287,6 +290,33 @@ describe("withCampaignRate", () => {
     ]);
 
     expect(withCampaignRate(listed, running)).toBe(listed);
+  });
+
+  it("adds nothing when the parts it lists don't make up its total", () => {
+    // The campaign part's token is malformed, so decoding drops that part,
+    // while the total it is part of stays 0.10.
+    const raw: unknown = {
+      ...yieldApiYieldDtoFixture({ id: "campaign-vault" }),
+      rewardRate: {
+        rateType: "APY",
+        total: 0.1,
+        components: [
+          { ...vaultRate, token },
+          {
+            rate: 0.042,
+            rateType: "APR",
+            token: { network: token.network },
+            yieldSource: "campaign_incentive",
+          },
+        ],
+      },
+    };
+    const dropped = Schema.decodeUnknownSync(EarnYieldSchema)(raw);
+
+    expect(rates(withCampaignRate(dropped, running))).toEqual({
+      total: 0.1,
+      components: [["vault", "APY", 0.058]],
+    });
   });
 });
 

@@ -222,7 +222,9 @@ export const getEarningCampaign = (
  * A yield with its earning campaign's Campaign Incentive Rate added when its
  * own rate doesn't list one yet: the API serves yields from a longer cache
  * than campaigns, so for a while after a campaign starts paying, the yield's
- * rate misses it. A rate that lists a campaign part keeps it as given.
+ * rate misses it. A rate that lists a campaign part keeps it as given, and so
+ * does one whose listed parts don't make up its total: a part decoding
+ * dropped, such as a campaign part with a malformed token, may be in it.
  */
 export const withCampaignRate = <Y extends Pick<EarnYield, "rewardRate">>(
   yieldDto: Y,
@@ -230,8 +232,13 @@ export const withCampaignRate = <Y extends Pick<EarnYield, "rewardRate">>(
 ): Y => {
   const campaignRate = campaign.rewardRate;
   const { rewardRate } = yieldDto;
+  const listedTotal = rewardRate.components.reduce(
+    (total, component) => total.plus(component.rate),
+    exactZero()
+  );
   if (
     !campaignRate?.total.isGreaterThan(0) ||
+    !listedTotal.isEqualTo(rewardRate.total) ||
     rewardRate.components.some(
       (component) => component.yieldSource === "campaign_incentive"
     )
