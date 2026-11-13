@@ -1,4 +1,4 @@
-import { useAtomValue } from "@effect/atom-react";
+import { useAtomSubscribe, useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,11 +10,10 @@ import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { formatPercent } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
-  Badge,
-  Button,
   DetailList,
   DetailRow,
   Disclosure,
+  ExternalLink,
   Meter,
   Notice,
   Stack,
@@ -22,51 +21,67 @@ import {
 } from "../../../ui/index";
 import {
   getCampaignName,
+  getCampaignPayoutCaption,
   getCampaignPayouts,
   getCampaignProgressScale,
   getCampaignSectionNotice,
-  getCampaignStatus,
 } from "../model/campaign-copy";
 import { getCampaignAboutModel } from "../model/campaign-details-copy";
+import { campaignDetailsRequestAtom } from "../state/campaign-details-request";
 import { yieldCampaignAtom } from "../state/yield-campaign";
-import { CampaignDetailsDialog } from "./campaign-details-dialog";
 import { CampaignRateRows } from "./campaign-rate-rows";
 
 /**
- * A yield's campaign among its details: its state, rates, schedule and
- * payouts, and the full details a press away.
+ * A yield's campaign details: who funds it, its rates, schedule and payouts.
+ * It opens and comes into view when its strip or rate tip asks for them.
  */
 export const CampaignSection = ({
   yieldDto,
+  defaultOpen = true,
 }: {
   readonly yieldDto: EarnYieldWithProvider;
+  readonly defaultOpen?: boolean;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [revealKey, setRevealKey] = useState(0);
   const view = useAtomValue(yieldCampaignAtom(yieldDto.id));
+
+  useAtomSubscribe(campaignDetailsRequestAtom, (request) => {
+    if (request?.yieldId === yieldDto.id) setRevealKey(request.count);
+  });
 
   if (!view) return null;
 
   const { campaign, lifecycle } = view;
   const progress = getCampaignProgress(campaign, view.now);
-  const status = getCampaignStatus(lifecycle, t);
   const notice = getCampaignSectionNotice(view, t, locale);
-  const payouts = getCampaignPayouts(view, t);
-  const sponsor = getCampaignAboutModel(view, yieldDto, t, locale)?.sponsor;
+  const about = getCampaignAboutModel(view, t);
 
   return (
-    <Disclosure title={t("campaign.section.title")} defaultOpen>
+    <Disclosure
+      title={t("campaign.section.title")}
+      defaultOpen={defaultOpen}
+      revealKey={revealKey}
+      testId="campaign-section__toggle"
+    >
       <Stack gap={12} testId="campaign-section">
         <Stack gap={4}>
-          <Stack direction="row" align="center" gap={8} wrap>
-            <Text weight="medium">{getCampaignName(view, yieldDto)}</Text>
-            <Badge tone={status.tone}>{status.label}</Badge>
-          </Stack>
-          {sponsor ? (
+          <Text weight="medium">{getCampaignName(view, yieldDto)}</Text>
+          {about?.sponsor ? (
             <Text variant="caption" tone="muted">
-              {sponsor.fundedBy}
+              {about.sponsor}
             </Text>
+          ) : null}
+          {about?.termsUrl ? (
+            <Stack direction="row">
+              <ExternalLink
+                href={about.termsUrl}
+                newTabLabel={t("shared.opens_in_new_tab")}
+              >
+                {t("campaign.details.terms")}
+              </ExternalLink>
+            </Stack>
           ) : null}
         </Stack>
 
@@ -86,9 +101,11 @@ export const CampaignSection = ({
         {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
         <DetailList>
-          {payouts ? (
-            <DetailRow label={t("campaign.details.payouts")} value={payouts} />
-          ) : null}
+          <DetailRow
+            label={t("campaign.details.payouts")}
+            value={getCampaignPayouts(view, t)}
+            caption={getCampaignPayoutCaption(view, t, locale)}
+          />
           <DetailRow
             label={t("campaign.details.reward_token")}
             value={campaign.rewardToken.symbol}
@@ -98,25 +115,6 @@ export const CampaignSection = ({
             }}
           />
         </DetailList>
-
-        <Stack direction="row">
-          <CampaignDetailsDialog
-            view={view}
-            yieldDto={yieldDto}
-            open={detailsOpen}
-            onOpenChange={setDetailsOpen}
-            trigger={
-              <Button
-                size="sm"
-                variant="link"
-                iconEnd="ChevronRightIcon"
-                testId="campaign-section__details"
-              >
-                {t("campaign.view_details")}
-              </Button>
-            }
-          />
-        </Stack>
       </Stack>
     </Disclosure>
   );

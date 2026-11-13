@@ -17,6 +17,7 @@ import { Footer } from "../../components/footer";
 import { SelectTokenSection } from "../../components/select-token-section";
 import { SelectYieldSection } from "../../components/select-yield-section";
 import { useEarnPageStatus } from "../../use-earn-facades";
+import { EarnCampaignSection } from "./components/campaign-section";
 import { SelectProvider } from "./components/select-provider";
 import { SelectValidatorSection } from "./components/select-validator-section";
 
@@ -70,6 +71,8 @@ const EarnPage = () => {
               <SelectValidatorSection />
 
               <ExtraArgsSelection showDivider />
+
+              <EarnCampaignSection />
             </Stack>
 
             <Footer />

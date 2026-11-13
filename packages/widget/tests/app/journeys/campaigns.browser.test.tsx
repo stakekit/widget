@@ -162,34 +162,36 @@ describe("Campaigns on Earn", () => {
     await expect
       .element(app.getByText("Kamino × Utila USDC Boost"))
       .not.toBeInTheDocument();
+    // The details live in the Campaign section, collapsed under the Earn card
+    // until the tip or the strip asks for them; no dialog opens.
+    const section = app.getByTestId("campaign-section");
+    const toggle = app.getByTestId("campaign-section__toggle");
+    await expect.element(section).not.toBeInTheDocument();
     await app.getByRole("button", { name: "View campaign details" }).click();
 
-    const details = app.getByTestId("campaign-details");
     await expect
-      .element(details.getByText("Kamino × Utila USDC Boost"))
+      .element(section.getByText("Kamino × Utila USDC Boost"))
       .toBeVisible();
-    await expect.element(details.getByText("Live")).toBeVisible();
-    await expect
-      .element(app.getByTestId("campaign-details__rate").getByText("+4.20%"))
-      .toBeVisible();
-    await expect
-      .element(details.getByText("Minimum balance"))
-      .not.toBeInTheDocument();
     await expect
       .element(
-        details.getByText(
-          /^Paid daily as kAllezUSDC \(Allez USDC vault shares\), added straight to your position/
-        )
+        section.getByTestId("campaign-rates__campaign").getByText("+4.20%")
       )
       .toBeVisible();
-    await details.getByRole("button", { name: "Got it" }).click();
-    await expect.element(details).not.toBeInTheDocument();
+    await expect
+      .element(section.getByText("Daily, added to your position"))
+      .toBeVisible();
+    await expect
+      .element(section.getByText("Minimum balance"))
+      .not.toBeInTheDocument();
+    await expect.element(toggle).toHaveFocus();
+    await expect.element(app.getByRole("dialog")).not.toBeInTheDocument();
 
-    const detailsTrigger = strip.getByRole("button", { name: "Details" });
-    await detailsTrigger.click();
-    await expect.element(details).toBeVisible();
-    await details.getByRole("button", { name: "Got it" }).click();
-    await expect.element(detailsTrigger).toHaveFocus();
+    // Closed again, the strip's Details opens it the same way.
+    await toggle.click();
+    await expect.element(section).not.toBeInTheDocument();
+    await strip.getByRole("button", { name: "Details" }).click();
+    await expect.element(section).toBeVisible();
+    await expect.element(toggle).toHaveFocus();
 
     await app.unmount();
   });
@@ -354,7 +356,11 @@ describe("Campaigns on Earn", () => {
 
     await strip.getByRole("button", { name: "Details" }).click();
     await expect
-      .element(app.getByTestId("campaign-details").getByText("Campaign paused"))
+      .element(
+        app
+          .getByTestId("campaign-section")
+          .getByText(/^Paused\. No new rewards build up for now\./)
+      )
       .toBeVisible();
 
     await app.unmount();
@@ -389,16 +395,10 @@ describe("Campaigns on Earn", () => {
       .getByRole("button", { name: "Details" })
       .click();
 
-    const details = app.getByTestId("campaign-details");
+    const section = app.getByTestId("campaign-section");
+    await expect.element(section.getByText("Funded by Kamino")).toBeVisible();
     await expect
-      .element(
-        app
-          .getByTestId("campaign-details__sponsor")
-          .getByText("Funded by Kamino")
-      )
-      .toBeVisible();
-    await expect
-      .element(details.getByRole("link", { name: /Read the campaign terms/ }))
+      .element(section.getByRole("link", { name: /Read the campaign terms/ }))
       .toHaveAttribute("href", "https://example.com/kamino-terms");
 
     await app.unmount();
@@ -470,20 +470,20 @@ describe("Campaigns on Earn", () => {
       .toBeVisible();
 
     await strip.getByRole("button", { name: "Details" }).click();
-    const details = app.getByTestId("campaign-details");
-    // No planned rate, so the notice doesn't point to one.
     await expect
       .element(
-        details.getByText(
-          "Rewards begin on the start date. The campaign rate is set then."
-        )
+        app
+          .getByTestId("campaign-section")
+          .getByText(
+            /^Starts .+\. Until then you earn this yield's own rate\.$/
+          )
       )
       .toBeVisible();
 
     await app.unmount();
   });
 
-  it("marks a campaign ending soon by its end date and status, without counting days", async ({
+  it("marks a campaign ending soon by its end date alone, without a chip or a day count", async ({
     worker,
   }) => {
     // oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture: the schedule must end days after the real clock the widget reads
@@ -508,8 +508,8 @@ describe("Campaigns on Earn", () => {
     await expect.element(strip.getByText(/^Ends [^·]+$/)).toBeVisible();
 
     await strip.getByRole("button", { name: "Details" }).click();
-    const details = app.getByTestId("campaign-details");
-    await expect.element(details.getByText("Ending soon")).toBeVisible();
+    await expect.element(app.getByTestId("campaign-section")).toBeVisible();
+    await expect.element(app.getByText("Ending soon")).not.toBeInTheDocument();
     await expect
       .element(app.getByText(/\d+ days? left/))
       .not.toBeInTheDocument();
@@ -569,7 +569,8 @@ describe("Campaigns on Earn", () => {
     await expect
       .element(section.getByText("Kamino × Utila USDC Boost"))
       .toBeVisible();
-    await expect.element(section.getByText("Live")).toBeVisible();
+    // The section's schedule tells the campaign's state; no status chip.
+    await expect.element(section.getByText("Live")).not.toBeInTheDocument();
     await expect
       .element(section.getByText("Daily, added to your position"))
       .toBeVisible();
@@ -582,8 +583,17 @@ describe("Campaigns on Earn", () => {
       .element(section.getByTestId("campaign-rates__total").getByText("10.00%"))
       .toBeVisible();
 
-    await section.getByTestId("campaign-section__details").click();
-    await expect.element(app.getByTestId("campaign-details")).toBeVisible();
+    // Closed, the strip's Details opens it again and brings it into view.
+    const toggle = app.getByTestId("campaign-section__toggle");
+    await toggle.click();
+    await expect.element(section).not.toBeInTheDocument();
+    await app
+      .getByTestId("campaign-strip")
+      .getByRole("button", { name: "Details" })
+      .click();
+    await expect.element(toggle).toHaveFocus();
+    await expect.element(toggle).toBeInViewport();
+    await expect.element(app.getByRole("dialog")).not.toBeInTheDocument();
 
     await app.unmount();
   });

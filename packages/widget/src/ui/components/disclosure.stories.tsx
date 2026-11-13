@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { Stack } from "../primitives/stack";
@@ -6,6 +7,7 @@ import { Text } from "../primitives/text";
 import { outlineUnclipped } from "../storybook/geometry";
 import { TokenAvatar } from "./avatar";
 import { Badge } from "./badge";
+import { Button } from "./button";
 import { CopyButton } from "./copy-button";
 import { Disclosure } from "./disclosure";
 import { ScrollArea } from "./scroll-area";
@@ -189,5 +191,66 @@ export const PanelKeepsContentRings: Story = {
     await userEvent.tab();
     await expect(copy).toHaveFocus();
     await expect(outlineUnclipped(copy)).toBe(true);
+  },
+};
+
+/**
+ * A closed section at the end of a scrolling list, inside a frame that clips
+ * what overflows it, and a control asking to show the section.
+ */
+const RevealFromElsewhere = () => {
+  const [revealKey, setRevealKey] = useState(0);
+  return (
+    <Stack gap={8}>
+      <Button size="sm" onClick={() => setRevealKey((key) => key + 1)}>
+        Show details
+      </Button>
+      <div
+        data-testid="frame"
+        style={{ width: 320, height: 260, overflow: "hidden" }}
+      >
+        <ScrollArea label="Facts" maxHeight="sm">
+          <Stack gap={8}>
+            {Array.from({ length: 12 }, (_, index) => (
+              <Text key={index} as="p">
+                Fact {index + 1}
+              </Text>
+            ))}
+            <Disclosure title="More details" revealKey={revealKey}>
+              <Text as="p">Rewards are paid every epoch.</Text>
+            </Disclosure>
+          </Stack>
+        </ScrollArea>
+        <div style={{ height: 400 }} />
+      </div>
+    </Stack>
+  );
+};
+
+/**
+ * Asked from elsewhere, a closed section opens, scrolls its list to it and
+ * takes focus, so the content it shows is where the user lands. The frame
+ * clipping the list never moves, even when the list can't scroll the section
+ * all the way to its top.
+ */
+export const Reveal: Story = {
+  render: () => <RevealFromElsewhere />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: "More details" });
+    const list = canvas.getByRole("region", { name: "Facts" });
+
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(canvas.getByRole("button", { name: "Show details" }));
+
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(trigger).toHaveFocus();
+    await waitFor(() =>
+      expect(canvas.getByText("Rewards are paid every epoch.")).toBeVisible()
+    );
+    await waitFor(() => expect(list.scrollTop).toBeGreaterThan(0));
+    // Long enough for a smooth scroll to settle.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await expect(canvas.getByTestId("frame").scrollTop).toBe(0);
   },
 };

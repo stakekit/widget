@@ -5,7 +5,6 @@ import { getCampaignRateComposition } from "../../../domain/earn/campaign";
 import type { RateComposition } from "../../../domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { formatDateTime } from "../../../shared/lib/date";
-import { getRewardTypeFormatted } from "../../../shared/lib/formatters";
 import {
   formatRewardRatePercent,
   unavailableFigure,
@@ -57,23 +56,6 @@ export const getCampaignStatusBadge = (view: YieldCampaignView, t: TFunction) =>
     label: t("campaign.label"),
     tone: view.lifecycle === "paused" ? "warning" : "info",
   }) as const;
-
-/** Where the campaign stands, as its details name it: "Live", "Paused"… */
-export const getCampaignStatus = (lifecycle: Lifecycle, t: TFunction) => {
-  switch (lifecycle) {
-    case "active":
-      return { label: t("campaign.status_active"), tone: "success" } as const;
-    case "upcoming":
-      return { label: t("campaign.status_upcoming"), tone: "neutral" } as const;
-    case "ending_soon":
-      return {
-        label: t("campaign.status_ending_soon"),
-        tone: "warning",
-      } as const;
-    case "paused":
-      return { label: t("campaign.status_paused"), tone: "warning" } as const;
-  }
-};
 
 /** "Ends May 15, 2027", and its upcoming and paused forms. */
 export const getCampaignScheduleLine = (
@@ -283,19 +265,21 @@ export const getCampaignSelectorNote = (
   }
 };
 
-/** "Daily, added to your position", for a payouts row. */
+/**
+ * "Daily, added to your position", for a payouts row; without a schedule,
+ * where the rewards go alone.
+ */
 export const getCampaignPayouts = (view: YieldCampaignView, t: TFunction) => {
   const { payoutFrequency, rewardMode, rewardToken } = view.campaign;
-  if (!payoutFrequency) return null;
-  return t(
-    rewardMode === "normal"
-      ? "campaign.section.payouts_normal"
-      : "campaign.section.payouts_compound",
-    {
-      frequency: t(`campaign.frequency.${payoutFrequency}`),
-      symbol: rewardToken.symbol,
-    }
-  );
+  const mode = rewardMode === "normal" ? "normal" : "compound";
+  return payoutFrequency
+    ? t(`campaign.section.payouts_${mode}`, {
+        frequency: t(`campaign.frequency.${payoutFrequency}`),
+        symbol: rewardToken.symbol,
+      })
+    : t(`campaign.section.payouts_${mode}_unscheduled`, {
+        symbol: rewardToken.symbol,
+      });
 };
 
 /** The details section's note for a campaign that is not earning. */
@@ -324,36 +308,6 @@ export const getCampaignSectionNotice = (
   }
 };
 
-/** The dialog's note for a campaign that is not earning. */
-export const getCampaignDialogNotice = (
-  view: YieldCampaignView,
-  t: TFunction,
-  locale: string
-) => {
-  const { campaign, timeZone } = view;
-  switch (view.lifecycle) {
-    case "upcoming":
-      return {
-        tone: "neutral",
-        title: t("campaign.details.notice.upcoming_title", {
-          date: formatCampaignDate(campaign.startTime, timeZone, locale),
-        }),
-        body: campaign.rewardRate?.total.isGreaterThan(0)
-          ? t("campaign.details.notice.upcoming")
-          : t("campaign.details.notice.upcoming_no_rate"),
-      } as const;
-    case "paused":
-      return {
-        tone: "warning",
-        title: t("campaign.details.notice.paused_title"),
-        body: t("campaign.details.notice.paused"),
-      } as const;
-    case "active":
-    case "ending_soon":
-      return null;
-  }
-};
-
 /** Under a progress bar: the campaign's start and end dates. */
 export const getCampaignProgressScale = (
   view: YieldCampaignView,
@@ -363,7 +317,7 @@ export const getCampaignProgressScale = (
   end: formatCampaignDate(view.campaign.endTime, view.timeZone, locale),
 });
 
-/** Under the dialog's payouts row: the next payout, or why there is none. */
+/** Under the payouts row: the next payout, or why there is none. */
 export const getCampaignPayoutCaption = (
   view: YieldCampaignView,
   t: TFunction,
@@ -384,42 +338,3 @@ export const getCampaignPayoutCaption = (
         : undefined;
   }
 };
-
-/** The campaign tile's caption in the dialog's composition. */
-export const getCampaignRateCaption = (
-  view: YieldCampaignView,
-  t: TFunction,
-  locale: string
-) => {
-  switch (view.lifecycle) {
-    case "paused":
-      return t("campaign.details.campaign_caption_paused");
-    case "upcoming":
-      return t("campaign.details.campaign_caption_upcoming", {
-        date: formatCampaignDay(view.campaign.startTime, view.timeZone, locale),
-      });
-    case "active":
-    case "ending_soon":
-      return t("campaign.details.campaign_caption_active");
-  }
-};
-
-/** How the campaign pays, as one sentence. */
-export const getCampaignPaymentSentence = (
-  view: YieldCampaignView,
-  t: TFunction
-) => {
-  const { payoutFrequency, rewardMode, rewardToken } = view.campaign;
-  const mode = rewardMode === "normal" ? "normal" : "compound";
-  const values = { symbol: rewardToken.symbol, name: rewardToken.name };
-  return payoutFrequency
-    ? t(`campaign.details.payment_${mode}`, {
-        ...values,
-        cadence: t(`campaign.cadence.${payoutFrequency}`),
-      })
-    : t(`campaign.details.payment_${mode}_no_cadence`, values);
-};
-
-/** A rate type as a label reads it: "APR". */
-export const formatRateType = (rateType: string | null | undefined) =>
-  getRewardTypeFormatted(rateType ?? undefined) ?? "";

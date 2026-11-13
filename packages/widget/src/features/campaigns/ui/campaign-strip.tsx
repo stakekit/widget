@@ -1,5 +1,4 @@
-import { useAtomValue } from "@effect/atom-react";
-import { useState } from "react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
@@ -10,13 +9,13 @@ import {
   getCampaignStripNote,
   getCampaignScheduleLine,
 } from "../model/campaign-copy";
+import { requestCampaignDetailsAtom } from "../state/campaign-details-request";
 import { yieldCampaignAtom } from "../state/yield-campaign";
-import { CampaignDetailsDialog } from "./campaign-details-dialog";
 
 /**
  * The selected yield's campaign in one line under its rate: its badge, its
- * time left or to the start, and its details; a note follows while it is
- * not earning.
+ * end or start date, and a link that brings up its Campaign section; a note
+ * follows while it is not earning.
  */
 export const CampaignStrip = ({
   yieldDto,
@@ -25,8 +24,8 @@ export const CampaignStrip = ({
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const view = useAtomValue(yieldCampaignAtom(yieldDto.id));
+  const requestDetails = useAtomSet(requestCampaignDetailsAtom);
 
   if (!view) return null;
 
@@ -45,17 +44,14 @@ export const CampaignStrip = ({
             {getCampaignScheduleLine(view, t, locale)}
           </Text>
         </Stack>
-        <CampaignDetailsDialog
-          view={view}
-          yieldDto={yieldDto}
-          open={detailsOpen}
-          onOpenChange={setDetailsOpen}
-          trigger={
-            <Button size="sm" variant="link" testId="campaign-strip__details">
-              {t("campaign.details_link")}
-            </Button>
-          }
-        />
+        <Button
+          size="sm"
+          variant="link"
+          testId="campaign-strip__details"
+          onClick={() => requestDetails(yieldDto.id)}
+        >
+          {t("campaign.details_link")}
+        </Button>
       </Stack>
       {note ? (
         <Text variant="caption" tone="muted">
