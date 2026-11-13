@@ -9,6 +9,7 @@ import {
 } from "../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import { isUserRevealableBalance } from "../../../domain/earn/confidential-balance";
+import { getPositionRate } from "../../../domain/earn/position-rate";
 import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
@@ -25,7 +26,6 @@ import {
 } from "../../campaigns/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { resolvePositionDetailsPageState } from "../model/page-state";
-import { getPositionRate } from "../model/position-rate";
 import { positionDetailsExitActions } from "./actions/exit";
 import {
   loadMorePositionDetailsExitValidatorsAtom,
@@ -129,14 +129,8 @@ export const positionDetailsViewAtom = Atom.family(
       const positionRate = integration
         ? getPositionRate({
             balanceRewardRate: workflow.positionBalances?.rewardRate ?? null,
-            // A balance's rate is its own only under a per-wallet cap: without
-            // one every wallet earns the same campaign rate, and without a
-            // shown campaign (loading, or ended) the widget can't tell.
-            balanceRateIsPersonal: () =>
-              Boolean(
-                get(yieldCampaignAtom(integration.id))?.campaign
-                  .qualificationConfig?.maxIncentivizedTvlToken
-              ),
+            getShownCampaign: () =>
+              get(yieldCampaignAtom(integration.id))?.campaign ?? null,
             canEarnCampaign: () =>
               get(
                 positionCanEarnCampaignAtom(
@@ -148,7 +142,7 @@ export const positionDetailsViewAtom = Atom.family(
               ),
             validators:
               workflow.positionBalances?.type === "validators"
-                ? (providers ?? [])
+                ? workflow.positionBalances.validators
                 : null,
             yieldRewardRate: integration.rewardRate,
           })

@@ -8,7 +8,7 @@ import {
 } from "../../../src/domain/portfolio/positions";
 import { toPositionItems } from "../../../src/features/portfolio/model/positions";
 import {
-  getPositionsAverageApy,
+  getPositionsAverageRate,
   getPositionsTotal,
 } from "../../../src/features/portfolio/state/read-models/summary";
 import {
@@ -42,7 +42,9 @@ describe("earning position amounts", () => {
     );
     const yields = new Map([[yieldDto.id, yieldDto]]);
     expect(getPositionsTotal(items, yields).toFixed()).toBe("900");
-    expect(getPositionsAverageApy(items, yields).toFixed()).toBe("0");
+    expect(
+      getPositionsAverageRate(items, yields, () => null).rate.toFixed()
+    ).toBe("0");
   });
 
   it("weighs only the earning funds of a mixed position", () => {
@@ -68,7 +70,9 @@ describe("earning position amounts", () => {
       [otherYield.id, otherYield],
     ]);
     expect(getPositionsTotal(items, yields).toFixed()).toBe("1100");
-    expect(getPositionsAverageApy(items, yields).toFixed()).toBe("7.5");
+    expect(
+      getPositionsAverageRate(items, yields, () => null).rate.toFixed()
+    ).toBe("7.5");
   });
 
   it("tells which Manage rows hold earning funds, the rows that show a rate", () => {

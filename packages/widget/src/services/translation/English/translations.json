@@ -1164,6 +1164,8 @@
         "debt": "Debt",
         "total_rewards": "Total rewards",
         "average_apy": "Average APY",
+        "average_apy_apr": "Average APR",
+        "average_apy_mixed": "Average rate",
         "claimable_rewards": "Claimable rewards",
         "partial": "Partial",
         "net_worth": "Net worth",

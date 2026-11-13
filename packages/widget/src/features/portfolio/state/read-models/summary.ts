@@ -2,6 +2,8 @@ import type BigNumber from "bignumber.js";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
+import type { YieldCampaign } from "../../../../domain/earn/campaign";
+import { getPositionHeadlineRate } from "../../../../domain/earn/position-rate";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { exactZero } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
@@ -14,6 +16,7 @@ import {
   type Presentable,
   toPresentable,
 } from "../../../../shared/effect/async-result";
+import { yieldCampaignAtom } from "../../../campaigns/index";
 import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
@@ -66,37 +69,76 @@ export const getPositionsTotal = (
     return sum.plus(getTokenSumsUsd(position.total));
   }, exactZero());
 
-export const getPositionsAverageApy = (
+/**
+ * The rate type of an average: the one its positions' rates share, or
+ * "mixed" for differing or unknown types, which it never reads as APY.
+ */
+type AverageRateType = "apy" | "apr" | "mixed";
+
+type AverageRate = {
+  /** In whole percents, such as 4.2. */
+  readonly rate: BigNumber;
+  readonly rateType: AverageRateType;
+};
+
+// No rates read as APY, the label Manage has always shown.
+const getAverageRateType = (
+  rateTypes: ReadonlyArray<string | undefined>
+): AverageRateType => {
+  const distinct = new Set(rateTypes);
+  if (distinct.size === 0) return "apy";
+  const [shared] = distinct;
+  return distinct.size === 1 && (shared === "apy" || shared === "apr")
+    ? shared
+    : "mixed";
+};
+
+/**
+ * The earning positions' rates weighed by their value, each rate the one
+ * its page leads with (the Position Reward Rate). `shownCampaignOf` gives the
+ * Campaign a yield shows, asked only of a balance rate with a campaign part.
+ */
+export const getPositionsAverageRate = (
   positions: ReadonlyArray<PositionItem>,
-  yields: ReadonlyMap<YieldId, EarnYieldWithProvider>
-) => {
-  const weighted = positions.reduce(
-    (summary, position) => {
-      const yieldDto = getSummableYield(position, yields);
-      if (!yieldDto) return summary;
+  yields: ReadonlyMap<YieldId, EarnYieldWithProvider>,
+  shownCampaignOf: (yieldId: YieldId) => YieldCampaign | null
+): AverageRate => {
+  const weighed = positions.flatMap((position) => {
+    const yieldDto = getSummableYield(position, yields);
+    if (!yieldDto) return [];
 
-      const value = getTokenSumsUsd(
-        getPositionValueTotal(
-          getEarningPositionBalances(position.balancesWithAmount)
-        )
-      );
-      const rewardRate = yieldDto.rewardRate.total;
+    const value = getTokenSumsUsd(
+      getPositionValueTotal(
+        getEarningPositionBalances(position.balancesWithAmount)
+      )
+    );
+    const { rate, rateType } = getPositionHeadlineRate({
+      balanceRewardRate: position.rewardRate,
+      getShownCampaign: () => shownCampaignOf(position.integrationId),
+      validators: position.type === "validators" ? position.validators : null,
+      yieldRewardRate: yieldDto.rewardRate,
+    });
 
-      return rewardRate.isGreaterThan(0) && value.gt(0)
-        ? {
-            totalValue: summary.totalValue.plus(value),
-            weightedApy: summary.weightedApy.plus(
-              value.times(rewardRate).times(100)
-            ),
-          }
-        : summary;
-    },
-    { totalValue: exactZero(), weightedApy: exactZero() }
+    return rate.isGreaterThan(0) && value.gt(0)
+      ? [{ value, rate, rateType: rateType?.toLowerCase() }]
+      : [];
+  });
+  const totalValue = weighed.reduce(
+    (sum, { value }) => sum.plus(value),
+    exactZero()
   );
 
-  return weighted.totalValue.gt(0)
-    ? weighted.weightedApy.div(weighted.totalValue)
-    : exactZero();
+  return {
+    rate: totalValue.gt(0)
+      ? weighed
+          .reduce(
+            (sum, { value, rate }) => sum.plus(value.times(rate).times(100)),
+            exactZero()
+          )
+          .div(totalValue)
+      : exactZero(),
+    rateType: getAverageRateType(weighed.map(({ rateType }) => rateType)),
+  };
 };
 
 export const allPositionsSummaryAtom = Atom.make((get) =>
@@ -111,13 +153,17 @@ export const allPositionsSummaryAtom = Atom.make((get) =>
   )
 );
 
-export const averageApySummaryAtom = Atom.make((get) =>
+export const averageRateSummaryAtom = Atom.make((get) =>
   AsyncResult.all({
     positions: get(positionsResultAtom),
     yields: get(positionYieldsResultAtom),
   }).pipe(
     AsyncResult.map(({ positions, yields }) =>
-      getPositionsAverageApy(positions, yields)
+      getPositionsAverageRate(
+        positions,
+        yields,
+        (yieldId) => get(yieldCampaignAtom(yieldId))?.campaign ?? null
+      )
     )
   )
 );
@@ -158,13 +204,15 @@ export type SummaryValue =
 /**
  * The Manage summary, one set of figures for every Layout and state. Total
  * value sums what the list shows: Earn positions and borrow collateral.
- * Average APY weighs the Earn positions' reward rates by their value, so a
+ * Average rate weighs the Earn positions' reward rates by their value, so a
  * borrowing cost never lowers it.
  */
 type ManageSummary = {
   readonly totalValue: SummaryValue;
   /** In whole percents, such as 4.2. */
-  readonly averageApy: SummaryValue;
+  readonly averageRate: SummaryValue;
+  /** What the average rate is, until it loads APY. */
+  readonly averageRateType: AverageRateType;
   readonly claimableRewards: SummaryValue;
   /** With borrow positions that owe debt: it, and the total value less it. */
   readonly borrow: {
@@ -226,13 +274,13 @@ const combineSummaryValues = (
  * borrow wallet is connected.
  */
 export const deriveManageSummary = ({
-  averageApy,
+  averageRate,
   borrow,
   claimableRewards,
   earnPositions,
   earnValue,
 }: {
-  readonly averageApy: Presentable<BigNumber, unknown>;
+  readonly averageRate: Presentable<AverageRate, unknown>;
   readonly borrow: BorrowSummarySource | null;
   readonly claimableRewards: Presentable<BigNumber, unknown>;
   readonly earnPositions: Presentable<unknown, unknown>;
@@ -263,7 +311,9 @@ export const deriveManageSummary = ({
     !(debt._tag === "Ready" && debt.value.isZero());
 
   return {
-    averageApy: toSummaryValue(averageApy, (value) => value),
+    averageRate: toSummaryValue(averageRate, (value) => value.rate),
+    averageRateType:
+      averageRate._tag === "Ready" ? averageRate.value.rateType : "apy",
     borrow: owesDebt
       ? {
           debt,
@@ -285,7 +335,7 @@ export const manageSummaryAtom = Atom.make((get) => {
   const borrow = get(currentPortfolioBorrowPositionsAtom);
 
   return deriveManageSummary({
-    averageApy: toPresentable(get(averageApySummaryAtom)),
+    averageRate: toPresentable(get(averageRateSummaryAtom)),
     borrow: borrow.connectionStatus === "connected" ? borrow : null,
     claimableRewards: toPresentable(get(claimableRewardsSummaryAtom)),
     earnPositions: toPresentable(get(positionsResultAtom)),

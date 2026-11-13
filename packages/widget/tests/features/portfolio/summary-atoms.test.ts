@@ -20,10 +20,10 @@ import {
 } from "../../../src/features/portfolio/state/read-models/positions";
 import {
   allPositionsSummaryAtom,
-  averageApySummaryAtom,
+  averageRateSummaryAtom,
   deriveManageSummary,
   getClaimableRewardsUsd,
-  getPositionsAverageApy,
+  getPositionsAverageRate,
   getPositionsTotal,
   hasHiddenPositions,
   manageSummaryAtom,
@@ -148,7 +148,13 @@ describe("summary atom derivations", () => {
 
     expect(position.item.balancesWithAmount[0]?.amount.toFixed()).toBe("0.2");
     expect(getPositionsTotal([position.item], yields).toFixed()).toBe("0");
-    expect(getPositionsAverageApy([position.item], yields).toFixed()).toBe("0");
+    expect(
+      getPositionsAverageRate(
+        [position.item],
+        yields,
+        () => null
+      ).rate.toFixed()
+    ).toBe("0");
   });
 
   it("also zeros the summary when the Yield is missing from the multi-yield map", () => {
@@ -160,9 +166,13 @@ describe("summary atom derivations", () => {
     });
 
     expect(getPositionsTotal([position.item], new Map()).toFixed()).toBe("0");
-    expect(getPositionsAverageApy([position.item], new Map()).toFixed()).toBe(
-      "0"
-    );
+    expect(
+      getPositionsAverageRate(
+        [position.item],
+        new Map(),
+        () => null
+      ).rate.toFixed()
+    ).toBe("0");
   });
 
   it("leaves hidden confidential positions out of the totals until revealed", () => {
@@ -193,14 +203,24 @@ describe("summary atom derivations", () => {
 
     const hiddenPositions = [plain.item, hidden.item];
     expect(getPositionsTotal(hiddenPositions, yields).toFixed()).toBe("4");
-    expect(getPositionsAverageApy(hiddenPositions, yields).toFixed()).toBe("5");
+    expect(
+      getPositionsAverageRate(
+        hiddenPositions,
+        yields,
+        () => null
+      ).rate.toFixed()
+    ).toBe("5");
     expect(hasHiddenPositions(hiddenPositions)).toBe(true);
 
     const revealedPositions = [plain.item, revealed.item];
     expect(getPositionsTotal(revealedPositions, yields).toFixed()).toBe("10");
-    expect(getPositionsAverageApy(revealedPositions, yields).toFixed()).toBe(
-      "9.2"
-    );
+    expect(
+      getPositionsAverageRate(
+        revealedPositions,
+        yields,
+        () => null
+      ).rate.toFixed()
+    ).toBe("9.2");
     expect(hasHiddenPositions(revealedPositions)).toBe(false);
 
     const partiallyHidden = [plain.item, revealed.item, otherHidden.item];
@@ -288,7 +308,7 @@ describe("summary atom derivations", () => {
       ],
     });
     const unmountTotal = registry.mount(allPositionsSummaryAtom);
-    const unmountApy = registry.mount(averageApySummaryAtom);
+    const unmountApy = registry.mount(averageRateSummaryAtom);
 
     try {
       expect(
@@ -297,7 +317,9 @@ describe("summary atom derivations", () => {
         ).allPositionsSum.toFixed()
       ).toBe("5");
       expect(
-        AsyncResult.getOrThrow(registry.get(averageApySummaryAtom)).toFixed()
+        AsyncResult.getOrThrow(
+          registry.get(averageRateSummaryAtom)
+        ).rate.toFixed()
       ).toBe("5");
 
       offline = true;
@@ -314,11 +336,11 @@ describe("summary atom derivations", () => {
           .pipe(AsyncResult.value, Option.getOrThrow)
           .allPositionsSum.toFixed()
       ).toBe("5");
-      const refetchedApy = registry.get(averageApySummaryAtom);
+      const refetchedApy = registry.get(averageRateSummaryAtom);
 
       expect(AsyncResult.isFailure(refetchedApy)).toBe(true);
       expect(
-        refetchedApy.pipe(AsyncResult.value, Option.getOrThrow).toFixed()
+        refetchedApy.pipe(AsyncResult.value, Option.getOrThrow).rate.toFixed()
       ).toBe("5");
 
       const summary = registry.get(manageSummaryAtom);
@@ -326,7 +348,7 @@ describe("summary atom derivations", () => {
         _tag: "Ready",
         value: new BigNumber(5),
       });
-      expect(summary.averageApy).toEqual({
+      expect(summary.averageRate).toEqual({
         _tag: "Ready",
         value: new BigNumber(5),
       });
@@ -413,7 +435,10 @@ describe("Manage summary", () => {
   };
   const loading: Presentable<never, unknown> = { _tag: "Loading" };
   const earn = {
-    averageApy: ready(new BigNumber("3.97")),
+    averageRate: ready({
+      rate: new BigNumber("3.97"),
+      rateType: "apr" as const,
+    }),
     claimableRewards: ready(new BigNumber("5.09")),
     earnPositions: ready([]),
     earnValue: ready({
@@ -436,7 +461,8 @@ describe("Manage summary", () => {
 
   it("shows the same figures without borrow positions in every Layout", () => {
     expect(deriveManageSummary({ ...earn, borrow: null })).toEqual({
-      averageApy: readyFigure("3.97"),
+      averageRate: readyFigure("3.97"),
+      averageRateType: "apr",
       borrow: null,
       claimableRewards: readyFigure("5.09"),
       excludesHidden: false,
@@ -447,7 +473,8 @@ describe("Manage summary", () => {
 
   it("adds borrow collateral to the total and shows debt and net worth, keeping the Earn APY", () => {
     expect(deriveManageSummary({ ...earn, borrow })).toEqual({
-      averageApy: readyFigure("3.97"),
+      averageRate: readyFigure("3.97"),
+      averageRateType: "apr",
       borrow: { debt: readyFigure(18_250), netWorth: readyFigure(1_242_470) },
       claimableRewards: readyFigure("5.09"),
       excludesHidden: false,
@@ -476,7 +503,7 @@ describe("Manage summary", () => {
 
   it("marks Earn figures partial instead of totalling the borrow positions alone", () => {
     const summary = deriveManageSummary({
-      averageApy: failed,
+      averageRate: failed,
       borrow,
       claimableRewards: failed,
       earnPositions: failed,
@@ -484,7 +511,8 @@ describe("Manage summary", () => {
     });
 
     expect(summary).toMatchObject({
-      averageApy: unavailable,
+      averageRate: unavailable,
+      averageRateType: "apy",
       borrow: { debt: readyFigure(18_250), netWorth: unavailable },
       claimableRewards: unavailable,
       isPartial: true,
@@ -499,7 +527,7 @@ describe("Manage summary", () => {
     });
 
     expect(summary).toMatchObject({
-      averageApy: readyFigure("3.97"),
+      averageRate: readyFigure("3.97"),
       borrow: null,
       isPartial: true,
       totalValue: unavailable,
@@ -509,7 +537,7 @@ describe("Manage summary", () => {
   it("is not partial when every source failed, and loads while one loads", () => {
     expect(
       deriveManageSummary({
-        averageApy: failed,
+        averageRate: failed,
         borrow: null,
         claimableRewards: failed,
         earnPositions: failed,

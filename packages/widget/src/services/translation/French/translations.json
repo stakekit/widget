@@ -1804,6 +1804,8 @@
         "debt": "Dette",
         "total_rewards": "Total des récompenses",
         "average_apy": "APY moyen",
+        "average_apy_apr": "APR moyen",
+        "average_apy_mixed": "Taux moyen",
         "claimable_rewards": "Récompenses à réclamer",
         "partial": "Partiel",
         "net_worth": "Valeur nette",

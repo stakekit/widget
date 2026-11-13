@@ -7,6 +7,11 @@ import {
   ConfidentialHandle,
   EarnBalance,
 } from "../../../src/domain/earn/balance";
+import { YieldCampaign } from "../../../src/domain/earn/campaign";
+import {
+  getPositionRate,
+  type PositionRateSources,
+} from "../../../src/domain/earn/position-rate";
 import type { YieldRewardRate } from "../../../src/domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import { YieldRewardsSummary } from "../../../src/domain/portfolio/models";
@@ -16,12 +21,9 @@ import {
   getPositionProviderName,
 } from "../../../src/features/position-details/model/position-overview";
 import {
-  getPositionRate,
-  type PositionValidators,
-} from "../../../src/features/position-details/model/position-rate";
-import {
   confidentialFixture,
   confidentialYieldFixture,
+  yieldApiCampaignDtoFixture,
   yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
@@ -218,7 +220,7 @@ const makePositionBalances = (): PositionBalancesByType => {
 type OverviewInput = Omit<Parameters<typeof overviewModel>[0], "rate"> & {
   /** The position's own rate, shown when it lists a campaign part. */
   readonly personalizedRewardRate: YieldRewardRate | null;
-  readonly validators: PositionValidators | null;
+  readonly validators: PositionRateSources["validators"];
 };
 
 /** The overview of a position whose rate is its own, its validators' or its yield's. */
@@ -231,7 +233,9 @@ const positionOverview = ({
     ...input,
     rate: getPositionRate({
       balanceRewardRate: personalizedRewardRate,
-      balanceRateIsPersonal: () => true,
+      // Under a shown campaign's per-wallet cap, the position's own rate.
+      getShownCampaign: () =>
+        Schema.decodeUnknownSync(YieldCampaign)(yieldApiCampaignDtoFixture()),
       canEarnCampaign: () => true,
       validators,
       yieldRewardRate: input.integrationData.rewardRate,
@@ -318,8 +322,8 @@ describe("getPositionOverviewModel", () => {
       positionBalancesByType: makePositionBalances(),
       t: t as TFunction,
       validators: [
-        { rewardRate: new BigNumber("0.03") },
-        { rewardRate: new BigNumber("0.05") },
+        { rewardRate: yieldRewardRateFixture({ total: 0.03 }) },
+        { rewardRate: yieldRewardRateFixture({ total: 0.05 }) },
       ],
     });
 
@@ -337,8 +341,10 @@ describe("getPositionOverviewModel", () => {
       positionBalancesByType: makePositionBalances(),
       t: t as TFunction,
       validators: [
-        { rewardRate: new BigNumber("0.03"), rewardType: "apr" },
-        { rewardRate: null },
+        {
+          rewardRate: yieldRewardRateFixture({ total: 0.03, rateType: "APR" }),
+        },
+        {},
       ],
     });
 

@@ -12,6 +12,7 @@ import {
   getPositionShares,
   type TokenAmount,
 } from "../../../domain/earn/denomination";
+import type { PositionRate } from "../../../domain/earn/position-rate";
 import {
   getExtendedYieldType,
   isDepositYieldType,
@@ -42,7 +43,6 @@ import {
 } from "../../yield-presentation/index";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
 import { getPositionEarned, type PositionEarned } from "./position-earned";
-import type { PositionRate } from "./position-rate";
 
 /** Under a cent a year a projection reads as "<$0.01" and says nothing. */
 const MIN_PROJECTED_USD = 0.01;

@@ -2,10 +2,8 @@ import { useAtomSubscribe, useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  getCampaignProgress,
-  getCampaignRateComposition,
-} from "../../../domain/earn/campaign";
+import { getCampaignProgress } from "../../../domain/earn/campaign";
+import { getRateComposition } from "../../../domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { formatPercent } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
@@ -87,7 +85,7 @@ export const CampaignSection = ({
 
         <CampaignRateRows
           view={view}
-          composition={getCampaignRateComposition(yieldDto.rewardRate, view)}
+          composition={getRateComposition(yieldDto.rewardRate, view)}
         />
 
         <Meter

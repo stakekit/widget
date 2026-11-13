@@ -4,9 +4,9 @@ import * as Atom from "effect/reactivity/Atom";
 
 import {
   getEarningCampaign,
-  withCampaignRate,
   type YieldCampaign,
 } from "../../domain/earn/campaign";
+import { withCampaignRate } from "../../domain/earn/reward-rate";
 import type { EarnYield } from "../../domain/earn/yield-schema";
 import type { YieldId } from "../../domain/identity/identifiers";
 import { appRuntime } from "../../runtime/app-runtime";

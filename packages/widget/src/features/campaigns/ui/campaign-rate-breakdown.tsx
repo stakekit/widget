@@ -1,7 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
-import { getCampaignRateComposition } from "../../../domain/earn/campaign";
 import {
   getRateComposition,
   type YieldRewardRate,
@@ -42,23 +41,21 @@ export const CampaignRateBreakdown = ({
   if (!view) {
     return (
       <RewardRateBreakdown
-        composition={getRateComposition(rewardRate)}
+        composition={getRateComposition(rewardRate, null)}
         title={title}
         testId={testId}
       />
     );
   }
 
-  const composition = getCampaignRateComposition(yieldDto.rewardRate, view);
+  const composition = getRateComposition(yieldDto.rewardRate, view);
 
   return (
     <RewardRateBreakdown
       composition={composition}
-      // While it earns, the campaign part is the most a wallet earns, so the
-      // total is too; before the start or while paused it isn't in the total.
-      campaignUpTo={
-        view.lifecycle === "active" || view.lifecycle === "ending_soon"
-      }
+      // The yield's campaign part under its shown Campaign is a ceiling;
+      // without one shown, the breakdown above reads it plain.
+      campaignUpTo
       title={title}
       testId={testId}
       campaign={{

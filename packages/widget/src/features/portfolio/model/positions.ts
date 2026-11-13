@@ -8,6 +8,7 @@ import {
 import type { EarnBalance } from "../../../domain/earn/balance";
 import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
 import type { TokenAmount } from "../../../domain/earn/denomination";
+import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
@@ -34,6 +35,8 @@ export type PositionItem = PositionAttention & {
   readonly allBalances: EarnBalance[];
   readonly balanceId: BalanceDataKey;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
+  /** The rate the balances endpoint gives the wallet's position, if any. */
+  readonly rewardRate: YieldRewardRate | null;
   /** Whether any balance earns the rate; without one, the row shows none. */
   readonly hasEarningBalances: boolean;
   /**
@@ -75,6 +78,7 @@ export const toPositionItems = (
             ),
           }),
           integrationId: position.yieldId,
+          rewardRate: position.rewardRate ?? null,
           balancesWithAmount,
           balanceId,
           allBalances: value.balances,

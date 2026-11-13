@@ -12,11 +12,6 @@ import {
 } from "../finance/scalars";
 import { CampaignId, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
-import {
-  getRateComposition,
-  type RateComposition,
-  type YieldRewardRate,
-} from "./reward-rate";
 import { getExtendedYieldType } from "./yield";
 import type { EarnYield } from "./yield-schema";
 
@@ -218,59 +213,6 @@ export const getEarningCampaign = (
     : null;
 };
 
-// How far listed parts may sum from their total and still make it up: the
-// API rounds some yields' parts by up to ~1e-10, far below any campaign rate.
-const partsSumTolerance = exactDecimal("1e-8");
-
-/**
- * A yield with its earning campaign's Campaign Incentive Rate added when its
- * own rate doesn't list one yet: the API serves yields from a longer cache
- * than campaigns, so for a while after a campaign starts paying, the yield's
- * rate misses it. A rate that lists a campaign part keeps it as given, and so
- * does one whose listed parts don't make up its total: a part decoding
- * dropped, such as a campaign part with a malformed token, may be in it.
- */
-export const withCampaignRate = <Y extends Pick<EarnYield, "rewardRate">>(
-  yieldDto: Y,
-  campaign: YieldCampaign
-): Y => {
-  const campaignRate = campaign.rewardRate;
-  const { rewardRate } = yieldDto;
-  const listedTotal = rewardRate.components.reduce(
-    (total, component) => total.plus(component.rate),
-    exactZero()
-  );
-  if (
-    !campaignRate?.total.isGreaterThan(0) ||
-    listedTotal
-      .minus(rewardRate.total)
-      .abs()
-      .isGreaterThan(partsSumTolerance) ||
-    rewardRate.components.some(
-      (component) => component.yieldSource === "campaign_incentive"
-    )
-  ) {
-    return yieldDto;
-  }
-
-  return {
-    ...yieldDto,
-    rewardRate: {
-      ...rewardRate,
-      total: rewardRate.total.plus(campaignRate.total),
-      components: [
-        ...rewardRate.components,
-        {
-          rate: campaignRate.total,
-          rateType: campaignRate.rateType,
-          token: campaign.rewardToken,
-          yieldSource: "campaign_incentive",
-        },
-      ],
-    },
-  };
-};
-
 /**
  * Yearly and monthly earnings on `amount` while a campaign is earning. The
  * Campaign Incentive Rate applies only from the minimum balance, only up to the
@@ -362,41 +304,4 @@ export const getCampaignProgress = (
     Duration.toMillis(DateTime.distance(campaign.startTime, now)) /
     Duration.toMillis(DateTime.distance(campaign.startTime, campaign.endTime));
   return Math.min(1, Math.max(0, elapsed));
-};
-
-/**
- * A yield's Rate Composition as its shown campaign stands. While the campaign
- * earns, its part is the one the rate lists; before it starts, its planned
- * rate, which today's total doesn't include yet; while paused, none.
- */
-export type CampaignRateComposition = RateComposition & {
-  /** The total with the campaign part in it, from the start when upcoming. */
-  readonly withCampaign: BigNumber;
-};
-
-export const getCampaignRateComposition = (
-  rewardRate: YieldRewardRate,
-  { campaign, lifecycle }: DisplayedCampaign
-): CampaignRateComposition => {
-  const composition = getRateComposition(rewardRate);
-  const total = composition.total.rate;
-  switch (lifecycle) {
-    case "active":
-    case "ending_soon":
-      return { ...composition, withCampaign: total };
-    case "upcoming": {
-      const planned = campaign.rewardRate?.total.isGreaterThan(0)
-        ? campaign.rewardRate
-        : null;
-      return {
-        ...composition,
-        campaign: planned
-          ? { rate: planned.total, rateType: planned.rateType }
-          : null,
-        withCampaign: total.plus(planned?.total ?? 0),
-      };
-    }
-    case "paused":
-      return { ...composition, campaign: null, withCampaign: total };
-  }
 };

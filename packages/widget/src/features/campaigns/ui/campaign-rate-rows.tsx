@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import type { CampaignRateComposition } from "../../../domain/earn/campaign";
+import type { RateComposition } from "../../../domain/earn/reward-rate";
 import { formatRewardRatePercent } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { DetailList, DetailRow } from "../../../ui/index";
@@ -17,7 +17,7 @@ export const CampaignRateRows = ({
   composition,
 }: {
   readonly view: YieldCampaignView;
-  readonly composition: CampaignRateComposition;
+  readonly composition: RateComposition;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();

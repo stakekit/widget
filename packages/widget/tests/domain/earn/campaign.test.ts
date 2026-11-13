@@ -4,25 +4,18 @@ import { describe, expect, it } from "vitest";
 import {
   getCampaignLifecycle,
   getCampaignProgress,
-  getCampaignRateComposition,
   getCampaignRewardsEstimate,
   getDisplayedCampaign,
   getEarningCampaign,
   pinCampaignYields,
-  withCampaignRate,
   YieldCampaign,
 } from "../../../src/domain/earn/campaign";
-import {
-  EarnYield as EarnYieldSchema,
-  type EarnYield,
-} from "../../../src/domain/earn/yield-schema";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import {
   yieldApiCampaignDtoFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
-  yieldRewardRateFixture,
 } from "../../fixtures";
 
 const campaign = (
@@ -240,105 +233,6 @@ describe("pinCampaignYields", () => {
   });
 });
 
-describe("withCampaignRate", () => {
-  const token = yieldApiYieldDtoFixture().token;
-  const vaultRate = {
-    rate: 0.058,
-    rateType: "APY",
-    token,
-    yieldSource: "vault",
-  } as const;
-  const vaultYield = (
-    components: ReadonlyArray<{
-      readonly rate: number;
-      readonly rateType: string;
-      readonly yieldSource: "vault" | "campaign_incentive";
-    }>
-  ) =>
-    yieldApiYieldFixture({
-      id: "campaign-vault",
-      rewardRate: {
-        rateType: "APY",
-        total: components.reduce((total, { rate }) => total + rate, 0),
-        components: components.map((component) => ({ ...component, token })),
-      },
-    });
-  const running = campaign({ yieldId: "campaign-vault" });
-  const rates = (yieldDto: EarnYield) => ({
-    total: yieldDto.rewardRate.total.toNumber(),
-    components: yieldDto.rewardRate.components.map((component) => [
-      component.yieldSource,
-      component.rateType,
-      component.rate.toNumber(),
-    ]),
-  });
-
-  it("adds the campaign's rate the yield's rate doesn't list yet", () => {
-    expect(rates(withCampaignRate(vaultYield([vaultRate]), running))).toEqual({
-      total: 0.1,
-      components: [
-        ["vault", "APY", 0.058],
-        ["campaign_incentive", "APR", 0.042],
-      ],
-    });
-  });
-
-  it("reads parts the API rounds a hair off its total as making it up", () => {
-    // As base-usdc-pusdc lists: parts 0.04041282942103987, total
-    // 0.04041282941447777.
-    const rounded = yieldApiYieldFixture({
-      id: "campaign-vault",
-      rewardRate: {
-        rateType: "APY",
-        total: 0.04041282941447777,
-        components: [{ ...vaultRate, rate: 0.04041282942103987, token }],
-      },
-    });
-
-    expect(
-      rates(withCampaignRate(rounded, running)).components.map(
-        ([source]) => source
-      )
-    ).toEqual(["vault", "campaign_incentive"]);
-  });
-
-  it("keeps the campaign part the yield's rate already lists", () => {
-    const listed = vaultYield([
-      vaultRate,
-      { rate: 0.03, rateType: "APR", yieldSource: "campaign_incentive" },
-    ]);
-
-    expect(withCampaignRate(listed, running)).toBe(listed);
-  });
-
-  it("adds nothing when the parts it lists don't make up its total", () => {
-    // The campaign part's token is malformed, so decoding drops that part,
-    // while the total it is part of stays 0.10.
-    const raw: unknown = {
-      ...yieldApiYieldDtoFixture({ id: "campaign-vault" }),
-      rewardRate: {
-        rateType: "APY",
-        total: 0.1,
-        components: [
-          { ...vaultRate, token },
-          {
-            rate: 0.042,
-            rateType: "APR",
-            token: { network: token.network },
-            yieldSource: "campaign_incentive",
-          },
-        ],
-      },
-    };
-    const dropped = Schema.decodeUnknownSync(EarnYieldSchema)(raw);
-
-    expect(rates(withCampaignRate(dropped, running))).toEqual({
-      total: 0.1,
-      components: [["vault", "APY", 0.058]],
-    });
-  });
-});
-
 describe("getEarningCampaign", () => {
   const running = campaign({
     startTime: "2026-11-01T00:00:00.000Z",
@@ -376,74 +270,6 @@ describe("getCampaignProgress", () => {
     expect(getCampaignProgress(tenDays, at("2026-12-20T00:00:00.000Z"))).toBe(
       1
     );
-  });
-});
-
-describe("getCampaignRateComposition", () => {
-  const token = yieldApiYieldFixture().token;
-  const vaultRate = (campaignRate: number | null) =>
-    yieldRewardRateFixture({
-      total: 0.058 + (campaignRate ?? 0),
-      components: [
-        { rate: 0.058, rateType: "APY", token, yieldSource: "vault" },
-        ...(campaignRate === null
-          ? []
-          : [
-              {
-                rate: campaignRate,
-                rateType: "APR",
-                token,
-                yieldSource: "campaign_incentive" as const,
-              },
-            ]),
-      ],
-    });
-  const shown = (
-    lifecycle: "active" | "upcoming" | "paused",
-    rewardRate = vaultRate(0.042)
-  ) => {
-    const {
-      native,
-      campaign: part,
-      total,
-      withCampaign,
-    } = getCampaignRateComposition(rewardRate, {
-      campaign: campaign(),
-      lifecycle,
-    });
-    return {
-      native: native.rate.toNumber(),
-      campaign: part?.rate.toNumber() ?? null,
-      total: total.rate.toNumber(),
-      withCampaign: withCampaign.toNumber(),
-    };
-  };
-
-  it("takes the campaign part the rate lists while the campaign earns", () => {
-    expect(shown("active")).toEqual({
-      native: 0.058,
-      campaign: 0.042,
-      total: 0.1,
-      withCampaign: 0.1,
-    });
-  });
-
-  it("shows the planned rate before the start, outside today's total", () => {
-    expect(shown("upcoming", vaultRate(null))).toEqual({
-      native: 0.058,
-      campaign: 0.042,
-      total: 0.058,
-      withCampaign: 0.1,
-    });
-  });
-
-  it("has no campaign part while paused", () => {
-    expect(shown("paused", vaultRate(null))).toEqual({
-      native: 0.058,
-      campaign: null,
-      total: 0.058,
-      withCampaign: 0.058,
-    });
   });
 });
 

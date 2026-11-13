@@ -42,7 +42,11 @@ export const RewardRateBreakdown = ({
   testId,
 }: {
   composition: RateComposition | null | undefined;
-  /** The campaign part is the most a wallet earns: "Up to" it and the total. */
+  /**
+   * The caller knows the campaign part is a ceiling, the most a wallet
+   * earns, not the wallet's own: "Up to" it and the total, while the total
+   * has it (not a planned part).
+   */
   campaignUpTo?: boolean;
   /** The yield's campaign, whose row it words; see `RewardRateCampaignRow`. */
   campaign?: RewardRateCampaignRow | undefined;
@@ -54,7 +58,10 @@ export const RewardRateBreakdown = ({
 
   if (!composition) return null;
 
-  const upTo = campaignUpTo && composition.campaign !== null;
+  const upTo =
+    campaignUpTo &&
+    composition.campaign !== null &&
+    composition.campaign.source !== "planned";
   const format = (part: RatePart, withUpTo: boolean) => {
     const value = formatRewardRatePercent(part.rate, locale);
     return withUpTo ? t("details.apy_composition.up_to", { value }) : value;

@@ -1,8 +1,10 @@
 import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 
-import { getCampaignRateComposition } from "../../../domain/earn/campaign";
-import type { RateComposition } from "../../../domain/earn/reward-rate";
+import {
+  getRateComposition,
+  type RateComposition,
+} from "../../../domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { formatDateTime } from "../../../shared/lib/date";
 import {
@@ -158,7 +160,7 @@ export const getCampaignMetricCaption = (
   t: TFunction,
   locale: string
 ) => {
-  const { campaign } = getCampaignRateComposition(yieldDto.rewardRate, view);
+  const { campaign } = getRateComposition(yieldDto.rewardRate, view);
   const rate = campaign ? formatRewardRatePercent(campaign.rate, locale) : null;
   if (view.lifecycle === "paused") return t("campaign.metric.paused");
   if (!rate) return null;
@@ -231,7 +233,7 @@ export const getCampaignOfferText = (
     ...(provider ? { provider, context: "provider" } : {}),
     name: yieldDto.metadata.name,
     rate: formatRewardRatePercent(
-      getCampaignRateComposition(yieldDto.rewardRate, view).withCampaign,
+      getRateComposition(yieldDto.rewardRate, view).withCampaign,
       locale
     ),
     rateType: formatRewardRateLabel(yieldDto, t),
@@ -248,10 +250,7 @@ export const getCampaignSelectorNote = (
   t: TFunction,
   locale: string
 ) => {
-  const incentive = getCampaignRateComposition(
-    yieldDto.rewardRate,
-    view
-  ).campaign;
+  const incentive = getRateComposition(yieldDto.rewardRate, view).campaign;
   switch (view.lifecycle) {
     case "paused":
       return t("campaign.selector.paused");

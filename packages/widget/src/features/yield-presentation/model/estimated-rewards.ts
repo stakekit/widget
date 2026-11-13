@@ -52,8 +52,9 @@ export const getYieldEstimatedRewards = ({
     ? getCampaignRewardsEstimate({
         amount: rewardAmount,
         campaign: campaign.campaign,
+        // The yield's rate already has its earning campaign's part.
         campaignIncentiveRate:
-          getRateComposition(selectedYield.rewardRate).campaign?.rate ??
+          getRateComposition(selectedYield.rewardRate, null).campaign?.rate ??
           exactZero(),
         now: campaign.now,
         rewardRate: rewardRateAverage,
