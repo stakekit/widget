@@ -585,9 +585,9 @@
     }
   },
   "details": {
-    "earn": "Earn",
+    "earn": "Gagner",
     "estimated_reward": "Récompenses estimées",
-    "earn_with": "Earn avec",
+    "earn_with": "Gagner avec",
     "restake_with": "Restake avec",
     "yield_strategy": "Stratégie de rendement",
     "via": "via {{providerName}}",
@@ -777,9 +777,9 @@
     "provider_search_title": "Sélectionnez un fournisseur",
     "reward_token": "Vous recevrez des <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tabs": {
-      "earn": "Earn",
-      "positions": "Manage",
-      "activity": "Activity"
+      "earn": "Gagner",
+      "positions": "Gérer",
+      "activity": "Activité"
     },
     "validators_preferred": "Préférés",
     "validators_other": "Tous les validateurs",
@@ -1462,12 +1462,12 @@
     },
     "details": {
       "tabs": {
-        "earn": "Earn",
+        "earn": "Gagner",
         "stake": "Stake",
         "defi": "DeFi",
         "rwa": "RWA",
         "borrow": "Emprunter",
-        "manage": "Manage",
+        "manage": "Gérer",
         "overview": "Aperçu",
         "rewards": "Récompenses",
         "activity": "Activité"
@@ -1508,6 +1508,10 @@
       "read_docs": "Lire la documentation d'intégration",
       "chart_history": "Historique : {{chart}}",
       "chart_period": "Période : {{chart}}",
+      "period_1m": "1M",
+      "period_3m": "3M",
+      "period_1y": "1A",
+      "period_all": "Tout",
       "no_chart_data": "Aucune donnée de graphique",
       "chart_data_to": "Données jusqu'au {{date}}",
       "tvl_in_token": "≈ {{amount}}",
