@@ -135,7 +135,7 @@ const workflowInvalidationKeys = (scope: WalletScopeKey) => {
   return [
     ...resourceInvalidationKeys.walletBalances(owner),
     ...resourceInvalidationKeys.yieldPositions(owner),
-    ...resourceInvalidationKeys.singleYieldBalances(owner.address),
+    ...resourceInvalidationKeys.singleYieldBalances(owner),
     ...resourceInvalidationKeys.activity(owner),
   ];
 };
