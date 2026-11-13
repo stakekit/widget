@@ -234,40 +234,23 @@ export const getCampaignFooterNote = (
 };
 
 /**
- * The hint on a yield without a campaign, pointing to `yieldDto`, which has
- * one: its rate, or that its rewards are paused, and its sponsor if named.
+ * The offer of `yieldDto`'s earning campaign beside a yield without one: its
+ * yield, its sponsor if named, and the rate with it.
  */
-export const getCampaignHint = (
+export const getCampaignOfferText = (
   view: YieldCampaignView,
   yieldDto: EarnYieldWithProvider,
   t: TFunction,
   locale: string
-) => {
-  const composition = getCampaignRateComposition(yieldDto.rewardRate, view);
-  const values = {
+) =>
+  t("campaign.offer.text", {
     ...sponsorContext(view),
     name: yieldDto.metadata.name,
-    rate: formatRewardRatePercent(composition.withCampaign, locale),
-  };
-  switch (view.lifecycle) {
-    case "paused":
-      return t("campaign.hint.other_yield_paused", values);
-    case "upcoming": {
-      const date = formatCampaignDay(
-        view.campaign.startTime,
-        view.timeZone,
-        locale
-      );
-      // Without a planned rate, the yield's own rate would read as the campaign's.
-      return composition.campaign
-        ? t("campaign.hint.other_yield_upcoming", { ...values, date })
-        : t("campaign.hint.other_yield_upcoming_no_rate", { ...values, date });
-    }
-    case "active":
-    case "ending_soon":
-      return t("campaign.hint.other_yield", values);
-  }
-};
+    rate: formatRewardRatePercent(
+      getCampaignRateComposition(yieldDto.rewardRate, view).withCampaign,
+      locale
+    ),
+  });
 
 /**
  * Under a campaign yield's rate in the selector: what the campaign adds, or

@@ -1,9 +1,6 @@
 import * as Atom from "effect/reactivity/Atom";
 
-import {
-  isCampaignEarning,
-  pinCampaignYields,
-} from "../../../domain/earn/campaign";
+import { pinCampaignYields } from "../../../domain/earn/campaign";
 import type { YieldCategory } from "../../../domain/earn/contract";
 import {
   getExtendedYieldType,
@@ -82,28 +79,12 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
     searchFiltered.filter(inCategory),
     new Set(campaigns.keys())
   );
-  // Another yield of this token and category with a campaign, a running one
-  // first, shown beside a choice without one so the campaign stays
-  // discoverable.
-  const alternatives = all.flatMap((item) => {
-    const campaign = campaigns.get(item.id);
-    return campaign && inCategory(item) ? [{ yieldDto: item, campaign }] : [];
-  });
-  const campaignAlternative =
-    selected && !campaigns.has(selected.id)
-      ? (alternatives.find(({ campaign }) =>
-          isCampaignEarning(campaign.lifecycle)
-        ) ??
-        alternatives[0] ??
-        null)
-      : null;
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
   const yieldLoading = status.loading.yields;
 
   return {
     all,
-    campaignAlternative,
     campaigns,
     availableCategories: categoryGrouping
       ? [...yieldOptions.availableCategories]

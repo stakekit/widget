@@ -523,16 +523,10 @@
       "end_of_campaign": "À la fin de la campagne",
       "monthly": "Mensuels"
     },
-    "hint": {
-      "other_yield": "{{name}} a une campagne : jusqu'à {{rate}}.",
-      "switch": "Changer",
-      "other_yield_sponsor": "{{name}} a une campagne {{sponsor}} : jusqu'à {{rate}}.",
-      "other_yield_paused": "{{name}} a une campagne. Ses récompenses sont en pause pour le moment.",
-      "other_yield_paused_sponsor": "{{name}} a une campagne {{sponsor}}. Ses récompenses sont en pause pour le moment.",
-      "other_yield_upcoming": "{{name}} a une campagne à partir du {{date}} : jusqu'à {{rate}}.",
-      "other_yield_upcoming_sponsor": "{{name}} a une campagne {{sponsor}} à partir du {{date}} : jusqu'à {{rate}}.",
-      "other_yield_upcoming_no_rate": "{{name}} a une campagne à partir du {{date}}.",
-      "other_yield_upcoming_no_rate_sponsor": "{{name}} a une campagne {{sponsor}} à partir du {{date}}."
+    "offer": {
+      "text": "{{name}} a une campagne : jusqu'à {{rate}}.",
+      "text_sponsor": "{{name}} a une campagne {{sponsor}} : jusqu'à {{rate}}.",
+      "switch": "Changer"
     },
     "section": {
       "title": "Campagne",

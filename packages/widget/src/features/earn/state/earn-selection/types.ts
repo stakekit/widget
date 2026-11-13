@@ -34,6 +34,14 @@ export type EarnTokenOption = {
 };
 export type EarnTokenKey = TokenString;
 
+/** A yield anywhere in Earn's catalog, with the category and token selecting it. */
+export type CatalogYieldTarget = {
+  /** Null when Earn doesn't group yields by category. */
+  readonly category: YieldCategory | null;
+  readonly tokenKey: EarnTokenKey;
+  readonly yieldId: YieldId;
+};
+
 export type EarnCatalogOperation =
   | "available-yield-categories"
   | "earn-token-catalog"

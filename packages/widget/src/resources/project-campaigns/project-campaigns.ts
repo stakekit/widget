@@ -99,10 +99,11 @@ const sameEarningCampaigns = (a: EarningCampaigns, b: EarningCampaigns) =>
   [...a].every(([yieldId, campaign]) => b.get(yieldId) === campaign);
 
 /**
- * Each yield's earning campaign at the presentation time. It changes only
- * when a campaign starts, ends or reloads, not on every clock tick.
+ * Each yield's earning campaign at the presentation time, in the order the
+ * API lists the campaigns. It changes only when a campaign starts, ends or
+ * reloads, not on every clock tick.
  */
-const earningCampaignsAtom = Atom.make((get): EarningCampaigns => {
+export const earningCampaignsAtom = Atom.make((get): EarningCampaigns => {
   const clock = get(presentationClockAtom);
   if (!clock) return new Map();
   return new Map(

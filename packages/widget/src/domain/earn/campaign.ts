@@ -201,7 +201,7 @@ export type CampaignAtTime = {
 };
 
 /** Whether a campaign adds to its yield's rate in this lifecycle state. */
-export const isCampaignEarning = (lifecycle: CampaignLifecycle) =>
+const isCampaignEarning = (lifecycle: CampaignLifecycle) =>
   lifecycle === "active" || lifecycle === "ending_soon";
 
 /**

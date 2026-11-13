@@ -4,6 +4,7 @@ import { useTrackPage } from "../../../../tracking/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { PageContainer, PageCtaButton } from "../../../../widget-shell/views";
+import { EarnCampaignOffer } from "../../components/campaign-offer";
 import {
   AmountPanelSkeleton,
   EarnCardSkeleton,
@@ -55,6 +56,8 @@ const EarnPage = () => {
           <>
             <Stack gap={12}>
               <ZerionChainModal />
+
+              <EarnCampaignOffer />
 
               <SelectTokenSection />
 

@@ -10,14 +10,11 @@ import type { Token } from "../../../../../domain/token/token";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
   Avatar,
-  Box,
-  Button,
   Divider,
   MorphoMark,
   Stack,
   Text,
 } from "../../../../../ui/index";
-import { getCampaignHint } from "../../../../campaigns/index";
 import {
   CampaignRateBreakdown,
   CampaignStrip,
@@ -28,7 +25,7 @@ import {
   getRewardTokenSymbols,
   isMorphoProvider,
 } from "../../../../yield-summary/views";
-import { useEarnEntry, useEarnYieldSelection } from "../../use-earn-facades";
+import { useEarnEntry } from "../../use-earn-facades";
 import { formatEntryFigure, formatEstimatedRewards } from "./entry-figure";
 
 type StrategyProvider = {
@@ -146,8 +143,6 @@ export const SelectYieldRewardDetails = ({
 
       {selectedStake ? <CampaignStrip yieldDto={selectedStake} /> : null}
 
-      <CampaignAlternativeHint />
-
       {showYieldStrategyDetails && alwaysShowStrategy && <Divider />}
 
       {earnPresentation.zerion && rewardToken ? (
@@ -190,34 +185,6 @@ export const SelectYieldRewardDetails = ({
         />
       ) : null}
     </Stack>
-  );
-};
-
-/**
- * A quiet line pointing to the campaign yield for the same token when the
- * choice has no campaign, so the campaign stays discoverable.
- */
-const CampaignAlternativeHint = () => {
-  const { t } = useTranslation();
-  const { locale } = useWidgetPresentation();
-  const {
-    select,
-    view: { campaignAlternative },
-  } = useEarnYieldSelection();
-
-  if (!campaignAlternative) return null;
-
-  const { campaign, yieldDto } = campaignAlternative;
-
-  return (
-    <Box testId="campaign-alternative">
-      <Text variant="caption" tone="muted" icon="SparkleIcon">
-        {getCampaignHint(campaign, yieldDto, t, locale)}{" "}
-        <Button size="sm" variant="link" onClick={() => select(yieldDto.id)}>
-          {t("campaign.hint.switch")}
-        </Button>
-      </Text>
-    </Box>
   );
 };
 

@@ -16,9 +16,15 @@ const baseYield = yieldApiYieldDtoFixture();
 const campaignYieldId = "ethereum-eth-kamino-allez-vault";
 const plainYieldId = "ethereum-eth-kamino-main-vault";
 
-const vault = (id: string, name: string, campaignRate: number | null) =>
+const vault = (
+  id: string,
+  name: string,
+  campaignRate: number | null,
+  token: YieldDto["token"] = baseYield.token
+) =>
   yieldApiYieldDtoFixture({
     id,
+    token,
     mechanics: { ...baseYield.mechanics, type: "vault" },
     metadata: { ...baseYield.metadata, name },
     rewardRate: {
@@ -68,11 +74,29 @@ const catalogHandlers = ({
       total: yields.length,
     });
   }),
+  http.get(yieldApiRoute("/v1/yields/:yieldId"), async ({ params }) => {
+    await mockDelay();
+    const found = yields.find(({ id }) => id === params.yieldId);
+    return found
+      ? HttpResponse.json(found)
+      : HttpResponse.json({ message: "Not found" }, { status: 404 });
+  }),
   http.get(legacyApiRoute("/v1/tokens"), async () => {
     await mockDelay();
-    return HttpResponse.json([
-      { availableYields: yields.map(({ id }) => id), token: baseYield.token },
-    ]);
+    // One entry per token, listing the yields it enters.
+    const tokens = new Map<string, YieldDto["token"]>(
+      yields.map(({ token }) => [`${token.network}:${token.symbol}`, token])
+    );
+    return HttpResponse.json(
+      [...tokens].map(([key, token]) => ({
+        availableYields: yields
+          .filter(
+            (item) => `${item.token.network}:${item.token.symbol}` === key
+          )
+          .map(({ id }) => id),
+        token,
+      }))
+    );
   }),
   projectCampaignsHandler(campaigns),
 ];
@@ -170,7 +194,7 @@ describe("Campaigns on Earn", () => {
     await app.unmount();
   });
 
-  it("badges and pins the campaign yield with its rate, and points to it from another yield", async ({
+  it("badges and pins the campaign yield with its rate, and offers it above another yield", async ({
     worker,
   }) => {
     worker.use(
@@ -185,10 +209,10 @@ describe("Campaigns on Earn", () => {
 
     const app = await renderApp();
 
-    const hint = app.getByTestId("campaign-alternative");
+    const offer = app.getByTestId("campaign-offer");
     await expect
       .element(
-        hint.getByText(/^Allez USDC Vault has a campaign: up to 10\.00%\./)
+        offer.getByText(/^Allez USDC Vault has a campaign: up to 10\.00%\./)
       )
       .toBeVisible();
     await expect
@@ -211,11 +235,95 @@ describe("Campaigns on Earn", () => {
       .getByRole("button", { name: "Close" })
       .click();
 
-    await hint.getByRole("button", { name: "Switch" }).click();
+    await offer.getByRole("button", { name: "Switch" }).click();
 
     await expect.element(app.getByTestId("campaign-strip")).toBeVisible();
     await expect
-      .element(app.getByTestId("campaign-alternative"))
+      .element(app.getByTestId("campaign-offer"))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("offers the catalog's first running campaign on the network, and switches to its token", async ({
+    worker,
+  }) => {
+    const usdt = {
+      ...baseYield.token,
+      symbol: "USDT",
+      name: "Tether USD",
+      address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
+    };
+    const otherNetworkYieldId = "polygon-usdc-allez-vault";
+    worker.use(
+      ...catalogHandlers({
+        yields: [
+          vault(plainYieldId, "USDC Main Market", null),
+          vault(otherNetworkYieldId, "Polygon USDC Vault", 0.05, {
+            ...baseYield.token,
+            network: "polygon",
+          }),
+          vault(campaignYieldId, "Allez USDT Vault", 0.042, usdt),
+        ],
+        campaigns: [
+          { ...liveCampaign, id: "polygon", yieldId: otherNetworkYieldId },
+          liveCampaign,
+        ],
+      })
+    );
+
+    const app = await renderApp();
+
+    // The first campaign earns on another network, so the next one is offered.
+    const offer = app.getByTestId("campaign-offer");
+    await expect
+      .element(
+        offer.getByText(/^Allez USDT Vault has a campaign: up to 10\.00%\./)
+      )
+      .toBeVisible();
+
+    await offer.getByRole("button", { name: "Switch" }).click();
+
+    await expect.element(app.getByTestId("campaign-strip")).toBeVisible();
+    await expect
+      .element(app.getByTestId("select-token").getByText("USDT"))
+      .toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-offer"))
+      .not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("offers the running campaign at the top of the Dashboard's Earn page", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [
+          vault(plainYieldId, "USDC Main Market", null),
+          vault(campaignYieldId, "Allez USDC Vault", 0.042),
+        ],
+        campaigns: [liveCampaign],
+      })
+    );
+
+    const app = await renderApp({
+      skProps: { apiKey: import.meta.env.VITE_API_KEY, dashboardVariant: true },
+    });
+
+    const offer = app.getByTestId("campaign-offer");
+    await expect
+      .element(
+        offer.getByText(/^Allez USDC Vault has a campaign: up to 10\.00%\./)
+      )
+      .toBeVisible();
+
+    await offer.getByRole("button", { name: "Switch" }).click();
+
+    await expect.element(app.getByTestId("campaign-section")).toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-offer"))
       .not.toBeInTheDocument();
 
     await app.unmount();
@@ -296,7 +404,7 @@ describe("Campaigns on Earn", () => {
     await app.unmount();
   });
 
-  it("pins and badges a paused campaign's yield, whose rate holds no campaign part", async ({
+  it("pins and badges a paused campaign's yield without offering it", async ({
     worker,
   }) => {
     worker.use(
@@ -311,15 +419,7 @@ describe("Campaigns on Earn", () => {
 
     const app = await renderApp();
 
-    await expect
-      .element(
-        app
-          .getByTestId("campaign-alternative")
-          .getByText(
-            /^Allez USDC Vault has a campaign\. Its rewards are paused right now\./
-          )
-      )
-      .toBeVisible();
+    await expect.element(app.getByTestId("select-opportunity")).toBeVisible();
     await expect(listedYieldIds(app, 2)).resolves.toEqual([
       campaignYieldId,
       plainYieldId,
@@ -333,6 +433,10 @@ describe("Campaigns on Earn", () => {
           .getByText("Campaign")
       )
       .toBeVisible();
+    // Only a running campaign is offered.
+    await expect
+      .element(app.getByTestId("campaign-offer"))
+      .not.toBeInTheDocument();
 
     await app.unmount();
   });

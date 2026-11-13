@@ -523,16 +523,10 @@
       "end_of_campaign": "At campaign end",
       "monthly": "Monthly"
     },
-    "hint": {
-      "other_yield": "{{name}} has a campaign: up to {{rate}}.",
-      "switch": "Switch",
-      "other_yield_sponsor": "{{name}} has a {{sponsor}} campaign: up to {{rate}}.",
-      "other_yield_paused": "{{name}} has a campaign. Its rewards are paused right now.",
-      "other_yield_paused_sponsor": "{{name}} has a {{sponsor}} campaign. Its rewards are paused right now.",
-      "other_yield_upcoming": "{{name}} has a campaign from {{date}}: up to {{rate}}.",
-      "other_yield_upcoming_sponsor": "{{name}} has a {{sponsor}} campaign from {{date}}: up to {{rate}}.",
-      "other_yield_upcoming_no_rate": "{{name}} has a campaign from {{date}}.",
-      "other_yield_upcoming_no_rate_sponsor": "{{name}} has a {{sponsor}} campaign from {{date}}."
+    "offer": {
+      "text": "{{name}} has a campaign: up to {{rate}}.",
+      "text_sponsor": "{{name}} has a {{sponsor}} campaign: up to {{rate}}.",
+      "switch": "Switch"
     },
     "section": {
       "title": "Campaign",

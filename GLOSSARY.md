@@ -260,6 +260,11 @@ rate lists none yet for its earning Campaign takes the Campaign's own rate.
 paused, or ended, derived from the API status, the start and end times, and the
 presentation clock. An ended Campaign is never shown on Earn.
 
+**Campaign Offer**: The banner at the top of Earn offering, while the selected
+yield has no earning Campaign, the first earning Campaign the API lists whose
+yield the user can select on the same network; switching selects its token and
+yield.
+
 **Campaign Rate Ceiling**: The highest rate a Campaign lets a yield reach:
 the campaign rate alone (`incentive` mode) or the yield's own rate plus it
 (`combined`). Milestones step it, so reaching one replaces it. Not the

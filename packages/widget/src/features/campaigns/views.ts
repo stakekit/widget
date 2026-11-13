@@ -1,3 +1,4 @@
+export { CampaignOfferBanner } from "./ui/campaign-offer-banner";
 export { CampaignMetaInfo } from "./ui/campaign-meta-info";
 export { CampaignRateBreakdown } from "./ui/campaign-rate-breakdown";
 export { CampaignRewardsSection } from "./ui/campaign-rewards-section";
