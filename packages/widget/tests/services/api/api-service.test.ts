@@ -279,7 +279,7 @@ describe("application API services", () => {
             Effect.fail(
               new HttpClientError.HttpClientError({
                 reason: new HttpClientError.TransportError({
-                  request: {} as never,
+                  request: HttpClientRequest.get("https://api.example.test"),
                 }),
               })
             ),
