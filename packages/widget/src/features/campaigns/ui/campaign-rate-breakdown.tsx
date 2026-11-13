@@ -54,6 +54,11 @@ export const CampaignRateBreakdown = ({
   return (
     <RewardRateBreakdown
       composition={composition}
+      // While it earns, the campaign part is the most a wallet earns, so the
+      // total is too; before the start or while paused it isn't in the total.
+      campaignUpTo={
+        view.lifecycle === "active" || view.lifecycle === "ending_soon"
+      }
       title={title}
       testId={testId}
       campaign={{

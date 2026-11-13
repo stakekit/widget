@@ -141,7 +141,8 @@ describe("Campaigns on Earn", () => {
     await expect.element(campaignRow.getByText("Up to 4.20%")).toBeVisible();
     const totalRow = app.getByTestId("reward-rate-breakdown__total");
     await expect.element(totalRow.getByText("Total APY")).toBeVisible();
-    await expect.element(totalRow.getByText("10.00%")).toBeVisible();
+    // The campaign part is the most a wallet earns, so the total is too.
+    await expect.element(totalRow.getByText("Up to 10.00%")).toBeVisible();
     await expect
       .element(
         app.getByText(
@@ -619,7 +620,9 @@ describe("Campaigns on Earn", () => {
       .toBeVisible();
     await expect
       .element(
-        app.getByTestId("reward-rate-breakdown__total").getByText("10.00%")
+        app
+          .getByTestId("reward-rate-breakdown__total")
+          .getByText("Up to 10.00%")
       )
       .toBeVisible();
 
