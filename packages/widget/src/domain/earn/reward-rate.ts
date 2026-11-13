@@ -153,11 +153,6 @@ const sumComponents = (
 const asListed = (part: RatePart | null) =>
   part && { ...part, source: "listed" as const };
 
-/** The campaign part `withCampaignRate` adds, which the API doesn't list. */
-type CampaignAddedPart = YieldRewardDto & { readonly origin: "campaign" };
-const isCampaignAdded = (component: YieldRewardDto) =>
-  "origin" in component && component.origin === "campaign";
-
 /**
  * The campaign part as the shown campaign stands: while it earns, the part
  * the rate lists, else its own rate when the listed parts make up the total
@@ -208,7 +203,7 @@ export const getRateComposition = (
   const listedCampaignRate = sumComponents(campaignComponents);
   const listedCampaign = listedCampaignRate && {
     ...listedCampaignRate,
-    source: campaignComponents.some(isCampaignAdded)
+    source: campaignComponents.some(({ origin }) => origin === "campaign")
       ? ("campaign" as const)
       : ("listed" as const),
   };
@@ -276,7 +271,7 @@ export const withCampaignRate = <Y extends Pick<EarnYield, "rewardRate">>(
   ) {
     return yieldDto;
   }
-  const added: CampaignAddedPart = {
+  const added: YieldRewardDto = {
     rate: part.rate,
     rateType: own.rateType,
     token: campaign.rewardToken,

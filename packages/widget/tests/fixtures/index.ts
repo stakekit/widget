@@ -36,7 +36,11 @@ const uuidFaker = () =>
 
 type ExactDecimalFixtureInput = Parameters<typeof exactDecimal>[0];
 type YieldRewardComponent = YieldRewardRate["components"][number];
-type YieldRewardComponentFixtureInput = Omit<YieldRewardComponent, "rate"> & {
+type YieldRewardComponentFixtureInput = Omit<
+  YieldRewardComponent,
+  "origin" | "rate"
+> & {
+  readonly origin?: YieldRewardComponent["origin"];
   readonly rate: ExactDecimalFixtureInput;
 };
 type YieldRewardRateFixtureInput = Omit<
@@ -58,6 +62,7 @@ export const yieldRewardRateFixture = (
     total: exactDecimal(total),
     components: components.map((component) => ({
       ...component,
+      origin: component.origin ?? "api",
       rate: exactDecimal(component.rate),
     })),
   };
@@ -83,11 +88,14 @@ export const encodeYieldRewardRateFixture = (
   return {
     rateType: rewardRate.rateType ?? "APY",
     total: exactDecimal(rewardRate.total ?? apyFaker()).toNumber(),
-    components: (rewardRate.components ?? []).map((component) => ({
-      ...component,
-      rate: exactDecimal(component.rate).toNumber(),
-      yieldSource: decodeWireYieldSource(component.yieldSource),
-    })),
+    components: (rewardRate.components ?? []).map(
+      ({ rate, rateType, token, yieldSource }) => ({
+        rate: exactDecimal(rate).toNumber(),
+        rateType,
+        token,
+        yieldSource: decodeWireYieldSource(yieldSource),
+      })
+    ),
   };
 };
 

@@ -33,6 +33,7 @@ const component = (
   yieldSource: YieldRewardRate["components"][number]["yieldSource"],
   rateType = "APY"
 ): YieldRewardRate["components"][number] => ({
+  origin: "api",
   rate: exactDecimal(rate),
   rateType,
   token,
@@ -361,6 +362,35 @@ describe("withCampaignRate", () => {
       total: 0.1,
       components: [["vault", "APY", 0.058]],
     });
+  });
+
+  it("never takes a part the API sends as the campaign's own", () => {
+    const raw: unknown = {
+      ...yieldApiYieldDtoFixture({ id: "campaign-vault" }),
+      rewardRate: {
+        rateType: "APY",
+        total: 0.1,
+        components: [
+          vaultRate,
+          {
+            rate: 0.042,
+            rateType: "APR",
+            token: yieldToken,
+            yieldSource: "campaign_incentive",
+            origin: "campaign",
+          },
+        ],
+      },
+    };
+    const decoded = Schema.decodeUnknownSync(EarnYieldSchema)(raw);
+
+    expect(decoded.rewardRate.components.map((part) => part.origin)).toEqual([
+      "api",
+      "api",
+    ]);
+    expect(getRateComposition(decoded.rewardRate, null).campaign?.source).toBe(
+      "listed"
+    );
   });
 });
 
