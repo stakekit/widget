@@ -143,13 +143,14 @@ describe("Campaigns on Earn", () => {
     await expect.element(totalRow.getByText("Total APY")).toBeVisible();
     // The campaign part is the most a wallet earns, so the total is too.
     await expect.element(totalRow.getByText("Up to 10.00%")).toBeVisible();
-    await expect
-      .element(
-        app.getByText(
-          /^Extra campaign rewards, paid daily into your position until /
-        )
-      )
-      .toBeVisible();
+    const campaignNote = app.getByText(
+      /^Extra campaign rewards, paid daily into your position until /
+    );
+    await expect.element(campaignNote).toBeVisible();
+    // The campaign's note leads the yield's notes.
+    expect(
+      campaignNote.element().closest("footer")?.firstElementChild?.textContent
+    ).toMatch(/^Extra campaign rewards/);
 
     await campaignRow
       .getByRole("button", { name: "About the campaign rate" })

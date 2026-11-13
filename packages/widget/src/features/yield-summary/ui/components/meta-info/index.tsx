@@ -27,7 +27,7 @@ type Props = {
   selectedToken: Token | null;
   /** `small` sets the notes in the caption role. */
   textSize?: "small" | "medium" | undefined;
-  /** Notes from beyond the yield, such as its campaign's, after its rewards. */
+  /** Notes from beyond the yield, such as its campaign's, leading the list. */
   notes?: ReadonlyArray<MetaInfoItem> | undefined;
 };
 
@@ -65,10 +65,10 @@ export const MetaInfo = ({
   }
 
   const items: ReadonlyArray<MetaInfoItem> = [
+    ...notes,
     { text: description, icon: "ArrowsLeftRightIcon" as const },
     { text: earnPeriod, icon: "HistoryIcon" as const },
     { text: earnRewards, icon: "GiftIcon" as const },
-    ...notes,
     { text: withdrawnNotAvailable, icon: "InfoIcon" as const },
     { text: withdrawnTime, icon: "InfoIcon" as const },
     { text: extra, icon: "InfoIcon" as const },
