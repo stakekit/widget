@@ -51,7 +51,7 @@ flowchart TB
 
   subgraph Adapters["services/wallet/internal/adapters (one per chain family)"]
     EVM["evm<br/>extensions, MetaMask, Coinbase, Ledger,<br/>wagmi walletConnect (clientTwo)"]
-    Cosmos["cosmos<br/>Keplr, Leap, Leap Snap + WC"]
+    Cosmos["cosmos<br/>Keplr, Leap + WC"]
     Sub["substrate<br/>Talisman, SubWallet + WC"]
     Tron["tron<br/>TronLink, Bitget, Ledger + WC"]
     SolA["solana<br/>Wallet Standard / adapters + WC"]

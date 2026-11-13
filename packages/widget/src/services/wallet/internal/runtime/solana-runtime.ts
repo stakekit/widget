@@ -13,10 +13,8 @@ import {
   WalletAdapterNetwork,
   WalletReadyState,
 } from "@solana/wallet-adapter-base";
-import {
-  PhantomWalletAdapter,
-  TrustWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+import { TrustWalletAdapter } from "@solana/wallet-adapter-trust";
 import { StandardWalletAdapter } from "@solana/wallet-standard-wallet-adapter-base";
 import { type Cluster, Connection, clusterApiUrl } from "@solana/web3.js";
 import { getWallets, type Wallets } from "@wallet-standard/app";

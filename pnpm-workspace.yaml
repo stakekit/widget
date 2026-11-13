@@ -37,7 +37,6 @@ catalog:
   "@cosmos-kit/core": 2.18.1
   "@cosmos-kit/keplr-extension": 2.17.1
   "@cosmos-kit/leap-extension": 2.17.1
-  "@cosmos-kit/leap-metamask-cosmos-snap": 0.17.1
   "@creit-tech/stellar-wallets-kit": jsr:2.8.0
   "@effect/atom-react": 4.1.2
   "@effect/openapi-generator": 4.1.2
@@ -63,7 +62,8 @@ catalog:
   "@safe-global/safe-apps-sdk": ^9.1.0
   "@solana-mobile/wallet-adapter-mobile": ^3.0.0
   "@solana/wallet-adapter-base": ^0.9.28
-  "@solana/wallet-adapter-wallets": ^0.19.40
+  "@solana/wallet-adapter-phantom": ^0.9.30
+  "@solana/wallet-adapter-trust": ^0.1.18
   "@solana/wallet-standard-wallet-adapter-base": ^1.1.7
   # The Solana wallet adapters peer on @solana/web3.js ^1.99.0.
   "@solana/web3.js": ^1.99.0
@@ -163,8 +163,3 @@ overrides:
   # oxlint's optional peer; pnpm would install it. The type-aware rules run on
   # the tsrs that @effect/tsgo bundles (`effect-tsgo --tsrs-lint`).
   oxlint-tsgolint: "-"
-
-packageExtensions:
-  "@fractalwagmi/solana-wallet-adapter@0.1.1":
-    peerDependencies:
-      "@solana/web3.js": ^1.98.4

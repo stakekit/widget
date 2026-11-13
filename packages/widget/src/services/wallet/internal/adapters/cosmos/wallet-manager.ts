@@ -2,7 +2,6 @@ import type { MainWalletBase } from "@cosmos-kit/core";
 import { Logger, WalletManager } from "@cosmos-kit/core";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr-extension";
 import { wallets as leapWallets } from "@cosmos-kit/leap-extension";
-import { wallets as leapSnapWallets } from "@cosmos-kit/leap-metamask-cosmos-snap";
 
 import type { WalletAddress } from "../../../../../domain/identity/identifiers";
 import { config } from "../../../../../shared/config/widget-defaults";
@@ -29,6 +28,9 @@ export type CosmosWalletManagerOptions = {
   }) => Promise<void>;
 };
 
+const cosmosHubRank = (chain: CosmosChainsAssets) =>
+  registryIdsToSKCosmosNetworks[chain.chain_id] === "cosmos" ? 0 : 1;
+
 export const getWalletManager = ({
   cosmosChainsMap,
   persistPublicKey,
@@ -45,17 +47,10 @@ export const getWalletManager = ({
   // `@cosmos-kit/leap` catalogues add mobile wallets that run their own
   // WalletConnect clients. Mobile wallets connect through the generic
   // WalletConnect entry over the shared protocol instead.
-  const extensionWallets: MainWalletBase[] = [
-    ...keplrWallets,
-    ...leapWallets,
-    ...leapSnapWallets,
-  ];
+  const extensionWallets: MainWalletBase[] = [...keplrWallets, ...leapWallets];
   const wallets: ReadonlyArray<() => CosmosWallet> = [
     ...keplrWallets.map((wallet) => () => makeExtensionWallet(wallet, "keplr")),
     ...leapWallets.map((wallet) => () => makeExtensionWallet(wallet, "leap")),
-    ...leapSnapWallets.map(
-      (wallet) => () => makeExtensionWallet(wallet, "metaMask")
-    ),
     () =>
       makeCosmosWalletConnectWallet({
         iconUrl: walletImages.wcLogo,
@@ -67,14 +62,10 @@ export const getWalletManager = ({
   const cosmosWagmiChains: Chain[] = cosmosChainEntries.map(
     (entry) => entry.wagmiChain
   );
-  const chains: CosmosChainsAssets[] = cosmosChainEntries.map(
-    (entry) => entry.chain
-  );
-
-  chains.sort((a) =>
-    // Put cosmos first
-    registryIdsToSKCosmosNetworks[a.chain_id] === "cosmos" ? -1 : 1
-  );
+  // Cosmos Hub first; the stable sort keeps the other chains in their order.
+  const chains: CosmosChainsAssets[] = cosmosChainEntries
+    .map((entry) => entry.chain)
+    .toSorted((a, b) => cosmosHubRank(a) - cosmosHubRank(b));
 
   const connector: WalletList[number] = {
     groupName: "Cosmos",

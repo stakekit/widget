@@ -22,14 +22,14 @@ import { gzipSync } from "node:zlib";
 import { widgetRoot } from "../paths";
 import { type BuildManifest, entryLoadFiles } from "./entry-load";
 
-// Measured on 2026-11-09: package 2.91 MB, bundle 1.87 MB (gzip). The package
-// entry already imports the cosmos-kit chunk (0.61 MB) statically.
+// Measured on 2026-11-13: package 2.49 MB, bundle 1.88 MB (gzip). Neither
+// entry imports the cosmos-kit chunk statically.
 const budgets = [
   {
     name: "package",
     directory: "dist/package",
     entry: "src/index.package.ts",
-    maxGzipBytes: 3_000_000,
+    maxGzipBytes: 2_560_000,
   },
   {
     name: "bundle",
