@@ -38,7 +38,13 @@ const campaignSetup = async (
   {
     rewards,
     payouts = 7,
-  }: { readonly rewards: Rewards; readonly payouts?: number }
+    campaign,
+  }: {
+    readonly rewards: Rewards;
+    readonly payouts?: number;
+    /** Overrides of the yield's campaign. */
+    readonly campaign?: Readonly<Record<string, unknown>>;
+  }
 ) => {
   const base = await setup(worker);
   // Every read fails, retries included, until the test lets them through.
@@ -50,6 +56,7 @@ const campaignSetup = async (
         yieldId: base.yieldId,
         startTime: "2026-01-01T00:00:00.000Z",
         endTime: "2030-01-01T00:00:00.000Z",
+        ...campaign,
       }),
     ]),
     http.post(yieldApiRoute("/v1/yields/balances"), async () => {
@@ -205,7 +212,10 @@ describe("Campaign rewards on positions", () => {
         )
       )
       .toBeVisible();
-    await expect.element(section.getByText(/^Updated /)).toBeVisible();
+    // The totals stand alone: no dates beside them, and no freshness line.
+    await expect
+      .element(section.getByText(/^(Since|Next payout|Updated) /))
+      .not.toBeInTheDocument();
     await expect
       .element(app.getByText("Pending campaign rewards"))
       .toBeInTheDocument();
@@ -222,6 +232,49 @@ describe("Campaign rewards on positions", () => {
     await expect
       .poll(() => payouts.getByText("+3.04 USDA").elements().length)
       .toBe(7);
+
+    await app.unmount();
+  });
+
+  it("reads the yield's rate, not a personal one, without a per-wallet cap", async ({
+    worker,
+  }) => {
+    const { openPositions } = await campaignSetup(worker, {
+      rewards: {},
+      campaign: {
+        qualificationConfig: {
+          type: "min_token_amount",
+          threshold: "10",
+          maxIncentivizedTvlToken: null,
+        },
+      },
+    });
+    const app = await openPositions();
+    await userEvent.click(app.getByText("Trust USDA Earn").first());
+
+    const summary = app.getByTestId("position-summary");
+    await expect
+      .element(summary.getByText("4.55% APY", { exact: true }))
+      .toBeVisible();
+    await expect
+      .element(summary.getByText(/Personalized APY/))
+      .not.toBeInTheDocument();
+    // Details splits the same rate the summary leads with.
+    await expect
+      .element(
+        app.getByTestId("reward-rate-breakdown__total").getByText("Up to 4.55%")
+      )
+      .toBeVisible();
+
+    // Entering further explains the campaign, as Earn does.
+    await userEvent.click(
+      app.getByRole("tab", { name: "Deposit", exact: true })
+    );
+    await expect
+      .element(
+        app.getByText(/^Extra campaign rewards, paid daily into your position/)
+      )
+      .toBeVisible();
 
     await app.unmount();
   });
@@ -255,7 +308,10 @@ describe("Campaign rewards on positions", () => {
     await expect
       .element(app.getByTestId("campaign-rewards__earned"))
       .not.toBeInTheDocument();
-    await expect.element(app.getByText(/^No payouts yet\./)).toBeVisible();
+    // Before the first payout, the payouts list is left out.
+    await expect
+      .element(app.getByTestId("campaign-rewards__payouts"))
+      .not.toBeInTheDocument();
 
     await app.unmount();
   });
@@ -387,7 +443,6 @@ describe("Campaign rewards on positions", () => {
     const pending = app.getByTestId("campaign-rewards__pending");
     await expect.element(pending.getByText("Final payout")).toBeVisible();
     await expect.element(pending.getByText("2.52 USDA")).toBeVisible();
-    await expect.element(pending.getByText(/^Due /)).toBeVisible();
     await expect
       .element(
         app

@@ -1,5 +1,5 @@
 import type BigNumber from "bignumber.js";
-import { Array as EArray, Match } from "effect";
+import { Array as EArray } from "effect";
 
 import { exactZero } from "../finance/exact";
 import type { EarnValidator, EarnValidatorKey } from "./validator";
@@ -12,8 +12,6 @@ type ValidatorRewardRateDto = NonNullable<EarnValidator["rewardRate"]>;
 export type SelectedValidators =
   | ReadonlyArray<EarnValidator>
   | ReadonlyMap<EarnValidatorKey, EarnValidator>;
-
-type RewardRateBreakdownKey = "native" | "protocol_incentive" | "campaign";
 
 const isSelectedValidatorMap = (
   validators: SelectedValidators
@@ -29,28 +27,6 @@ const getSelectedValidators = (
   }
   return selectedValidators;
 };
-
-export type RewardRateBreakdownItem = {
-  key: RewardRateBreakdownKey;
-  rate: BigNumber;
-  rewardType: string | undefined;
-  isUpTo: boolean;
-};
-
-const breakdownOrder: RewardRateBreakdownKey[] = [
-  "native",
-  "protocol_incentive",
-  "campaign",
-];
-
-const getBreakdownKey = (
-  yieldSource: YieldRewardDto["yieldSource"]
-): RewardRateBreakdownKey =>
-  Match.value(yieldSource).pipe(
-    Match.when("campaign_incentive", () => "campaign" as const),
-    Match.when("protocol_incentive", () => "protocol_incentive" as const),
-    Match.orElse(() => "native" as const)
-  );
 
 const getYieldRewardRateDetails = (
   yieldDto: YieldWithRewardRate | null | undefined
@@ -109,46 +85,67 @@ const averageRewardRates = (
   };
 };
 
-export const getRewardRateBreakdown = (
-  rewardRate: YieldRewardRate | null | undefined,
-  opts?: {
-    showUpToCampaign?: boolean;
-  }
-): RewardRateBreakdownItem[] => {
-  if (!rewardRate?.components?.length) {
-    return [];
-  }
-
-  const buckets = rewardRate.components.reduce((acc, component) => {
-    const key = getBreakdownKey(component.yieldSource);
-    const prev = acc.get(key);
-
-    acc.set(key, {
-      key,
-      rate: (prev?.rate ?? exactZero()).plus(component.rate),
-      rewardType: prev?.rewardType ?? component.rateType,
-      isUpTo: key === "campaign" && !!opts?.showUpToCampaign,
-    });
-
-    return acc;
-  }, new Map<RewardRateBreakdownKey, RewardRateBreakdownItem>());
-
-  return breakdownOrder.flatMap((key) => {
-    const item = buckets.get(key);
-
-    return item?.rate.isGreaterThan(0) ? [item] : [];
-  });
+/** A part of a reward rate, in its own rate type ("APY", "APR"). */
+export type RatePart = {
+  readonly rate: BigNumber;
+  readonly rateType: string | undefined;
 };
 
-/** The campaign incentive part of a reward rate; zero without a live campaign. */
-export const getCampaignIncentiveRate = (
-  rewardRate: YieldRewardRate | null | undefined
-): BigNumber =>
-  (rewardRate?.components ?? [])
-    .filter((component) => component.yieldSource === "campaign_incentive")
-    .reduce((total, component) => total.plus(component.rate), exactZero());
+/**
+ * A reward rate split into what the widget shows: the yield's own rate,
+ * protocol incentives and the Campaign Incentive Rate, each as the rate lists
+ * it, and the total as given. A rate listing no own part has as its own what
+ * the incentives leave of the total, so a campaign-only rate never reads as
+ * the yield's own.
+ */
+export type RateComposition = {
+  readonly native: RatePart;
+  readonly protocolIncentive: RatePart | null;
+  readonly campaign: RatePart | null;
+  readonly total: RatePart;
+};
 
-/** Whether a reward rate includes a live campaign's incentive. */
-export const hasCampaignIncentive = (
-  rewardRate: YieldRewardRate | null | undefined
-) => getCampaignIncentiveRate(rewardRate).isGreaterThan(0);
+const isIncentive = (yieldSource: string) =>
+  yieldSource === "protocol_incentive" || yieldSource === "campaign_incentive";
+
+// The components summed in the first one's rate type; null when they add
+// nothing.
+const sumComponents = (
+  components: YieldRewardRate["components"]
+): RatePart | null => {
+  const rate = components.reduce(
+    (total, component) => total.plus(component.rate),
+    exactZero()
+  );
+  return rate.isGreaterThan(0)
+    ? { rate, rateType: components[0]?.rateType }
+    : null;
+};
+
+export const getRateComposition = (
+  rewardRate: YieldRewardRate
+): RateComposition => {
+  const { components, total } = rewardRate;
+  const from = (yieldSource: string) =>
+    sumComponents(
+      components.filter((component) => component.yieldSource === yieldSource)
+    );
+  const protocolIncentive = from("protocol_incentive");
+  const campaign = from("campaign_incentive");
+  const listedNative = sumComponents(
+    components.filter((component) => !isIncentive(component.yieldSource))
+  );
+  const leftNative = total
+    .minus(protocolIncentive?.rate ?? 0)
+    .minus(campaign?.rate ?? 0);
+
+  return {
+    native: listedNative ?? {
+      rate: leftNative.isNegative() ? exactZero() : leftNative,
+      rateType: rewardRate.rateType,
+    },
+    protocolIncentive,
+    campaign,
+    total: { rate: total, rateType: rewardRate.rateType },
+  };
+};

@@ -1,5 +1,4 @@
 import type BigNumber from "bignumber.js";
-import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 
 import {
@@ -11,7 +10,6 @@ import {
   getCampaignRewardsAmounts,
 } from "../../../domain/earn/campaign-rewards";
 import type { Token } from "../../../domain/token/token";
-import { formatDateTime } from "../../../shared/lib/date";
 import { formatTokenAmountWithSymbol } from "../../../shared/lib/number-format";
 import { formatCampaignDate } from "./campaign-copy";
 import type {
@@ -35,20 +33,6 @@ type RewardsNotice = {
 
 const formatAmount = (amount: BigNumber, token: Token, locale: string) =>
   formatTokenAmountWithSymbol({ amount, token }, locale);
-
-const formatTime = (
-  date: DateTime.Utc,
-  timeZone: DateTime.TimeZone,
-  locale: string
-) =>
-  formatDateTime(date, {
-    locale,
-    timeZone,
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 /** Whether the wallet can't earn the campaign now, below its minimum or excluded. */
 const isBlocked = (state: CampaignQualificationState) =>
@@ -113,17 +97,11 @@ export const getCampaignRowModel = (
 };
 
 const getUnpaidMetric = (
-  view: ReadyCampaignRewardsView,
+  stage: CampaignRewardsStage,
   unpaid: string,
-  t: TFunction,
-  locale: string
+  t: TFunction
 ): RewardsMetric => {
-  const { nextPayoutDueAt } = view.rewards;
-  const due = nextPayoutDueAt
-    ? formatCampaignDate(nextPayoutDueAt, view.timeZone, locale)
-    : null;
-
-  switch (view.stage) {
+  switch (stage) {
     case "paused":
       return {
         id: "pending",
@@ -136,19 +114,8 @@ const getUnpaidMetric = (
         id: "pending",
         label: t("campaign.rewards.final_payout"),
         value: unpaid,
-        caption: due
-          ? t("campaign.rewards.final_payout_due", { date: due })
-          : t("campaign.rewards.final_payout_preparing"),
       };
     case "earning":
-      return {
-        id: "pending",
-        label: t("campaign.rewards.pending"),
-        value: unpaid,
-        ...(due
-          ? { caption: t("campaign.rewards.next_payout", { date: due }) }
-          : {}),
-      };
     case "paid_out":
       return {
         id: "pending",
@@ -230,44 +197,11 @@ const getStageNotice = (
   }
 };
 
-const getEarnedMetric = (
-  view: ReadyCampaignRewardsView,
-  earned: string,
-  t: TFunction,
-  locale: string
-): RewardsMetric => {
-  const base = {
-    id: "earned",
-    label: t("campaign.rewards.total_earned"),
-    value: earned,
-  } as const;
-  if (!view.campaign) return base;
-  return {
-    ...base,
-    caption: t("campaign.rewards.since", {
-      date: formatCampaignDate(view.campaign.startTime, view.timeZone, locale),
-    }),
-  };
-};
-
-const getFreshness = (
-  view: ReadyCampaignRewardsView,
-  t: TFunction,
-  locale: string
-) => {
-  const { accruedThrough } = view.rewards;
-  if (!accruedThrough) return null;
-  const date = formatTime(accruedThrough, view.timeZone, locale);
-  return view.stale
-    ? t("campaign.rewards.last_updated", { date })
-    : t("campaign.rewards.updated", { date });
-};
-
 /**
  * What a position's Campaign rewards section says: the totals over the whole
- * campaign, why the wallet does or doesn't earn, where the campaign stands,
- * and how fresh the figures are. A wallet that earned nothing and can't earn
- * shows its notice without empty totals.
+ * campaign, why the wallet does or doesn't earn, and where the campaign
+ * stands. A wallet that earned nothing and can't earn shows its notice
+ * without empty totals.
  */
 export const getCampaignRewardsSectionModel = (
   view: ReadyCampaignRewardsView,
@@ -288,22 +222,20 @@ export const getCampaignRewardsSectionModel = (
       ? rewards.inputTokenTotals.paid
       : null;
   const metrics: ReadonlyArray<RewardsMetric> = [
-    getEarnedMetric(
-      view,
-      formatAmount(amounts.earned, amounts.token, locale),
-      t,
-      locale
-    ),
+    {
+      id: "earned",
+      label: t("campaign.rewards.total_earned"),
+      value: formatAmount(amounts.earned, amounts.token, locale),
+    },
     {
       id: "paid",
       label: t("campaign.rewards.paid_out"),
       value: formatAmount(amounts.paid, amounts.token, locale),
     },
     getUnpaidMetric(
-      view,
+      view.stage,
       formatAmount(amounts.unpaid, amounts.token, locale),
-      t,
-      locale
+      t
     ),
   ];
 
@@ -319,7 +251,6 @@ export const getCampaignRewardsSectionModel = (
           amount: formatAmount(paidIntoPosition, yieldToken, locale),
         })
       : null,
-    freshness: getFreshness(view, t, locale),
   };
 };
 

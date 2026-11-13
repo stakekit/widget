@@ -2,20 +2,24 @@ import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import {
-  getCampaignCeilingPlan,
   getCampaignLifecycle,
+  getCampaignProgress,
+  getCampaignRateComposition,
   getCampaignRewardsEstimate,
-  getCampaignTimeline,
   getDisplayedCampaign,
+  getEarningCampaign,
   pinCampaignYields,
+  withCampaignRate,
   YieldCampaign,
 } from "../../../src/domain/earn/campaign";
+import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import {
   yieldApiCampaignDtoFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
+  yieldRewardRateFixture,
 } from "../../fixtures";
 
 const campaign = (
@@ -233,155 +237,164 @@ describe("pinCampaignYields", () => {
   });
 });
 
-describe("getCampaignTimeline", () => {
+describe("withCampaignRate", () => {
+  const token = yieldApiYieldDtoFixture().token;
+  const vaultRate = {
+    rate: 0.058,
+    rateType: "APY",
+    token,
+    yieldSource: "vault",
+  } as const;
+  const vaultYield = (
+    components: ReadonlyArray<{
+      readonly rate: number;
+      readonly rateType: string;
+      readonly yieldSource: "vault" | "campaign_incentive";
+    }>
+  ) =>
+    yieldApiYieldFixture({
+      id: "campaign-vault",
+      rewardRate: {
+        rateType: "APY",
+        total: components.reduce((total, { rate }) => total + rate, 0),
+        components: components.map((component) => ({ ...component, token })),
+      },
+    });
+  const running = campaign({ yieldId: "campaign-vault" });
+  const rates = (yieldDto: EarnYield) => ({
+    total: yieldDto.rewardRate.total.toNumber(),
+    components: yieldDto.rewardRate.components.map((component) => [
+      component.yieldSource,
+      component.rateType,
+      component.rate.toNumber(),
+    ]),
+  });
+
+  it("adds the campaign's rate the yield's rate doesn't list yet", () => {
+    expect(rates(withCampaignRate(vaultYield([vaultRate]), running))).toEqual({
+      total: 0.1,
+      components: [
+        ["vault", "APY", 0.058],
+        ["campaign_incentive", "APR", 0.042],
+      ],
+    });
+  });
+
+  it("keeps the campaign part the yield's rate already lists", () => {
+    const listed = vaultYield([
+      vaultRate,
+      { rate: 0.03, rateType: "APR", yieldSource: "campaign_incentive" },
+    ]);
+
+    expect(withCampaignRate(listed, running)).toBe(listed);
+  });
+});
+
+describe("getEarningCampaign", () => {
+  const running = campaign({
+    startTime: "2026-11-01T00:00:00.000Z",
+    endTime: "2027-05-01T00:00:00.000Z",
+  });
+  const now = at("2026-12-01T00:00:00.000Z");
+
+  it("is the shown campaign while it earns", () => {
+    expect(getEarningCampaign([running], now)).toBe(running);
+  });
+
+  it("is none for a paused campaign, or one yet to start", () => {
+    expect(
+      getEarningCampaign([{ ...running, status: "paused" }], now)
+    ).toBeNull();
+    expect(
+      getEarningCampaign([running], at("2026-10-01T00:00:00.000Z"))
+    ).toBeNull();
+  });
+});
+
+describe("getCampaignProgress", () => {
   const tenDays = campaign({
     startTime: "2026-12-01T00:00:00.000Z",
     endTime: "2026-12-11T00:00:00.000Z",
   });
 
-  it("counts whole days to the start before it begins", () => {
-    expect(
-      getCampaignTimeline(tenDays, at("2026-11-29T12:00:00.000Z"))
-    ).toEqual({
-      elapsed: 0,
-      daysLeft: 10,
-      daysUntilStart: 2,
-      day: 0,
-      durationDays: 10,
-    });
-  });
-
-  it("measures the elapsed share, rounds days left up and counts the day it is on", () => {
-    expect(
-      getCampaignTimeline(tenDays, at("2026-12-03T12:00:00.000Z"))
-    ).toEqual({
-      elapsed: 0.25,
-      daysLeft: 8,
-      daysUntilStart: 0,
-      day: 3,
-      durationDays: 10,
-    });
-  });
-
-  it("stops at the end", () => {
-    expect(
-      getCampaignTimeline(tenDays, at("2026-12-20T00:00:00.000Z"))
-    ).toEqual({
-      elapsed: 1,
-      daysLeft: 0,
-      daysUntilStart: 0,
-      day: 10,
-      durationDays: 10,
-    });
+  it("measures the elapsed share, from none before the start to all at the end", () => {
+    expect(getCampaignProgress(tenDays, at("2026-11-29T12:00:00.000Z"))).toBe(
+      0
+    );
+    expect(getCampaignProgress(tenDays, at("2026-12-03T12:00:00.000Z"))).toBe(
+      0.25
+    );
+    expect(getCampaignProgress(tenDays, at("2026-12-20T00:00:00.000Z"))).toBe(
+      1
+    );
   });
 });
 
-describe("getCampaignCeilingPlan", () => {
-  const milestone = (overrides: Readonly<Record<string, unknown>>) => ({
-    order: 1,
-    apyCeiling: null,
-    twTvlThreshold: null,
-    tvlYearsTarget: null,
-    unlockAfter: null,
-    status: "locked",
-    unlockedAt: null,
-    ...overrides,
-  });
-  const steps = [
-    milestone({ order: 1, apyCeiling: 0.075, twTvlThreshold: "10000000" }),
-    milestone({
-      order: 2,
-      apyCeiling: 0.06,
-      unlockAfter: "2027-02-01T00:00:00.000Z",
-    }),
-  ];
+describe("getCampaignRateComposition", () => {
+  const token = yieldApiYieldFixture().token;
+  const vaultRate = (campaignRate: number | null) =>
+    yieldRewardRateFixture({
+      total: 0.058 + (campaignRate ?? 0),
+      components: [
+        { rate: 0.058, rateType: "APY", token, yieldSource: "vault" },
+        ...(campaignRate === null
+          ? []
+          : [
+              {
+                rate: campaignRate,
+                rateType: "APR",
+                token,
+                yieldSource: "campaign_incentive" as const,
+              },
+            ]),
+      ],
+    });
+  const shown = (
+    lifecycle: "active" | "upcoming" | "paused",
+    rewardRate = vaultRate(0.042)
+  ) => {
+    const {
+      native,
+      campaign: part,
+      total,
+      withCampaign,
+    } = getCampaignRateComposition(rewardRate, {
+      campaign: campaign(),
+      lifecycle,
+    });
+    return {
+      native: native.rate.toNumber(),
+      campaign: part?.rate.toNumber() ?? null,
+      total: total.rate.toNumber(),
+      withCampaign: withCampaign.toNumber(),
+    };
+  };
 
-  it("has no plan without a ceiling", () => {
-    expect(
-      getCampaignCeilingPlan(
-        campaign({ apyCeiling: null, apyCeilingMode: "combined" })
-      )
-    ).toBeNull();
-  });
-
-  it("starts at the configured ceiling, with every step ahead", () => {
-    const plan = getCampaignCeilingPlan(
-      campaign({
-        apyCeiling: 0.1,
-        apyCeilingMode: "combined",
-        milestones: steps,
-      })
-    );
-
-    expect(plan?.mode).toBe("combined");
-    expect(plan?.current.toString()).toBe("0.1");
-    expect(plan?.steppedDown).toBeNull();
-    expect(
-      plan?.steps.map(({ ceiling, state, trigger }) => [
-        ceiling.toString(),
-        state,
-        trigger?.deposits?.toString() ?? null,
-        trigger?.date ? DateTime.formatIso(trigger.date) : null,
-      ])
-    ).toEqual([
-      ["0.1", "current", null, null],
-      ["0.075", "next", "10000000", null],
-      ["0.06", "next", null, "2027-02-01T00:00:00.000Z"],
-    ]);
-  });
-
-  it("marks the reached steps and keeps when the step was reached", () => {
-    const plan = getCampaignCeilingPlan(
-      campaign({
-        apyCeiling: 0.075,
-        apyCeilingMode: "combined",
-        milestones: [
-          {
-            ...steps[0],
-            status: "funded",
-            unlockedAt: "2026-12-01T00:00:00.000Z",
-          },
-          steps[1],
-        ],
-      })
-    );
-
-    // The starting ceiling is overwritten once a step unlocks, so it drops out.
-    expect(
-      plan?.steps.map(({ ceiling, state }) => [ceiling.toString(), state])
-    ).toEqual([
-      ["0.075", "current"],
-      ["0.06", "next"],
-    ]);
-    expect(plan?.steppedDown).toEqual({
-      trigger: { deposits: exactDecimal("10000000"), date: null },
-      reachedAt: DateTime.makeUnsafe("2026-12-01T00:00:00.000Z"),
-      from: null,
+  it("takes the campaign part the rate lists while the campaign earns", () => {
+    expect(shown("active")).toEqual({
+      native: 0.058,
+      campaign: 0.042,
+      total: 0.1,
+      withCampaign: 0.1,
     });
   });
 
-  it("gives the ceiling a later step moved from", () => {
-    const plan = getCampaignCeilingPlan(
-      campaign({
-        apyCeiling: 0.06,
-        apyCeilingMode: "combined",
-        milestones: [
-          { ...steps[0], status: "funded" },
-          { ...steps[1], status: "unlocked" },
-        ],
-      })
-    );
-
-    expect(plan?.steps.map(({ state }) => state)).toEqual(["past", "current"]);
-    expect(plan?.steppedDown?.from?.toString()).toBe("0.075");
+  it("shows the planned rate before the start, outside today's total", () => {
+    expect(shown("upcoming", vaultRate(null))).toEqual({
+      native: 0.058,
+      campaign: 0.042,
+      total: 0.058,
+      withCampaign: 0.1,
+    });
   });
 
-  it("has no plan when the API names a ceiling mode the widget doesn't know", () => {
-    expect(
-      getCampaignCeilingPlan(
-        campaign({ apyCeiling: 0.1, apyCeilingMode: "new" })
-      )
-    ).toBeNull();
+  it("has no campaign part while paused", () => {
+    expect(shown("paused", vaultRate(null))).toEqual({
+      native: 0.058,
+      campaign: null,
+      total: 0.058,
+      withCampaign: 0.058,
+    });
   });
 });
 

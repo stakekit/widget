@@ -10,6 +10,7 @@ import type {
 } from "../../services/api/resource-sources";
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { liveCampaignRateAtom } from "../project-campaigns/project-campaigns";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
 
@@ -55,10 +56,10 @@ const enrichedYieldOpportunityCanonicalAtom = Atom.family((yieldId: YieldId) =>
           Effect.orElseSucceed(() => undefined)
         );
 
-      return {
+      return get(liveCampaignRateAtom)({
         ...yieldModel,
         ...(provider ? { provider } : {}),
-      } satisfies EarnYieldWithProvider;
+      } satisfies EarnYieldWithProvider);
     })
   )
 );

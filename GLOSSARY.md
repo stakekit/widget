@@ -232,6 +232,17 @@ validator choice.
 unweighted mean of selected validators with rates, otherwise the Yield Reward
 Rate.
 
+**Rate Composition**: A reward rate split into the yield's own rate, protocol
+incentives and the Campaign Incentive Rate, each as the rate lists it and in
+its own rate type, with the total as given; nothing is converted between APR
+and APY. A rate listing no own part has as its own what the incentives leave
+of the total.
+
+**Position Reward Rate**: The one rate a position's page shows: its balance's
+rate when that rate's campaign part is the wallet's own (personalized), else
+its Effective Reward Rate. A campaign part is the wallet's own only under a
+per-wallet cap, or for a Campaign the widget doesn't know.
+
 **Reward Rate History**: A yield-scoped time series of Yield Reward Rate
 snapshots, not validator or Effective Reward Rates.
 
@@ -242,7 +253,8 @@ _Avoid_: boost, promotion
 
 **Campaign Incentive Rate**: The `campaign_incentive` part of a Yield Reward
 Rate, an APR the API already reduces for the campaign's ceiling. The widget
-shows it as given and never recomputes a cap.
+shows it as given and never recomputes it for a ceiling. A yield whose cached
+rate lists none yet for its earning Campaign takes the Campaign's own rate.
 
 **Campaign Lifecycle**: Upcoming, active, ending soon (under 14 days left),
 paused, or ended, derived from the API status, the start and end times, and the

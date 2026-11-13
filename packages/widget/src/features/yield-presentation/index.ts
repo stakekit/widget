@@ -20,6 +20,7 @@ export {
   formatProviderWebsiteHref,
   formatRateTypeLabel,
   formatRewardRateLabel,
+  formatRatePartLabel,
 } from "./model/yield-details-formatters";
 export {
   getYieldContracts,

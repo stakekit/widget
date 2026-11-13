@@ -1,12 +1,8 @@
-import type BigNumber from "bignumber.js";
 import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 
-import {
-  getCampaignTimeline,
-  isCampaignEarning,
-} from "../../../domain/earn/campaign";
-import { getCampaignIncentiveRate } from "../../../domain/earn/reward-rate";
+import { getCampaignRateComposition } from "../../../domain/earn/campaign";
+import type { RateComposition } from "../../../domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { formatDateTime } from "../../../shared/lib/date";
 import { getRewardTypeFormatted } from "../../../shared/lib/formatters";
@@ -44,55 +40,6 @@ export const getCampaignName = (
   yieldDto: EarnYieldWithProvider
 ) => view.campaign.name ?? yieldDto.metadata.name;
 
-/**
- * A yield's rate split into its own part and its campaign's. While the
- * campaign earns, its part is the Campaign Incentive Rate the yield's rate
- * includes, so every figure matches the headline; before it starts, it is
- * the campaign's planned rate on top of the yield's; paused, it is none.
- */
-export const getCampaignRates = (
-  view: YieldCampaignView,
-  yieldDto: EarnYieldWithProvider
-): {
-  readonly native: BigNumber;
-  readonly nativeRateType: string | null;
-  readonly campaign: BigNumber | null;
-  readonly campaignRateType: string | null;
-  readonly total: BigNumber;
-} => {
-  const { components, rateType } = yieldDto.rewardRate;
-  const total = yieldDto.rewardRate.total;
-  const nativeRateType =
-    components.find(
-      (component) => component.yieldSource !== "campaign_incentive"
-    )?.rateType ??
-    rateType ??
-    null;
-  const incentiveRateType =
-    components.find(
-      (component) => component.yieldSource === "campaign_incentive"
-    )?.rateType ?? null;
-  if (isCampaignEarning(view.lifecycle)) {
-    const campaign = getCampaignIncentiveRate(yieldDto.rewardRate);
-    return {
-      native: total.minus(campaign),
-      nativeRateType,
-      campaign: campaign.isGreaterThan(0) ? campaign : null,
-      campaignRateType: incentiveRateType,
-      total,
-    };
-  }
-  const planned =
-    view.lifecycle === "upcoming" ? view.campaign.rewardRate : null;
-  return {
-    native: total,
-    nativeRateType,
-    campaign: planned?.total.isGreaterThan(0) ? planned.total : null,
-    campaignRateType: view.campaign.rewardRate?.rateType ?? incentiveRateType,
-    total: planned?.total.isGreaterThan(0) ? total.plus(planned.total) : total,
-  };
-};
-
 /** The badge a campaign yield carries on Earn: "Campaign", or "Upcoming". */
 export const getCampaignBadge = (lifecycle: Lifecycle, t: TFunction) => {
   if (lifecycle === "upcoming") {
@@ -128,22 +75,17 @@ export const getCampaignStatus = (lifecycle: Lifecycle, t: TFunction) => {
   }
 };
 
-const formatDays = (count: number, t: TFunction) =>
-  t("campaign.days", { count });
-
-/** "Ends May 15, 2027 · 153 days left", and its upcoming and paused forms. */
+/** "Ends May 15, 2027", and its upcoming and paused forms. */
 export const getCampaignScheduleLine = (
   view: YieldCampaignView,
   t: TFunction,
   locale: string
 ) => {
   const { campaign, timeZone } = view;
-  const timeline = getCampaignTimeline(campaign, view.now);
   switch (view.lifecycle) {
     case "upcoming":
       return t("campaign.time.upcoming", {
         date: formatCampaignDate(campaign.startTime, timeZone, locale),
-        days: formatDays(timeline.daysUntilStart, t),
       });
     case "paused":
       return t("campaign.time.paused", {
@@ -153,7 +95,6 @@ export const getCampaignScheduleLine = (
     case "ending_soon":
       return t("campaign.time.active", {
         date: formatCampaignDate(campaign.endTime, timeZone, locale),
-        days: formatDays(timeline.daysLeft, t),
       });
   }
 };
@@ -184,12 +125,12 @@ export const getCampaignStripNote = (
 /** The campaign row of a rate's composition: "Up to 4.2%", "Paused"… */
 export const getCampaignCompositionValue = (
   view: YieldCampaignView,
-  yieldDto: EarnYieldWithProvider,
+  composition: RateComposition,
   t: TFunction,
   locale: string
 ) => {
-  const { campaign } = getCampaignRates(view, yieldDto);
-  const rate = campaign ? formatRewardRatePercent(campaign, locale) : null;
+  const { campaign } = composition;
+  const rate = campaign ? formatRewardRatePercent(campaign.rate, locale) : null;
   const day = formatCampaignDay(view.campaign.startTime, view.timeZone, locale);
   switch (view.lifecycle) {
     case "paused":
@@ -207,12 +148,12 @@ export const getCampaignCompositionValue = (
 /** What the campaign adds, as its rate summary words it: "+4.2%", "Paused"… */
 export const getCampaignRateSummary = (
   view: YieldCampaignView,
-  yieldDto: EarnYieldWithProvider,
+  composition: RateComposition,
   t: TFunction,
   locale: string
 ) => {
-  const { campaign } = getCampaignRates(view, yieldDto);
-  const rate = campaign ? formatRewardRatePercent(campaign, locale) : null;
+  const { campaign } = composition;
+  const rate = campaign ? formatRewardRatePercent(campaign.rate, locale) : null;
   const day = formatCampaignDay(view.campaign.startTime, view.timeZone, locale);
   switch (view.lifecycle) {
     case "paused":
@@ -234,8 +175,8 @@ export const getCampaignMetricCaption = (
   t: TFunction,
   locale: string
 ) => {
-  const { campaign } = getCampaignRates(view, yieldDto);
-  const rate = campaign ? formatRewardRatePercent(campaign, locale) : null;
+  const { campaign } = getCampaignRateComposition(yieldDto.rewardRate, view);
+  const rate = campaign ? formatRewardRatePercent(campaign.rate, locale) : null;
   if (view.lifecycle === "paused") return t("campaign.metric.paused");
   if (!rate) return null;
   return view.lifecycle === "upcoming"
@@ -302,11 +243,11 @@ export const getCampaignHint = (
   t: TFunction,
   locale: string
 ) => {
-  const rates = getCampaignRates(view, yieldDto);
+  const composition = getCampaignRateComposition(yieldDto.rewardRate, view);
   const values = {
     ...sponsorContext(view),
     name: yieldDto.metadata.name,
-    rate: formatRewardRatePercent(rates.total, locale),
+    rate: formatRewardRatePercent(composition.withCampaign, locale),
   };
   switch (view.lifecycle) {
     case "paused":
@@ -318,7 +259,7 @@ export const getCampaignHint = (
         locale
       );
       // Without a planned rate, the yield's own rate would read as the campaign's.
-      return rates.campaign
+      return composition.campaign
         ? t("campaign.hint.other_yield_upcoming", { ...values, date })
         : t("campaign.hint.other_yield_upcoming_no_rate", { ...values, date });
     }
@@ -338,7 +279,10 @@ export const getCampaignSelectorNote = (
   t: TFunction,
   locale: string
 ) => {
-  const incentive = getCampaignRates(view, yieldDto).campaign;
+  const incentive = getCampaignRateComposition(
+    yieldDto.rewardRate,
+    view
+  ).campaign;
   switch (view.lifecycle) {
     case "paused":
       return t("campaign.selector.paused");
@@ -350,7 +294,7 @@ export const getCampaignSelectorNote = (
     case "ending_soon":
       return incentive
         ? t("campaign.selector.incentive", {
-            rate: formatRewardRatePercent(incentive, locale),
+            rate: formatRewardRatePercent(incentive.rate, locale),
           })
         : null;
   }
@@ -371,21 +315,19 @@ export const getCampaignPayouts = (view: YieldCampaignView, t: TFunction) => {
   );
 };
 
-/** The details section's note for a campaign that is not simply running. */
+/** The details section's note for a campaign that is not earning. */
 export const getCampaignSectionNotice = (
   view: YieldCampaignView,
   t: TFunction,
   locale: string
 ) => {
   const { campaign, timeZone } = view;
-  const timeline = getCampaignTimeline(campaign, view.now);
   switch (view.lifecycle) {
     case "upcoming":
       return {
         tone: "neutral",
         text: t("campaign.section.notice_upcoming", {
           date: formatCampaignDate(campaign.startTime, timeZone, locale),
-          days: formatDays(timeline.daysUntilStart, t),
         }),
       } as const;
     case "paused":
@@ -393,27 +335,19 @@ export const getCampaignSectionNotice = (
         tone: "warning",
         text: t("campaign.section.notice_paused"),
       } as const;
-    case "ending_soon":
-      return {
-        tone: "warning",
-        text: t("campaign.section.notice_ending_soon", {
-          days: formatDays(timeline.daysLeft, t),
-          date: formatCampaignDate(campaign.endTime, timeZone, locale),
-        }),
-      } as const;
     case "active":
+    case "ending_soon":
       return null;
   }
 };
 
-/** The dialog's note for a campaign that is not simply running. */
+/** The dialog's note for a campaign that is not earning. */
 export const getCampaignDialogNotice = (
   view: YieldCampaignView,
   t: TFunction,
   locale: string
 ) => {
   const { campaign, timeZone } = view;
-  const timeline = getCampaignTimeline(campaign, view.now);
   switch (view.lifecycle) {
     case "upcoming":
       return {
@@ -431,59 +365,20 @@ export const getCampaignDialogNotice = (
         title: t("campaign.details.notice.paused_title"),
         body: t("campaign.details.notice.paused"),
       } as const;
-    case "ending_soon":
-      return {
-        tone: "warning",
-        title: t("campaign.details.notice.ending_soon_title", {
-          days: formatDays(timeline.daysLeft, t),
-        }),
-        body: t("campaign.details.notice.ending_soon", {
-          date: formatCampaignDate(campaign.endTime, timeZone, locale),
-        }),
-      } as const;
     case "active":
+    case "ending_soon":
       return null;
   }
 };
 
-/** Under the dialog's progress bar: where the campaign stands and its day. */
+/** Under a progress bar: the campaign's start and end dates. */
 export const getCampaignProgressScale = (
   view: YieldCampaignView,
-  t: TFunction
-) => {
-  const timeline = getCampaignTimeline(view.campaign, view.now);
-  const days = (count: number) => formatDays(count, t);
-  switch (view.lifecycle) {
-    case "upcoming":
-      return {
-        start: t("campaign.details.starts_in", {
-          days: days(timeline.daysUntilStart),
-        }),
-        end: t("campaign.details.runs", { days: days(timeline.durationDays) }),
-      };
-    case "paused":
-      return {
-        start: t("campaign.details.paused_until_end", {
-          days: days(timeline.daysLeft),
-        }),
-        end: t("campaign.details.day_of", {
-          day: timeline.day,
-          total: timeline.durationDays,
-        }),
-      };
-    case "active":
-    case "ending_soon":
-      return {
-        start: t("campaign.details.days_left", {
-          days: days(timeline.daysLeft),
-        }),
-        end: t("campaign.details.day_of", {
-          day: timeline.day,
-          total: timeline.durationDays,
-        }),
-      };
-  }
-};
+  locale: string
+) => ({
+  start: formatCampaignDate(view.campaign.startTime, view.timeZone, locale),
+  end: formatCampaignDate(view.campaign.endTime, view.timeZone, locale),
+});
 
 /** Under the dialog's payouts row: the next payout, or why there is none. */
 export const getCampaignPayoutCaption = (

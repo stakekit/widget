@@ -5,7 +5,7 @@ import {
   type CampaignAtTime,
   getCampaignRewardsEstimate,
 } from "../../../domain/earn/campaign";
-import { getCampaignIncentiveRate } from "../../../domain/earn/reward-rate";
+import { getRateComposition } from "../../../domain/earn/reward-rate";
 import type {
   EarnValidator,
   EarnValidatorKey,
@@ -52,9 +52,9 @@ export const getYieldEstimatedRewards = ({
     ? getCampaignRewardsEstimate({
         amount: rewardAmount,
         campaign: campaign.campaign,
-        campaignIncentiveRate: getCampaignIncentiveRate(
-          selectedYield.rewardRate
-        ),
+        campaignIncentiveRate:
+          getRateComposition(selectedYield.rewardRate).campaign?.rate ??
+          exactZero(),
         now: campaign.now,
         rewardRate: rewardRateAverage,
       })

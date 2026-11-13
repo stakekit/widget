@@ -12,7 +12,6 @@ import {
   getPositionShares,
   type TokenAmount,
 } from "../../../domain/earn/denomination";
-import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
 import {
   getExtendedYieldType,
   isDepositYieldType,
@@ -41,6 +40,7 @@ import {
 } from "../../yield-presentation/index";
 import { formatPendingBalanceTiming } from "./pending-balance-timing";
 import { getPositionEarned, type PositionEarned } from "./position-earned";
+import type { PositionRate } from "./position-rate";
 
 /** Under a cent a year a projection reads as "<$0.01" and says nothing. */
 const MIN_PROJECTED_USD = 0.01;
@@ -96,13 +96,6 @@ type ProviderDetail = {
   name?: string | undefined;
 };
 
-/** The validators the position is staked with, by their reward rates. */
-type PositionValidators = ReadonlyArray<{
-  readonly rewardRate?: BigNumber | null | undefined;
-  /** The rate's type, such as "apy". */
-  readonly rewardType?: string | undefined;
-}>;
-
 /**
  * A position's page below its header: the summary card's figures, and what
  * its Details disclosure lists of the position itself. The yield's facts
@@ -114,11 +107,10 @@ export const getPositionOverviewModel = ({
   integrationData,
   locale,
   now = null,
-  personalizedRewardRate,
   positionBalancesByType,
+  rate,
   rewardsSummary,
   t,
-  validators,
 }: {
   /** Handles of pending balances whose cancel is in flight. */
   cancellingHandles?: ReadonlySet<ConfidentialHandle>;
@@ -126,8 +118,9 @@ export const getPositionOverviewModel = ({
   locale: string;
   /** Presentation time; batch timing is omitted without it. */
   now?: DateTime.Utc | null;
-  personalizedRewardRate?: YieldRewardRate | null | undefined;
   positionBalancesByType: PositionBalancesByType;
+  /** The rate the summary leads with and projects. */
+  rate: PositionRate;
   /**
    * The wallet's tracked earnings as the page can present them; none when
    * untracked.
@@ -136,12 +129,6 @@ export const getPositionOverviewModel = ({
     | Presentable<Option.Option<YieldRewardsSummary>, unknown>
     | undefined;
   t: TFunction;
-  /**
-   * The validators of a position staked with them, whose average rate it
-   * earns, as the positions list's row reads it; null for a position held
-   * with the yield's provider.
-   */
-  validators: PositionValidators | null;
 }): PositionOverviewModel => {
   const balanceRows = groupPositionBalanceRows(
     getBalancesByPriority(positionBalancesByType),
@@ -161,12 +148,10 @@ export const getPositionOverviewModel = ({
   });
   const summary = getPositionSummary({
     earned,
-    integrationData,
     locale,
-    personalizedRewardRate,
     positionBalancesByType,
+    rate,
     t,
-    validators,
   });
 
   return {
@@ -196,20 +181,16 @@ export const getPositionOverviewModel = ({
  */
 const getPositionSummary = ({
   earned,
-  integrationData,
   locale,
-  personalizedRewardRate,
   positionBalancesByType,
+  rate,
   t,
-  validators,
 }: {
   earned: PositionEarned | null;
-  integrationData: EarnYieldWithProvider;
   locale: string;
-  personalizedRewardRate?: YieldRewardRate | null | undefined;
   positionBalancesByType: PositionBalancesByType;
+  rate: PositionRate;
   t: TFunction;
-  validators: PositionValidators | null;
 }): PositionOverviewSummary => {
   const balances = getBalancesByPriority(positionBalancesByType);
   // The same total Manage shows, in the primary Value Token when priced.
@@ -234,33 +215,15 @@ const getPositionSummary = ({
     return { value: tokenLine || formatUsd(totalUsd, locale) };
   };
 
-  const personalizedRate =
-    personalizedRewardRate?.total === undefined ? null : personalizedRewardRate;
-  // The Effective Reward Rate: the mean of the validators with rates, in the
-  // first one's rate type as a mean of validator rates reads, else the Yield
-  // Reward Rate in its own.
-  const ratedValidators = (validators ?? []).flatMap(
-    ({ rewardRate, rewardType }) =>
-      rewardRate ? [{ rate: rewardRate, rateType: rewardType }] : []
-  );
-  const [firstRated] = ratedValidators;
-  const effectiveRate = firstRated
-    ? {
-        rateType: firstRated.rateType ?? integrationData.rewardRate.rateType,
-        total: ratedValidators
-          .reduce((total, { rate }) => total.plus(rate), exactDecimal(0))
-          .dividedBy(ratedValidators.length),
-      }
-    : integrationData.rewardRate;
-  const rate = exactDecimal((personalizedRate ?? effectiveRate).total);
-  const hasRate = rate.isFinite() && !rate.isZero();
+  const { headline } = rate;
+  const hasRate = headline.rate.isFinite() && !headline.rate.isZero();
   const yearly = getEstimatedRewardsUsd({
     amountUsd: totalUsd,
-    estimatedRewards: { rewardRateAverage: rate },
+    estimatedRewards: { rewardRateAverage: headline.rate },
   })?.yearly;
-  const rateLabel = personalizedRate
+  const rateLabel = rate.personalized
     ? t("position_details.personalized_apy")
-    : formatRateTypeLabel(effectiveRate.rateType, t);
+    : formatRateTypeLabel(headline.rateType ?? "", t);
   const earnedRow = (
     id: "earned-week" | "earned-total",
     label: string,
@@ -313,7 +276,7 @@ const getPositionSummary = ({
       ? {
           rate: t("position_details.rate_badge", {
             label: rateLabel,
-            rate: formatRoundedPercent(rate, locale),
+            rate: formatRoundedPercent(headline.rate, locale),
           }),
         }
       : {}),

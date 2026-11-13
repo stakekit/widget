@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getEffectiveYieldRewardRateDetails,
-  getRewardRateBreakdown,
+  getRateComposition,
   type YieldRewardRate,
 } from "../../../src/domain/earn/reward-rate";
 import { exactDecimal } from "../../../src/domain/finance/exact";
@@ -15,13 +15,91 @@ import { decodeValidator } from "../../utils/validators";
 
 const token = yieldApiYieldFixture().token;
 
-const nativeComponent = (
-  rate: number
+const component = (
+  rate: number,
+  yieldSource: string,
+  rateType = "APY"
 ): YieldRewardRate["components"][number] => ({
   rate: exactDecimal(rate),
-  rateType: "APY",
+  rateType,
   token,
-  yieldSource: "staking",
+  yieldSource,
+});
+
+const nativeComponent = (rate: number) => component(rate, "staking");
+
+const parts = (rewardRate: YieldRewardRate) => {
+  const { native, protocolIncentive, campaign, total } =
+    getRateComposition(rewardRate);
+  const part = (value: typeof native | null) =>
+    value ? [value.rate.toNumber(), value.rateType] : null;
+  return {
+    native: part(native),
+    protocolIncentive: part(protocolIncentive),
+    campaign: part(campaign),
+    total: part(total),
+  };
+};
+
+describe("getRateComposition", () => {
+  it("splits the yield's own rate, protocol incentives and the campaign part, each in its rate type", () => {
+    expect(
+      parts(
+        yieldRewardRateFixture({
+          total: 0.102,
+          components: [
+            component(0.058, "vault"),
+            component(0.002, "protocol_incentive"),
+            component(0.042, "campaign_incentive", "APR"),
+          ],
+        })
+      )
+    ).toEqual({
+      native: [0.058, "APY"],
+      protocolIncentive: [0.002, "APY"],
+      campaign: [0.042, "APR"],
+      total: [0.102, "APY"],
+    });
+  });
+
+  it("keeps the listed own rate and the total as given, even when they don't add up", () => {
+    expect(
+      parts(
+        yieldRewardRateFixture({
+          total: 0.0455,
+          components: [
+            component(0.0427, "vault"),
+            component(0.0028, "protocol_incentive", "APR"),
+            component(0.002, "campaign_incentive", "APR"),
+          ],
+        })
+      )
+    ).toEqual({
+      native: [0.0427, "APY"],
+      protocolIncentive: [0.0028, "APR"],
+      campaign: [0.002, "APR"],
+      total: [0.0455, "APY"],
+    });
+  });
+
+  it("counts as the own rate of a rate listing none what the incentives leave of the total", () => {
+    expect(
+      parts(
+        yieldRewardRateFixture({
+          total: 0.042,
+          components: [component(0.042, "campaign_incentive", "APR")],
+        })
+      ).native
+    ).toEqual([0, "APY"]);
+    expect(
+      parts(yieldRewardRateFixture({ total: 0.058, components: [] }))
+    ).toEqual({
+      native: [0.058, "APY"],
+      protocolIncentive: null,
+      campaign: null,
+      total: [0.058, "APY"],
+    });
+  });
 });
 
 describe("getEffectiveYieldRewardRateDetails", () => {
@@ -60,9 +138,7 @@ describe("getEffectiveYieldRewardRateDetails", () => {
     });
 
     expect(rewardRate?.total.isEqualTo("0.1582")).toBe(true);
-    expect(
-      getRewardRateBreakdown(rewardRate)[0]?.rate.isEqualTo("0.1582")
-    ).toBe(true);
+    expect(rewardRate?.components[0]?.rate.isEqualTo("0.1582")).toBe(true);
   });
 
   it("averages selected validator reward rates", () => {
@@ -97,8 +173,6 @@ describe("getEffectiveYieldRewardRateDetails", () => {
     });
 
     expect(rewardRate?.total.isEqualTo("0.17")).toBe(true);
-    expect(getRewardRateBreakdown(rewardRate)[0]?.rate.isEqualTo("0.17")).toBe(
-      true
-    );
+    expect(rewardRate?.components[0]?.rate.isEqualTo("0.17")).toBe(true);
   });
 });

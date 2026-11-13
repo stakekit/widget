@@ -1,114 +1,78 @@
 import { useAtomValue } from "@effect/atom-react";
-import { type ComponentProps, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
-import { formatRewardRatePercent } from "../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
-import { DetailList, DetailRow, Stack, Text } from "../../../ui/index";
-import { RewardRateBreakdown } from "../../yield-summary/views";
+import { getCampaignRateComposition } from "../../../domain/earn/campaign";
 import {
-  getCampaignRateSummary,
-  getCampaignCompositionValue,
-  getCampaignName,
-  getCampaignRates,
-  getCampaignScheduleLine,
-} from "../model/campaign-copy";
-import { getCampaignCeilingModel } from "../model/campaign-details-copy";
-import type { YieldCampaignView } from "../model/yield-campaign-view";
+  getRateComposition,
+  type YieldRewardRate,
+} from "../../../domain/earn/reward-rate";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
+import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
+import { RewardRateBreakdown } from "../../yield-summary/views";
+import { getCampaignCompositionValue } from "../model/campaign-copy";
 import { yieldCampaignAtom } from "../state/yield-campaign";
 import { CampaignDetailsDialog } from "./campaign-details-dialog";
-
-/** The campaign at a glance, beside its row of the rate's composition. */
-const CampaignRateSummary = ({
-  view,
-  yieldDto,
-}: {
-  readonly view: YieldCampaignView;
-  readonly yieldDto: EarnYieldWithProvider;
-}) => {
-  const { t } = useTranslation();
-  const { locale } = useWidgetPresentation();
-  const rates = getCampaignRates(view, yieldDto);
-  const capExplanation =
-    getCampaignCeilingModel(view, yieldDto, t, locale)?.explanation ?? null;
-
-  return (
-    <Stack gap={8}>
-      <Text variant="caption" weight="medium">
-        {getCampaignName(view, yieldDto)}
-      </Text>
-      <DetailList>
-        <DetailRow
-          label={t(
-            "details.apy_composition.native",
-            rates.nativeRateType?.toLowerCase() === "apr"
-              ? { context: "apr" }
-              : {}
-          )}
-          value={formatRewardRatePercent(rates.native, locale)}
-        />
-        <DetailRow
-          label={t("campaign.tip.incentive")}
-          value={getCampaignRateSummary(view, yieldDto, t, locale)}
-        />
-        <DetailRow
-          label={t(
-            view.lifecycle === "upcoming"
-              ? "campaign.tip.total_today"
-              : "campaign.tip.total"
-          )}
-          value={formatRewardRatePercent(
-            view.lifecycle === "upcoming" ? rates.native : rates.total,
-            locale
-          )}
-        />
-      </DetailList>
-      {capExplanation ? (
-        <Text variant="caption" tone="muted">
-          {capExplanation}
-        </Text>
-      ) : null}
-      <Text variant="caption" tone="muted">
-        {getCampaignScheduleLine(view, t, locale)}
-      </Text>
-    </Stack>
-  );
-};
+import { CampaignRateRows } from "./campaign-rate-rows";
 
 /**
- * A yield's rate composition. With a campaign, its row reads as the campaign
+ * A rate's composition. With a campaign, its row reads as the campaign
  * stands ("Up to 4.2%", "Paused", or the planned rate before it starts) and
  * explains the campaign beside its label, with its details a press away.
  */
 export const CampaignRateBreakdown = ({
+  rewardRate,
   yieldDto,
-  ...breakdown
-}: Omit<ComponentProps<typeof RewardRateBreakdown>, "campaign"> & {
+  title,
+  testId,
+}: {
+  /**
+   * The rate to split without a campaign: the yield's, or its selected
+   * validators'. A campaign's rate is the yield's, which alone carries its part.
+   */
+  readonly rewardRate: YieldRewardRate;
   readonly yieldDto: EarnYieldWithProvider;
+  readonly title: string;
+  readonly testId: string;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const view = useAtomValue(yieldCampaignAtom(yieldDto.id));
 
-  if (!view) return <RewardRateBreakdown {...breakdown} />;
+  if (!view) {
+    return (
+      <RewardRateBreakdown
+        composition={getRateComposition(rewardRate)}
+        title={title}
+        testId={testId}
+      />
+    );
+  }
+
+  const composition = getCampaignRateComposition(yieldDto.rewardRate, view);
 
   return (
     <>
       <RewardRateBreakdown
-        {...breakdown}
+        composition={composition}
+        title={title}
+        testId={testId}
         campaign={{
-          value: getCampaignCompositionValue(view, yieldDto, t, locale),
-          rateType: getCampaignRates(view, yieldDto).campaignRateType,
+          value: getCampaignCompositionValue(view, composition, t, locale),
+          rateType: view.campaign.rewardRate?.rateType ?? null,
           info: {
             label: t("campaign.tip.label"),
-            text: <CampaignRateSummary view={view} yieldDto={yieldDto} />,
+            text: <CampaignRateRows view={view} composition={composition} />,
             action: {
               label: t("campaign.view_details"),
               onClick: () => setDetailsOpen(true),
             },
           },
+          // Before the start, the total is the yield's own rate today.
+          ...(view.lifecycle === "upcoming"
+            ? { totalLabel: t("campaign.tip.total_today") }
+            : {}),
         }}
       />
       <CampaignDetailsDialog

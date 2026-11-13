@@ -12,6 +12,11 @@ import {
 } from "../finance/scalars";
 import { CampaignId, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
+import {
+  getRateComposition,
+  type RateComposition,
+  type YieldRewardRate,
+} from "./reward-rate";
 import { getExtendedYieldType } from "./yield";
 import type { EarnYield } from "./yield-schema";
 
@@ -38,34 +43,6 @@ const CampaignSponsor = Schema.Struct({
   name: Schema.NonEmptyString,
   // A logo the widget can't safely load is left out, not the sponsor.
   logoURI: TolerantNullOr(HttpsUrl, { operation, field: "sponsor.logoURI" }),
-});
-
-/**
- * A step of a campaign's ceiling plan: once deposits average `twTvlThreshold`
- * (with enough TVL-years) or `unlockAfter` passes, `apyCeiling` replaces
- * the ceiling.
- */
-const CampaignMilestone = Schema.Struct({
-  order: Schema.Finite,
-  apyCeiling: TolerantNullOr(NonNegativeExactDecimal, {
-    operation,
-    field: "milestones.apyCeiling",
-  }),
-  twTvlThreshold: TolerantNullOr(NonNegativeExactDecimal, {
-    operation,
-    field: "milestones.twTvlThreshold",
-  }),
-  unlockAfter: TolerantNullableUtcDateTimeFromString({
-    operation,
-    field: "milestones.unlockAfter",
-  }),
-  status: Schema.Literals(["locked", "unlocked", "funded"]),
-  unlockedAt: Schema.optionalKey(
-    TolerantNullableUtcDateTimeFromString({
-      operation,
-      field: "milestones.unlockedAt",
-    })
-  ),
 });
 
 /**
@@ -105,20 +82,6 @@ export const YieldCampaign = Schema.Struct({
       operation,
       field: "nextPayoutDueAt",
     })
-  ),
-  /** The current ceiling: a reached step overwrites it. */
-  apyCeiling: Schema.optionalKey(
-    TolerantNullOr(NonNegativeExactDecimal, { operation, field: "apyCeiling" })
-  ),
-  /** `incentive` caps the campaign rate; `combined`, the whole rate. */
-  apyCeilingMode: Schema.optionalKey(
-    TolerantNullOr(Schema.Literals(["incentive", "combined"]), {
-      operation,
-      field: "apyCeilingMode",
-    })
-  ),
-  milestones: Schema.optionalKey(
-    TolerantArray(CampaignMilestone, { operation })
   ),
   sponsor: Schema.optionalKey(
     TolerantNullOr(CampaignSponsor, { operation, field: "sponsor" })
@@ -242,6 +205,59 @@ export const isCampaignEarning = (lifecycle: CampaignLifecycle) =>
   lifecycle === "active" || lifecycle === "ending_soon";
 
 /**
+ * The campaign a yield's rate includes at `now`: the one it shows, while that
+ * one earns; null otherwise.
+ */
+export const getEarningCampaign = (
+  campaigns: ReadonlyArray<YieldCampaign>,
+  now: DateTime.Utc
+) => {
+  const displayed = getDisplayedCampaign(campaigns, now);
+  return displayed && isCampaignEarning(displayed.lifecycle)
+    ? displayed.campaign
+    : null;
+};
+
+/**
+ * A yield with its earning campaign's Campaign Incentive Rate added when its
+ * own rate doesn't list one yet: the API serves yields from a longer cache
+ * than campaigns, so for a while after a campaign starts paying, the yield's
+ * rate misses it. A rate that lists a campaign part keeps it as given.
+ */
+export const withCampaignRate = <Y extends Pick<EarnYield, "rewardRate">>(
+  yieldDto: Y,
+  campaign: YieldCampaign
+): Y => {
+  const campaignRate = campaign.rewardRate;
+  const { rewardRate } = yieldDto;
+  if (
+    !campaignRate?.total.isGreaterThan(0) ||
+    rewardRate.components.some(
+      (component) => component.yieldSource === "campaign_incentive"
+    )
+  ) {
+    return yieldDto;
+  }
+
+  return {
+    ...yieldDto,
+    rewardRate: {
+      ...rewardRate,
+      total: rewardRate.total.plus(campaignRate.total),
+      components: [
+        ...rewardRate.components,
+        {
+          rate: campaignRate.total,
+          rateType: campaignRate.rateType,
+          token: campaign.rewardToken,
+          yieldSource: "campaign_incentive",
+        },
+      ],
+    },
+  };
+};
+
+/**
  * Yearly and monthly earnings on `amount` while a campaign is earning. The
  * Campaign Incentive Rate applies only from the minimum balance, only up to the
  * per-wallet cap, and only for the time the campaign has left. Null when the
@@ -323,142 +339,50 @@ export const pinCampaignYields = <Y extends EarnYield>(
   ].flat();
 };
 
-const day = Duration.days(1);
-
-/** Whole days, rounded up, from `from` to `to`; zero once `to` has passed. */
-const daysUntil = (from: DateTime.Utc, to: DateTime.Utc) =>
-  Math.max(
-    0,
-    Math.ceil(
-      Duration.toMillis(DateTime.distance(from, to)) / Duration.toMillis(day)
-    )
-  );
-
-/**
- * How far a campaign has run at `now`, for its timeline: the elapsed share,
- * whole days left and to the start, and the day it is on out of its length
- * (0 before it starts).
- */
-export const getCampaignTimeline = (
+/** The share of a campaign's schedule that has passed at `now`, from 0 to 1. */
+export const getCampaignProgress = (
   campaign: YieldCampaign,
   now: DateTime.Utc
 ) => {
   const elapsed =
     Duration.toMillis(DateTime.distance(campaign.startTime, now)) /
     Duration.toMillis(DateTime.distance(campaign.startTime, campaign.endTime));
-  const durationDays = daysUntil(campaign.startTime, campaign.endTime);
-
-  return {
-    elapsed: Math.min(1, Math.max(0, elapsed)),
-    daysLeft: daysUntil(
-      DateTime.max(now, campaign.startTime),
-      campaign.endTime
-    ),
-    daysUntilStart: daysUntil(now, campaign.startTime),
-    day: Math.min(
-      durationDays,
-      daysUntil(campaign.startTime, DateTime.max(now, campaign.startTime))
-    ),
-    durationDays,
-  } as const;
+  return Math.min(1, Math.max(0, elapsed));
 };
 
 /**
- * What moves a campaign's ceiling to a step: deposits averaging an amount (in the
- * yield's token, over 14 days and long enough), a date, or whichever comes
- * first. Neither is set for the ceiling the campaign starts with.
+ * A yield's Rate Composition as its shown campaign stands. While the campaign
+ * earns, its part is the one the rate lists; before it starts, its planned
+ * rate, which today's total doesn't include yet; while paused, none.
  */
-export type CampaignCeilingTrigger = {
-  readonly deposits: BigNumber | null;
-  readonly date: DateTime.Utc | null;
+export type CampaignRateComposition = RateComposition & {
+  /** The total with the campaign part in it, from the start when upcoming. */
+  readonly withCampaign: BigNumber;
 };
 
-type CampaignCeilingStep = {
-  readonly ceiling: BigNumber;
-  /** Null for the ceiling the campaign starts with. */
-  readonly trigger: CampaignCeilingTrigger | null;
-  /** `past` steps were replaced by a later one. */
-  readonly state: "past" | "current" | "next";
-};
-
-export type CampaignCeilingPlan = {
-  readonly mode: "incentive" | "combined";
-  readonly current: BigNumber;
-  /** The plan; empty when the campaign has no steps. */
-  readonly steps: ReadonlyArray<CampaignCeilingStep>;
-  /** The step that set the current ceiling, and the one it replaced if known. */
-  readonly steppedDown: {
-    readonly trigger: CampaignCeilingTrigger;
-    readonly reachedAt: DateTime.Utc | null;
-    readonly from: BigNumber | null;
-  } | null;
-};
-
-// The step at `position` (counted from 1) against how many steps are reached.
-const stepState = (
-  position: number,
-  reachedCount: number
-): CampaignCeilingStep["state"] => {
-  if (position < reachedCount) return "past";
-  if (position === reachedCount) return "current";
-  return "next";
-};
-
-/**
- * A campaign's Campaign Rate Ceiling and how it steps: the steps that change it, in unlock
- * order, the reached ones before the current one marked past. Reaching a
- * step overwrites the starting ceiling, so the plan shows it only before then.
- * Null without a ceiling, or when the API names a mode the widget doesn't know,
- * since the ceiling could then read as limiting the wrong rate.
- */
-export const getCampaignCeilingPlan = (
-  campaign: YieldCampaign
-): CampaignCeilingPlan | null => {
-  const current = campaign.apyCeiling;
-  const mode = campaign.apyCeilingMode;
-  if (!current || !mode) return null;
-
-  const ceilingSteps = [...(campaign.milestones ?? [])]
-    .sort((a, b) => a.order - b.order)
-    .flatMap((milestone) =>
-      milestone.apyCeiling ? [{ ceiling: milestone.apyCeiling, milestone }] : []
-    );
-  const reachedCount = ceilingSteps.filter(
-    ({ milestone }) => milestone.status !== "locked"
-  ).length;
-  const milestoneSteps = ceilingSteps.map(
-    ({ ceiling, milestone }, index): CampaignCeilingStep => ({
-      ceiling,
-      trigger: {
-        deposits: milestone.twTvlThreshold,
-        date: milestone.unlockAfter,
-      },
-      state: stepState(index + 1, reachedCount),
-    })
-  );
-  const last = ceilingSteps[reachedCount - 1];
-  const startStep: CampaignCeilingStep = {
-    ceiling: current,
-    trigger: null,
-    state: "current",
-  };
-  // Until a step is reached, the plan starts at the configured ceiling.
-  const startSteps =
-    reachedCount === 0 && milestoneSteps.length > 0 ? [startStep] : [];
-
-  return {
-    mode,
-    current,
-    steps: [...startSteps, ...milestoneSteps],
-    steppedDown: last
-      ? {
-          trigger: {
-            deposits: last.milestone.twTvlThreshold,
-            date: last.milestone.unlockAfter,
-          },
-          reachedAt: last.milestone.unlockedAt ?? null,
-          from: ceilingSteps[reachedCount - 2]?.ceiling ?? null,
-        }
-      : null,
-  };
+export const getCampaignRateComposition = (
+  rewardRate: YieldRewardRate,
+  { campaign, lifecycle }: DisplayedCampaign
+): CampaignRateComposition => {
+  const composition = getRateComposition(rewardRate);
+  const total = composition.total.rate;
+  switch (lifecycle) {
+    case "active":
+    case "ending_soon":
+      return { ...composition, withCampaign: total };
+    case "upcoming": {
+      const planned = campaign.rewardRate?.total.isGreaterThan(0)
+        ? campaign.rewardRate
+        : null;
+      return {
+        ...composition,
+        campaign: planned
+          ? { rate: planned.total, rateType: planned.rateType }
+          : null,
+        withCampaign: total.plus(planned?.total ?? 0),
+      };
+    }
+    case "paused":
+      return { ...composition, campaign: null, withCampaign: total };
+  }
 };

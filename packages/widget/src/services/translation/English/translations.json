@@ -467,12 +467,10 @@
     "status_paused": "Paused",
     "details_link": "Details",
     "view_details": "View campaign details",
-    "days_one": "{{count}} day",
-    "days_other": "{{count}} days",
     "time": {
-      "upcoming": "Starts {{date}} · in {{days}}",
+      "upcoming": "Starts {{date}}",
       "paused": "Paused · ends {{date}}",
-      "active": "Ends {{date}} · {{days}} left"
+      "active": "Ends {{date}}"
     },
     "strip": {
       "upcoming_note": "The campaign starts on {{date}}. Rewards build up from that day.",
@@ -540,9 +538,8 @@
       "title": "Campaign",
       "payouts_compound": "{{frequency}}, added to your position",
       "payouts_normal": "{{frequency}}, in {{symbol}}",
-      "notice_upcoming": "Starts {{date}}, in {{days}}. Until then you earn this yield's own rate.",
-      "notice_paused": "Paused. No new rewards build up for now. Rewards you've already earned are kept.",
-      "notice_ending_soon": "{{days}} left. Rewards stop on {{date}}."
+      "notice_upcoming": "Starts {{date}}. Until then you earn this yield's own rate.",
+      "notice_paused": "Paused. No new rewards build up for now. Rewards you've already earned are kept."
     },
     "details": {
       "title": "Campaign details",
@@ -552,19 +549,12 @@
         "upcoming": "Rewards begin on the start date. The campaign rate below is the planned rate from then.",
         "paused_title": "Campaign paused",
         "paused": "No new rewards build up while it's paused. Rewards you've already earned are kept.",
-        "ending_soon_title": "{{days}} left",
-        "ending_soon": "Rewards stop on {{date}}. What you earn until then is still paid out.",
         "upcoming_no_rate": "Rewards begin on the start date. The campaign rate is set then."
       },
       "timeline": "Timeline",
       "start": "Start",
       "end": "End",
       "progress": "Campaign progress",
-      "day_of": "Day {{day}} of {{total}}",
-      "days_left": "{{days}} left",
-      "starts_in": "Starts in {{days}}",
-      "runs": "Runs {{days}}",
-      "paused_until_end": "Paused · {{days}} until the end date",
       "payouts": "Payouts",
       "next_payout": "Next payout planned {{date}}",
       "first_payout": "First payout after the start",
@@ -581,50 +571,19 @@
       "payment_compound_no_cadence": "Paid as {{symbol}} ({{name}}), added straight to your position, so they keep earning.",
       "payment_normal_no_cadence": "Paid in {{symbol}} ({{name}}) to your wallet.",
       "reward_token": "Reward token",
-      "rules": "Who can earn",
-      "minimum": "Minimum balance",
-      "maximum": "Max per wallet",
-      "maximum_caption": "Above this, only this yield's own rate applies",
       "funded_by": "Funded by {{sponsor}}",
       "about": "About",
       "about_text": "{{sponsor}} funds extra rewards on {{yield}} from {{start}} to {{end}}, on top of the yield's own rate.",
-      "terms": "Read the campaign terms",
-      "ceiling": {
-        "label_incentive": "Cap on campaign {{rateType}}",
-        "label_combined": "Cap on total {{rateType}}",
-        "explanation_incentive": "The campaign {{rateType}} is capped at {{ceiling}}. It adjusts with deposits and the remaining budget.",
-        "explanation_combined": "Total {{rateType}} is capped at {{ceiling}}. The campaign part adjusts with deposits and the remaining budget.",
-        "step_start": "From launch",
-        "step_deposits": "After deposits average {{amount}}",
-        "step_date": "From {{date}}",
-        "step_deposits_or_date": "After deposits average {{amount}}, or from {{date}}",
-        "step_now": "Now",
-        "steps_note": "A step starts once deposits over the last 14 days average above its level for long enough.",
-        "stepped_down_title": "{{rateType}} cap is now {{ceiling}}",
-        "stepped_down_deposits": "Deposits have averaged above {{amount}}, so the cap moved from {{from}} to {{ceiling}}, as planned in the steps below.",
-        "stepped_down_deposits_now": "Deposits have averaged above {{amount}}, so the cap is now {{ceiling}}, as planned in the steps below.",
-        "stepped_down_date": "Since {{date}}, the cap moved from {{from}} to {{ceiling}}, as planned in the steps below.",
-        "stepped_down_date_now": "Since {{date}}, the cap is {{ceiling}}, as planned in the steps below.",
-        "stepped_down": "The cap moved from {{from}} to {{ceiling}}, as planned in the steps below.",
-        "stepped_down_now": "The cap is now {{ceiling}}, as planned in the steps below.",
-        "section_stepped_down": "{{label}} is now {{ceiling}}, down from {{from}} as planned.",
-        "section_stepped_down_now": "{{label}} is now {{ceiling}}, as planned."
-      }
+      "terms": "Read the campaign terms"
     },
     "rewards": {
       "title": "Campaign rewards",
       "earned_line": "Campaign rewards earned",
       "total_earned": "Total earned",
-      "since": "Since {{date}}",
       "paid_out": "Paid out",
       "pending": "Pending",
       "final_payout": "Final payout",
-      "next_payout": "Next payout planned {{date}}",
       "paused_caption": "Paused. Earned rewards are kept",
-      "final_payout_due": "Due {{date}}",
-      "final_payout_preparing": "Being prepared",
-      "updated": "Updated {{date}}",
-      "last_updated": "Last updated {{date}}",
       "notice": {
         "paused": "The campaign is paused, so no new rewards build up. What you've earned stays yours.",
         "final_payout": "This campaign has ended. Your final payout is on its way, and your position keeps earning this yield's own rate.",
@@ -646,7 +605,6 @@
         "show_less": "Show less",
         "show_more": "Show more",
         "pending": "Pending",
-        "empty": "No payouts yet. Your first payout arrives after you start earning.",
         "unavailable": "Payouts can't be loaded right now.",
         "retry": "Load payouts again"
       },
@@ -886,6 +844,8 @@
       "protocol_incentive_apr": "Protocol incentive APR",
       "campaign": "Campaign APY",
       "campaign_apr": "Campaign APR",
+      "total": "Total APY",
+      "total_apr": "Total APR",
       "up_to": "Up to {{value}}"
     }
   },

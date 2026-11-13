@@ -472,7 +472,6 @@ describe("API responses with values added after client generation", () => {
               rewardMode: UNKNOWN,
               payoutFrequency: UNKNOWN,
               qualificationConfig: { type: UNKNOWN, threshold: "10" },
-              apyCeilingMode: UNKNOWN,
             }),
           ],
           limit: 20,

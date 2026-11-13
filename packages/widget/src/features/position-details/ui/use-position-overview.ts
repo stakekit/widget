@@ -22,25 +22,21 @@ export const usePositionOverview = (): PositionOverviewModel | null => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const presentationTime = useAtomValue(presentationClockAtom);
-  const { integrationData, positionBalancesByType } = position;
+  const { integrationData, positionBalancesByType, positionRate } = position;
   const rewardsSummary = useAtomValue(
     currentYieldRewardsSummaryAtom(integrationData?.id ?? null)
   );
 
-  if (!integrationData || !positionBalancesByType) return null;
+  if (!integrationData || !positionBalancesByType || !positionRate) return null;
 
   return getPositionOverviewModel({
     cancellingHandles: position.cancellingHandles,
     integrationData,
     locale,
     now: presentationTime?.now ?? null,
-    personalizedRewardRate: position.personalizedRewardRate,
     positionBalancesByType,
+    rate: positionRate,
     rewardsSummary,
     t,
-    validators:
-      position.positionSource === "validator"
-        ? (position.providersDetails ?? [])
-        : null,
   });
 };

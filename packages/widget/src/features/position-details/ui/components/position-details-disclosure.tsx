@@ -27,7 +27,8 @@ export const PositionDetailsDisclosure = () => {
   const { locale } = useWidgetPresentation();
   const positionDetails = usePositionDetails();
   const overview = usePositionOverview();
-  const { integrationData, personalizedRewardRate } = positionDetails;
+  const { integrationData, positionRate } = positionDetails;
+  const personalized = positionRate?.personalized ?? false;
 
   if (
     positionDetails.page._tag === "Loading" ||
@@ -97,11 +98,11 @@ export const PositionDetailsDisclosure = () => {
         ) : null}
 
         <RewardRateBreakdown
-          rewardRate={positionDetails.apyCompositionRewardRate}
-          showUpToCampaign={positionDetails.apyCompositionShowsUpToCampaign}
+          composition={positionRate?.composition}
+          campaignUpTo={!personalized}
           title={t("details.apy_composition.title")}
           testId={
-            personalizedRewardRate
+            personalized
               ? "personalized-reward-rate-breakdown"
               : "reward-rate-breakdown"
           }
@@ -113,12 +114,8 @@ export const PositionDetailsDisclosure = () => {
               <ProviderDetails
                 {...provider}
                 key={provider.address ?? index}
-                rewardRate={
-                  personalizedRewardRate ? undefined : provider.rewardRate
-                }
-                rewardType={
-                  personalizedRewardRate ? undefined : provider.rewardType
-                }
+                rewardRate={personalized ? undefined : provider.rewardRate}
+                rewardType={personalized ? undefined : provider.rewardType}
                 stakeType={stakeType}
                 integrationData={integrationData}
               />

@@ -21,6 +21,7 @@ import {
   loadAllPagesByIdChunks,
   YIELD_IDS_CHUNK_SIZE,
 } from "../../shared/effect/pagination";
+import { liveCampaignRateAtom } from "../project-campaigns/project-campaigns";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import type { YieldProviderError } from "../yield-provider/yield-provider";
 import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
@@ -187,14 +188,15 @@ const enrichedYieldDirectoryCanonicalAtom = Atom.family(
                 : []
             )
           );
+          const addLiveCampaignRate = context(liveCampaignRateAtom);
 
           return {
             items: directory.items.map((yieldModel) => {
               const provider = providers.get(yieldModel.providerId);
-              return {
+              return addLiveCampaignRate({
                 ...yieldModel,
                 ...(provider ? { provider } : {}),
-              } satisfies EarnYieldWithProvider;
+              } satisfies EarnYieldWithProvider);
             }),
             missingProviderIds: providerResults.flatMap(
               ([providerId, provider]) =>

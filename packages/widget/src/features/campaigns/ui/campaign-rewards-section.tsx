@@ -70,7 +70,7 @@ const RewardsSkeleton = () => (
 
 /**
  * A wallet's payouts in a campaign: the five most recent, then page after
- * page of them once expanded.
+ * page of them once expanded. Nothing before the first payout.
  */
 const CampaignPayouts = ({
   scope,
@@ -105,11 +105,7 @@ const CampaignPayouts = ({
   if (payouts.items.length === 0) {
     if (payouts.loading) return <Skeleton shape="rect" height="md" />;
     if (payouts.failed) return failedNotice;
-    return (
-      <Text variant="caption" tone="muted">
-        {t("campaign.rewards.payouts.empty")}
-      </Text>
-    );
+    return null;
   }
 
   const toggleLabel = expanded
@@ -214,12 +210,6 @@ const ReadyRewards = ({
             />
           ))}
         </MetricGroup>
-      ) : null}
-
-      {model.freshness ? (
-        <Text variant="caption" tone="muted">
-          {model.freshness}
-        </Text>
       ) : null}
 
       {view.stale ? (

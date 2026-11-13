@@ -1,6 +1,5 @@
 export {
   getCampaignBadge,
-  getCampaignFooterNote,
   getCampaignHint,
   getCampaignMetricCaption,
   getCampaignSelectorNote,

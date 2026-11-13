@@ -2,12 +2,12 @@ import { useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { getCampaignTimeline } from "../../../domain/earn/campaign";
-import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import {
-  formatPercent,
-  formatTokenAmountWithSymbol,
-} from "../../../shared/lib/number-format";
+  getCampaignProgress,
+  getCampaignRateComposition,
+} from "../../../domain/earn/campaign";
+import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
+import { formatPercent } from "../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import {
   Badge,
@@ -27,16 +27,14 @@ import {
   getCampaignSectionNotice,
   getCampaignStatus,
 } from "../model/campaign-copy";
-import {
-  getCampaignAboutModel,
-  getCampaignCeilingModel,
-} from "../model/campaign-details-copy";
+import { getCampaignAboutModel } from "../model/campaign-details-copy";
 import { yieldCampaignAtom } from "../state/yield-campaign";
 import { CampaignDetailsDialog } from "./campaign-details-dialog";
+import { CampaignRateRows } from "./campaign-rate-rows";
 
 /**
- * A yield's campaign among its details: its state, schedule, payouts and
- * rules, and the full details a press away.
+ * A yield's campaign among its details: its state, rates, schedule and
+ * payouts, and the full details a press away.
  */
 export const CampaignSection = ({
   yieldDto,
@@ -51,19 +49,11 @@ export const CampaignSection = ({
   if (!view) return null;
 
   const { campaign, lifecycle } = view;
-  const timeline = getCampaignTimeline(campaign, view.now);
+  const progress = getCampaignProgress(campaign, view.now);
   const status = getCampaignStatus(lifecycle, t);
   const notice = getCampaignSectionNotice(view, t, locale);
   const payouts = getCampaignPayouts(view, t);
-  const qualification = campaign.qualificationConfig;
-  const walletCap = qualification?.maxIncentivizedTvlToken;
   const sponsor = getCampaignAboutModel(view, yieldDto, t, locale)?.sponsor;
-  const steppedDown = getCampaignCeilingModel(
-    view,
-    yieldDto,
-    t,
-    locale
-  )?.steppedDown;
 
   return (
     <Disclosure title={t("campaign.section.title")} defaultOpen>
@@ -80,20 +70,20 @@ export const CampaignSection = ({
           ) : null}
         </Stack>
 
+        <CampaignRateRows
+          view={view}
+          composition={getCampaignRateComposition(yieldDto.rewardRate, view)}
+        />
+
         <Meter
           label={t("campaign.details.progress")}
-          value={timeline.elapsed * 100}
-          valueText={formatPercent(timeline.elapsed, locale)}
+          value={progress * 100}
+          valueText={formatPercent(progress, locale)}
           tone={lifecycle === "ending_soon" ? "warning" : "accent"}
-          scale={getCampaignProgressScale(view, t)}
+          scale={getCampaignProgressScale(view, locale)}
         />
 
         {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
-        {steppedDown ? (
-          <Notice tone="info" testId="campaign-section__stepped-down">
-            {steppedDown.summary}
-          </Notice>
-        ) : null}
 
         <DetailList>
           {payouts ? (
@@ -107,24 +97,6 @@ export const CampaignSection = ({
               src: campaign.rewardToken.logoURI ?? undefined,
             }}
           />
-          {qualification ? (
-            <DetailRow
-              label={t("campaign.details.minimum")}
-              value={formatTokenAmountWithSymbol(
-                { amount: qualification.threshold, token: yieldDto.token },
-                locale
-              )}
-            />
-          ) : null}
-          {walletCap ? (
-            <DetailRow
-              label={t("campaign.details.maximum")}
-              value={formatTokenAmountWithSymbol(
-                { amount: walletCap, token: yieldDto.token },
-                locale
-              )}
-            />
-          ) : null}
         </DetailList>
 
         <Stack direction="row">

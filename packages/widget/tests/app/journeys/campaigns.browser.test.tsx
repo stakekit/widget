@@ -111,12 +111,13 @@ describe("Campaigns on Earn", () => {
 
     const strip = app.getByTestId("campaign-strip");
     await expect.element(strip.getByText("Campaign")).toBeVisible();
-    await expect
-      .element(strip.getByText(/^Ends .+ · \d+ days left$/))
-      .toBeVisible();
+    await expect.element(strip.getByText(/^Ends [^·]+$/)).toBeVisible();
     const campaignRow = app.getByTestId("reward-rate-breakdown__campaign");
     await expect.element(campaignRow.getByText("Campaign APR")).toBeVisible();
     await expect.element(campaignRow.getByText("Up to 4.20%")).toBeVisible();
+    const totalRow = app.getByTestId("reward-rate-breakdown__total");
+    await expect.element(totalRow.getByText("Total APY")).toBeVisible();
+    await expect.element(totalRow.getByText("10.00%")).toBeVisible();
     await expect
       .element(
         app.getByText(
@@ -130,6 +131,13 @@ describe("Campaigns on Earn", () => {
       .click();
     await expect.element(app.getByText("Campaign rate")).toBeVisible();
     await expect.element(app.getByText("+4.20%")).toBeVisible();
+    await expect
+      .element(app.getByTestId("campaign-rates__total").getByText("10.00%"))
+      .toBeVisible();
+    // The tip sums the rate up, without the campaign's name.
+    await expect
+      .element(app.getByText("Kamino × Utila USDC Boost"))
+      .not.toBeInTheDocument();
     await app.getByRole("button", { name: "View campaign details" }).click();
 
     const details = app.getByTestId("campaign-details");
@@ -141,13 +149,8 @@ describe("Campaigns on Earn", () => {
       .element(app.getByTestId("campaign-details__rate").getByText("+4.20%"))
       .toBeVisible();
     await expect
-      .element(app.getByTestId("campaign-details__minimum").getByText("10 ETH"))
-      .toBeVisible();
-    await expect
-      .element(
-        app.getByTestId("campaign-details__maximum").getByText("50,000 ETH")
-      )
-      .toBeVisible();
+      .element(details.getByText("Minimum balance"))
+      .not.toBeInTheDocument();
     await expect
       .element(
         details.getByText(
@@ -249,9 +252,7 @@ describe("Campaigns on Earn", () => {
     await app.unmount();
   });
 
-  it("names the sponsor, links the terms and explains a cap that stepped down", async ({
-    worker,
-  }) => {
+  it("names the sponsor and links the terms", async ({ worker }) => {
     worker.use(
       ...catalogHandlers({
         yields: [vault(campaignYieldId, "Allez USDC Vault", 0.017)],
@@ -260,28 +261,6 @@ describe("Campaigns on Earn", () => {
             ...liveCampaign,
             sponsor: { name: "Kamino", logoURI: null },
             termsUrl: "https://example.com/kamino-terms",
-            apyCeiling: 0.075,
-            apyCeilingMode: "combined",
-            milestones: [
-              {
-                order: 1,
-                apyCeiling: 0.075,
-                twTvlThreshold: "10000000",
-                tvlYearsTarget: null,
-                unlockAfter: null,
-                status: "funded",
-                unlockedAt: "2026-12-01T00:00:00.000Z",
-              },
-              {
-                order: 2,
-                apyCeiling: 0.06,
-                twTvlThreshold: "25000000",
-                tvlYearsTarget: null,
-                unlockAfter: null,
-                status: "locked",
-                unlockedAt: null,
-              },
-            ],
           },
         ],
       })
@@ -313,22 +292,6 @@ describe("Campaigns on Earn", () => {
     await expect
       .element(details.getByRole("link", { name: /Read the campaign terms/ }))
       .toHaveAttribute("href", "https://example.com/kamino-terms");
-    await expect
-      .element(
-        app
-          .getByTestId("campaign-details__stepped-down")
-          .getByText(
-            "Deposits have averaged above 10M ETH, so the cap is now 7.50%, as planned in the steps below."
-          )
-      )
-      .toBeVisible();
-
-    const cap = app.getByTestId("campaign-details__ceiling");
-    await expect.element(cap.getByText("Cap on total APY")).toBeVisible();
-    await expect
-      .element(cap.getByText("After deposits average 25M ETH"))
-      .toBeVisible();
-    await expect.element(cap.getByText("Now")).toBeVisible();
 
     await app.unmount();
   });
@@ -395,9 +358,7 @@ describe("Campaigns on Earn", () => {
 
     const strip = app.getByTestId("campaign-strip");
     await expect.element(strip.getByText("Upcoming")).toBeVisible();
-    await expect
-      .element(strip.getByText(/^Starts .+ · in \d+ days$/))
-      .toBeVisible();
+    await expect.element(strip.getByText(/^Starts [^·]+$/)).toBeVisible();
     await expect
       .element(
         app.getByTestId("reward-rate-breakdown__campaign").getByText(/^From /)
@@ -406,9 +367,6 @@ describe("Campaigns on Earn", () => {
 
     await strip.getByRole("button", { name: "Details" }).click();
     const details = app.getByTestId("campaign-details");
-    await expect
-      .element(details.getByText(/^Starts in \d+ days$/))
-      .toBeVisible();
     // No planned rate, so the notice doesn't point to one.
     await expect
       .element(
@@ -421,7 +379,7 @@ describe("Campaigns on Earn", () => {
     await app.unmount();
   });
 
-  it("warns that a campaign ends soon, in the strip and its details", async ({
+  it("marks a campaign ending soon by its end date and status, without counting days", async ({
     worker,
   }) => {
     // oxlint-disable-next-line effect/no-run-effect-in-test -- synchronous fixture: the schedule must end days after the real clock the widget reads
@@ -443,21 +401,14 @@ describe("Campaigns on Earn", () => {
     const app = await renderApp();
 
     const strip = app.getByTestId("campaign-strip");
-    await expect.element(strip.getByText(/· 5 days left$/)).toBeVisible();
+    await expect.element(strip.getByText(/^Ends [^·]+$/)).toBeVisible();
 
     await strip.getByRole("button", { name: "Details" }).click();
     const details = app.getByTestId("campaign-details");
     await expect.element(details.getByText("Ending soon")).toBeVisible();
     await expect
-      .element(details.getByText("5 days left").first())
-      .toBeVisible();
-    await expect
-      .element(
-        details.getByText(
-          /^Rewards stop on .+\. What you earn until then is still paid out\.$/
-        )
-      )
-      .toBeVisible();
+      .element(app.getByText(/\d+ days? left/))
+      .not.toBeInTheDocument();
 
     await app.unmount();
   });
@@ -518,9 +469,54 @@ describe("Campaigns on Earn", () => {
     await expect
       .element(section.getByText("Daily, added to your position"))
       .toBeVisible();
+    await expect
+      .element(
+        section.getByTestId("campaign-rates__campaign").getByText("+4.20%")
+      )
+      .toBeVisible();
+    await expect
+      .element(section.getByTestId("campaign-rates__total").getByText("10.00%"))
+      .toBeVisible();
 
     await section.getByTestId("campaign-section__details").click();
     await expect.element(app.getByTestId("campaign-details")).toBeVisible();
+
+    await app.unmount();
+  });
+
+  it("adds a live campaign's rate the cached yield doesn't list yet", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", null)],
+        campaigns: [liveCampaign],
+      })
+    );
+
+    const app = await renderApp();
+
+    await expect
+      .element(
+        app
+          .getByTestId("reward-rate-breakdown__campaign")
+          .getByText("Up to 4.20%")
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        app.getByTestId("reward-rate-breakdown__total").getByText("10.00%")
+      )
+      .toBeVisible();
+
+    await app.getByTestId("select-opportunity").click();
+    const campaignOption = app.getByTestId(
+      new RegExp(`^select-opportunity__item_${campaignYieldId}`)
+    );
+    await expect.element(campaignOption.getByText("10.00%")).toBeVisible();
+    await expect
+      .element(campaignOption.getByText("+4.20% campaign"))
+      .toBeVisible();
 
     await app.unmount();
   });
