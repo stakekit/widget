@@ -216,7 +216,9 @@ describe("Campaigns on Earn", () => {
     const offer = app.getByTestId("campaign-offer");
     await expect
       .element(
-        offer.getByText(/^Allez USDC Vault has a campaign: up to 10\.00%\./)
+        offer.getByText(
+          /^Earn up to 10\.00% APY with boosted rewards on StakeKit's Allez USDC Vault\./
+        )
       )
       .toBeVisible();
     await expect
@@ -282,7 +284,9 @@ describe("Campaigns on Earn", () => {
     const offer = app.getByTestId("campaign-offer");
     await expect
       .element(
-        offer.getByText(/^Allez USDT Vault has a campaign: up to 10\.00%\./)
+        offer.getByText(
+          /^Earn up to 10\.00% APY with boosted rewards on StakeKit's Allez USDT Vault\./
+        )
       )
       .toBeVisible();
 
@@ -319,7 +323,9 @@ describe("Campaigns on Earn", () => {
     const offer = app.getByTestId("campaign-offer");
     await expect
       .element(
-        offer.getByText(/^Allez USDC Vault has a campaign: up to 10\.00%\./)
+        offer.getByText(
+          /^Earn up to 10\.00% APY with boosted rewards on StakeKit's Allez USDC Vault\./
+        )
       )
       .toBeVisible();
 

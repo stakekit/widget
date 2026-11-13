@@ -520,8 +520,8 @@
       "monthly": "Monthly"
     },
     "offer": {
-      "text": "{{name}} has a campaign: up to {{rate}}.",
-      "text_sponsor": "{{name}} has a {{sponsor}} campaign: up to {{rate}}.",
+      "text": "Earn up to {{rate}} {{rateType}} with boosted rewards on {{name}}.",
+      "text_provider": "Earn up to {{rate}} {{rateType}} with boosted rewards on {{provider}}'s {{name}}.",
       "switch": "Switch"
     },
     "section": {

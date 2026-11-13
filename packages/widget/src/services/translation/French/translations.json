@@ -520,8 +520,8 @@
       "monthly": "Mensuels"
     },
     "offer": {
-      "text": "{{name}} a une campagne : jusqu'à {{rate}}.",
-      "text_sponsor": "{{name}} a une campagne {{sponsor}} : jusqu'à {{rate}}.",
+      "text": "Gagnez jusqu'à {{rate}} {{rateType}} avec des récompenses boostées sur {{name}}.",
+      "text_provider": "Gagnez jusqu'à {{rate}} {{rateType}} avec des récompenses boostées sur {{name}} de {{provider}}.",
       "switch": "Changer"
     },
     "section": {

@@ -9,6 +9,7 @@ import {
   formatRewardRatePercent,
   unavailableFigure,
 } from "../../../shared/lib/number-format";
+import { formatRewardRateLabel } from "../../yield-presentation/index";
 import type { YieldCampaignView } from "./yield-campaign-view";
 
 type Lifecycle = YieldCampaignView["lifecycle"];
@@ -216,23 +217,26 @@ export const getCampaignFooterNote = (
 };
 
 /**
- * The offer of `yieldDto`'s earning campaign beside a yield without one: its
- * yield, its sponsor if named, and the rate with it.
+ * The offer of `yieldDto`'s earning campaign beside a yield without one: the
+ * rate with it, and the yield by its provider when the yield names one.
  */
 export const getCampaignOfferText = (
   view: YieldCampaignView,
   yieldDto: EarnYieldWithProvider,
   t: TFunction,
   locale: string
-) =>
-  t("campaign.offer.text", {
-    ...sponsorContext(view),
+) => {
+  const provider = yieldDto.provider?.name;
+  return t("campaign.offer.text", {
+    ...(provider ? { provider, context: "provider" } : {}),
     name: yieldDto.metadata.name,
     rate: formatRewardRatePercent(
       getCampaignRateComposition(yieldDto.rewardRate, view).withCampaign,
       locale
     ),
+    rateType: formatRewardRateLabel(yieldDto, t),
   });
+};
 
 /**
  * Under a campaign yield's rate in the selector: what the campaign adds, or
