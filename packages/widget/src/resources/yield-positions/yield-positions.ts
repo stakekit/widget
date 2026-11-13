@@ -18,6 +18,7 @@ import {
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
 import { appRuntime } from "../../runtime/app-runtime";
+import { withVisibleRefresh } from "../../runtime/page-visibility";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -65,7 +66,7 @@ const yieldPositionsRequestAtom = Atom.family((scope: WalletScopeOwnerKey) =>
 const yieldPositionsByOwnerResourceAtom = Atom.family(
   (scope: WalletScopeOwnerKey) =>
     yieldPositionsRequestAtom(scope).pipe(
-      Atom.withRefresh(scheduledRefreshInterval),
+      withVisibleRefresh(scheduledRefreshInterval),
       Atom.transform((get, self) =>
         AsyncResult.map(get(self), (page) => ({
           ...page,

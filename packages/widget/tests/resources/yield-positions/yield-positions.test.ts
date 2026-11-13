@@ -23,6 +23,7 @@ import {
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../../fixtures";
+import { readCountsAcrossHiddenPage } from "../../utils/services/page-visibility";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -51,13 +52,17 @@ const makePosition = (amount = "2") => {
   });
 };
 
-const makeRegistry = (source: YieldResourceSource["Service"]) =>
+const makeRegistry = (
+  source: YieldResourceSource["Service"],
+  initialValues: ReadonlyArray<readonly [Atom.Atom<unknown>, unknown]> = []
+) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
         Layer.succeed(YieldResourceSource, source)
       ),
+      ...initialValues,
     ],
   });
 
@@ -234,6 +239,31 @@ describe("Yield Positions resource", () => {
       vi.useRealTimers();
     }
   });
+
+  it.effect(
+    "skips scheduled reads while the page is hidden and reads once when it is shown",
+    () => {
+      const getPositions = vi.fn(() =>
+        Effect.succeed({ errors: [], items: [makePosition()] })
+      );
+      return readCountsAcrossHiddenPage({
+        mount: (pageVisibility) => {
+          const registry = makeRegistry(
+            YieldResourceSource.of({ getPositions } as never),
+            [pageVisibility]
+          );
+          registry.mount(yieldPositionsResourceAtom(makeScope()));
+          return registry;
+        },
+        periodSeconds: 60,
+        readCount: () => getPositions.mock.calls.length,
+      }).pipe(
+        Effect.map((readCounts) => {
+          expect(readCounts).toEqual([1, 2, 2, 3, 3, 4]);
+        })
+      );
+    }
+  );
 
   it("resolves position balances for an explicit wallet scope", () => {
     const position = makePosition();
