@@ -30,7 +30,9 @@ export type ButtonLookProps = {
    * and edge, for a destructive action beside a secondary one, such as
    * disconnecting. `soft` is the accent text on its soft tint, for an action
    * on a filled surface that a secondary button's fill would vanish into,
-   * such as an `ActionCard`'s.
+   * such as an `ActionCard`'s. `link` is the accent text alone, without a
+   * surface or padding, for a small action inside a line of text or at the
+   * end of a row, such as "Details"; its size sets only its type.
    */
   readonly variant?: ButtonVariant;
   /** `cta` fills the width at the call-to-action height the Layout asks for. */
@@ -63,6 +65,7 @@ export const buttonLook = (
     focusRingStyles.visible,
     buttonVariantStyles[variant],
     buttonSizeStyles[size],
+    variant === "link" && buttonStyles.linkBox,
     share && buttonStyles.share
   );
 
@@ -130,6 +133,13 @@ const buttonStyles = stylex.create({
     flexBasis: `calc(50% - ${space[8]} / 2)`,
     flexGrow: 1,
     minWidth: "max-content",
+  },
+  // A link-look button sits in a line of text: the size keeps its type and
+  // drops its height and padding, which `buttonSizeStyles` would otherwise
+  // set after the variant.
+  linkBox: {
+    paddingInline: 0,
+    height: "auto",
   },
 });
 
@@ -205,6 +215,15 @@ const buttonVariantStyles = stylex.create({
       ":hover:not(:disabled)": color.dangerSoft,
     },
     color: color.danger,
+  },
+  // The accent text alone; hover underlines it.
+  link: {
+    textDecoration: {
+      default: "none",
+      ":hover:not(:disabled)": "underline",
+    },
+    backgroundColor: "transparent",
+    color: color.accentText,
   },
 });
 

@@ -162,10 +162,13 @@ const specs: SpecConfig[] = [
         "ActionsController_manageYield",
         "ActionsController_simulateEnter",
         "ActionsController_simulateExit",
+        "CampaignsController_getCampaignPayouts",
+        "CampaignsController_getCampaignRewards",
+        "CampaignsController_getProjectCampaigns",
         "HealthController_health",
         "KycController_getStatus",
         "NetworksController_getNetworks",
-        "ProvidersController_getProvider",
+        "ProvidersController_getProviders",
         "TransactionsController_getTransaction",
         "TransactionsController_submitTransaction",
         "TransactionsController_submitTransactionHash",
@@ -178,6 +181,9 @@ const specs: SpecConfig[] = [
         "YieldsController_getYieldTvlHistory",
         "YieldsController_getYieldValidators",
       ],
+      // The providers page types its items as `never` (an `allOf` openapigen
+      // does not merge); the domain page schema reads them as `ProviderDto`.
+      extraSchemas: ["ProviderDto"],
     },
     patches: [
       // These DTO properties have concrete scalar types in the Yield API

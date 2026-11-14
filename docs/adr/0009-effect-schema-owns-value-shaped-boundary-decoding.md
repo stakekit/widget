@@ -12,7 +12,10 @@ recover from, or discard invalid input.
 API responses evolve independently of the generated client, so response schemas
 decode only what the widget reads and fail no wider than the value they
 describe. Catalogue and capability members that are unknown or unsupported are
-dropped one at a time (`TolerantArray`). Unread fields are not decoded. Displayed
-metadata with a fallback stays an open string. Execution-critical fields, such as
-transaction status, signing payloads, KYC status and health status, stay strict,
-and their failures are scoped to the owning flow.
+dropped one at a time (`TolerantArray`). Unread fields are not decoded. An enum
+the widget branches on decodes to its known values plus `"unknown"`
+(`OpenLiterals`), so new values neither fail decoding nor widen the type to
+`string`; displayed metadata with a fallback that shows the raw value stays an
+open string. Execution-critical fields, such as transaction status, signing
+payloads, KYC status and health status, stay strict, and their failures are
+scoped to the owning flow.

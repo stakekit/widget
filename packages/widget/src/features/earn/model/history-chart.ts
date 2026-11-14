@@ -43,6 +43,27 @@ const stalePeriods = {
   all: Duration.days(14),
 } satisfies Record<HistoryPeriod, Duration.Duration>;
 
+/**
+ * The least a reward-rate axis spans, in percentage points: drawn over its own
+ * range, a rate that moves by hundredths of a point reads as a cliff.
+ */
+const minimumRateAxisSpan = 0.5;
+
+/**
+ * The values a reward-rate axis spans: the series, widened evenly to
+ * `minimumRateAxisSpan` when it moves less, and never widened below zero.
+ */
+const rateAxisValues = (values: ReadonlyArray<number>) => {
+  if (values.length === 0) return values;
+  const low = Math.min(...values);
+  const missing = minimumRateAxisSpan - (Math.max(...values) - low);
+  if (missing <= 0) return values;
+  const widenedLow = low - missing / 2;
+  const bottom = low < 0 ? widenedLow : Math.max(0, widenedLow);
+
+  return [bottom, bottom + minimumRateAxisSpan];
+};
+
 type HistoryChartAxis = {
   /** Lowest or earliest first; the axis spans the first to the last. */
   readonly ticks: ReadonlyArray<number>;
@@ -100,12 +121,17 @@ const formatHistoryDate = (
 const getHistoryChart = (
   { locale, now, period, points, t }: HistoryChartInput,
   {
+    axisValues,
     figure,
     formatValue,
     formatValueAxis,
     secondary,
     title,
   }: {
+    /** The values the value axis spans, from the period's series values. */
+    readonly axisValues: (
+      values: ReadonlyArray<number>
+    ) => ReadonlyArray<number>;
     readonly figure: string | null;
     readonly formatValue: (value: number) => string;
     readonly formatValueAxis: (
@@ -130,7 +156,9 @@ const getHistoryChart = (
   const start = span ? end - Duration.toMillis(span) : (series[0]?.time ?? end);
   const data = series.filter((point) => point.time >= start);
   const latest = data.at(-1);
-  const valueTicks = getValueAxisTicks(data.map((point) => point.value));
+  const valueTicks = getValueAxisTicks(
+    axisValues(data.map((point) => point.value))
+  );
   const timeTicks = latest ? [start, (start + end) / 2, end] : [];
   const endsEarly =
     seriesLatest !== undefined &&
@@ -172,6 +200,7 @@ export const getRewardRateHistoryChart = ({
   const latest = points.at(-1);
 
   return getHistoryChart(input, {
+    axisValues: rateAxisValues,
     figure: latest ? formatValue(latest.value) : (rate?.value ?? null),
     formatValue,
     formatValueAxis: (ticks) =>
@@ -203,6 +232,7 @@ export const getTvlHistoryChart = ({
   const latest = points.at(-1);
 
   return getHistoryChart(input, {
+    axisValues: (values) => values,
     figure: tvl?.usd ?? (latest ? formatValue(latest.value) : null),
     formatValue,
     formatValueAxis: (ticks) => formatAmountAxis(ticks, locale),

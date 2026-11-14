@@ -7,9 +7,14 @@ import {
   ActionSimulation,
   YieldAction,
 } from "../../../domain/earn/action-models";
+import { YieldCampaignPage } from "../../../domain/earn/campaign";
+import {
+  CampaignPayoutPage,
+  WalletCampaignRewardsPage,
+} from "../../../domain/earn/campaign-rewards";
 import { zeroEncryptedBalance } from "../../../domain/earn/confidential-balance";
 import { KycStatus } from "../../../domain/earn/kyc";
-import { EarnProvider } from "../../../domain/earn/provider";
+import { EarnProviderPage } from "../../../domain/earn/provider";
 import {
   EarnPositionsResponse,
   EarnValidatorPage,
@@ -21,7 +26,6 @@ import type { YieldBalancesCommand } from "../../../domain/finance/models";
 import { HealthStatus } from "../../../domain/health/models";
 import type {
   ActionId,
-  ProviderId,
   WalletAddress,
   YieldId,
 } from "../../../domain/identity/identifiers";
@@ -35,7 +39,9 @@ import { EnabledWalletNetworksResponse } from "../../../domain/wallet/models";
 import type * as YieldApi from "../../../generated/api/yield";
 import type {
   ActionSimulationRequest,
+  CampaignPayoutsRequest,
   ValidatorDirectoryRequest,
+  ProjectCampaignsRequest,
   YieldDirectoryRequest,
 } from "../resource-sources";
 import {
@@ -181,6 +187,44 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
       .pipe(decodeApiResponse("yield-directory", EarnYieldPage));
   });
 
+  const listProjectCampaigns = Effect.fn(
+    "YieldResourceSource.listProjectCampaigns"
+  )(function* (request: ProjectCampaignsRequest) {
+    return yield* yieldApi
+      .CampaignsControllerGetProjectCampaigns({
+        params: {
+          limit: request.limit,
+          offset: request.offset,
+          status: request.status,
+        },
+      })
+      .pipe(decodeApiResponse("project-campaigns", YieldCampaignPage));
+  });
+
+  const listWalletCampaignRewards = Effect.fn(
+    "YieldResourceSource.listWalletCampaignRewards"
+  )(function* (request: { readonly address: WalletAddress }) {
+    return yield* yieldApi
+      .CampaignsControllerGetCampaignRewards({
+        params: { address: request.address },
+      })
+      .pipe(decodeApiResponse("campaign-rewards", WalletCampaignRewardsPage));
+  });
+
+  const listCampaignPayouts = Effect.fn(
+    "YieldResourceSource.listCampaignPayouts"
+  )(function* (request: CampaignPayoutsRequest) {
+    return yield* yieldApi
+      .CampaignsControllerGetCampaignPayouts(request.campaignId, {
+        params: {
+          address: request.address,
+          limit: request.limit,
+          offset: request.offset,
+        },
+      })
+      .pipe(decodeApiResponse("campaign-payouts", CampaignPayoutPage));
+  });
+
   const listValidators = Effect.fn("YieldResourceSource.listValidators")(
     function* (request: ValidatorDirectoryRequest) {
       return yield* yieldApi
@@ -225,13 +269,13 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
       );
   });
 
-  const getProvider = Effect.fn("YieldResourceSource.getProvider")(function* (
-    providerId: ProviderId
-  ) {
-    return yield* yieldApi
-      .ProvidersControllerGetProvider(providerId, undefined)
-      .pipe(decodeOptionalApiResponse("yield-provider", EarnProvider));
-  });
+  const listProviders = Effect.fn("YieldResourceSource.listProviders")(
+    function* (request: { readonly limit: number; readonly offset: number }) {
+      return yield* yieldApi
+        .ProvidersControllerGetProviders({ params: request })
+        .pipe(decodeApiResponse("yield-providers", EarnProviderPage));
+    }
+  );
 
   // A simulation creates nothing, so it reads like any other request and
   // retries a transient failure.
@@ -255,12 +299,15 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
     getKycStatus,
     getOpportunity,
     getPositions,
-    getProvider,
+    listProviders,
     getSingleYieldBalances,
     getRewardsSummary,
     getRewardRateHistory,
     getTvlHistory,
     listYields,
+    listProjectCampaigns,
+    listWalletCampaignRewards,
+    listCampaignPayouts,
     listValidators,
     listActivity,
     simulateAction,

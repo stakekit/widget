@@ -8,13 +8,13 @@ import {
   type ProviderOption,
 } from "../../../domain/identity/identifiers";
 import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/yield-opportunity";
-import { yieldProviderResourceAtom } from "../../../resources/yield-provider/yield-provider";
+import { yieldProviderAtom } from "../../../resources/yield-provider/yield-provider";
 import type { EarnProviderOption } from "./earn-selection/types";
 
 /** A `providerId` option with its provider details once they resolve. */
 export const earnProviderOptionAtom = Atom.family((value: ProviderOption) =>
   Atom.make((get): EarnProviderOption => ({
-    provider: get(yieldProviderResourceAtom.local(ProviderId.make(value))).pipe(
+    provider: get(yieldProviderAtom(ProviderId.make(value))).pipe(
       AsyncResult.value,
       Option.flatten,
       Option.getOrNull

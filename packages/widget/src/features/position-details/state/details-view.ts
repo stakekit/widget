@@ -9,10 +9,7 @@ import {
 } from "../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import { isUserRevealableBalance } from "../../../domain/earn/confidential-balance";
-import {
-  getRewardRateBreakdown,
-  type YieldRewardRate,
-} from "../../../domain/earn/reward-rate";
+import { getPositionRate } from "../../../domain/earn/position-rate";
 import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
 import { exactDecimal } from "../../../domain/finance/exact";
@@ -22,6 +19,11 @@ import {
   InFlightCancelsKey,
   inFlightCancelsResourceAtom,
 } from "../../../resources/in-flight-cancels/in-flight-cancels";
+import {
+  PositionCampaignRewardsKey,
+  positionCanEarnCampaignAtom,
+  yieldCampaignAtom,
+} from "../../campaigns/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
 import { resolvePositionDetailsPageState } from "../model/page-state";
 import { positionDetailsExitActions } from "./actions/exit";
@@ -37,10 +39,6 @@ import {
   dispatchPositionDetailsWorkflowAtom,
   positionDetailsWorkflowViewAtom,
 } from "./workflow-view";
-
-const hasCampaignRewardRate = (
-  rewardRate: YieldRewardRate | null | undefined
-) => getRewardRateBreakdown(rewardRate).some((item) => item.key === "campaign");
 
 export type PositionDetailsShareConversion = {
   readonly rate: BigNumber;
@@ -126,15 +124,29 @@ export const positionDetailsViewAtom = Atom.family(
           })
         )
       ).providers;
-      const personalizedRewardRate =
-        workflow.positionBalances &&
-        hasCampaignRewardRate(workflow.positionBalances.rewardRate)
-          ? workflow.positionBalances.rewardRate
-          : null;
-      const fallbackRewardRate =
-        integration && hasCampaignRewardRate(integration.rewardRate)
-          ? integration.rewardRate
-          : null;
+      // The campaign checks read their atoms only when the rate has a
+      // campaign part, so other positions neither load nor follow campaigns.
+      const positionRate = integration
+        ? getPositionRate({
+            balanceRewardRate: workflow.positionBalances?.rewardRate ?? null,
+            getShownCampaign: () =>
+              get(yieldCampaignAtom(integration.id))?.campaign ?? null,
+            canEarnCampaign: () =>
+              get(
+                positionCanEarnCampaignAtom(
+                  new PositionCampaignRewardsKey({
+                    scope: key.scope,
+                    yieldId: integration.id,
+                  })
+                )
+              ),
+            validators:
+              workflow.positionBalances?.type === "validators"
+                ? workflow.positionBalances.validators
+                : null,
+            yieldRewardRate: integration.rewardRate,
+          })
+        : null;
       const shareToAmountConversions =
         integration && workflow.positionBalancesByType
           ? [...workflow.positionBalancesByType.values()].reduce(
@@ -200,10 +212,7 @@ export const positionDetailsViewAtom = Atom.family(
           positionBalances.some(
             (balance) => !balance.isEncrypted && balance.type !== "withdrawable"
           ),
-        apyCompositionRewardRate: personalizedRewardRate ?? fallbackRewardRate,
         cancellingHandles,
-        apyCompositionShowsUpToCampaign:
-          !personalizedRewardRate && Boolean(fallbackRewardRate),
         canChangeUnstakeAmount: workflow.canChangeUnstakeAmount,
         canUnstake,
         exitBalance: workflow.exitBalance,
@@ -223,9 +232,9 @@ export const positionDetailsViewAtom = Atom.family(
           validatorsLoading: exitResources.isValidatorsLoading,
           yieldOpportunity: workflow.yieldResult,
         }),
-        personalizedRewardRate,
         positionBalancesByType: workflow.positionBalancesByType,
         providersDetails: providers,
+        positionRate,
         shareToAmountConversions,
         unstakeAmount: workflow.unstakeAmount,
         unstakeAmountError:
@@ -283,18 +292,14 @@ export const positionOverviewViewAtom = Atom.family(
       const {
         cancellingHandles,
         integrationData,
-        personalizedRewardRate,
         positionBalancesByType,
-        positionSource,
-        providersDetails,
+        positionRate,
       } = get(positionDetailsViewAtom(key));
       return {
         cancellingHandles,
         integrationData,
-        personalizedRewardRate,
         positionBalancesByType,
-        positionSource,
-        providersDetails,
+        positionRate,
       } as const;
     }).pipe(
       Atom.withEquality(Equal.equals),

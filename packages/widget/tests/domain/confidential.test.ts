@@ -24,7 +24,7 @@ import {
   isCancellingBalance,
   isUserRevealableBalance,
 } from "../../src/domain/earn/confidential-balance";
-import { getConfidentialCampaignUrl } from "../../src/domain/earn/confidential-campaign";
+import { getConfidentialIncentivesUrl } from "../../src/domain/earn/confidential-incentives";
 import { Token } from "../../src/domain/token/token";
 import {
   confidentialFixture,
@@ -211,9 +211,9 @@ describe("confidential vault rules", () => {
     ).toBeNull();
   });
 
-  it("links a mainnet vault to its Zama campaign page", () => {
+  it("links a mainnet vault to its Zama incentives page", () => {
     expect(
-      getConfidentialCampaignUrl(
+      getConfidentialIncentivesUrl(
         confidentialYield({
           id: "ethereum-usdc-zama-rockawayx-usdc-rwa-confidential-vault",
         })
@@ -221,7 +221,7 @@ describe("confidential vault rules", () => {
     ).toBe(
       "https://app.zama.org/earn/ethereum/0xc207d3f66537D7F66456808379A0E560cF20Da36/rockawayx-usdc-rwa"
     );
-    expect(getConfidentialCampaignUrl(confidentialYield())).toBeNull();
+    expect(getConfidentialIncentivesUrl(confidentialYield())).toBeNull();
   });
 
   it("names the contract that holds each hidden balance's handle", () => {

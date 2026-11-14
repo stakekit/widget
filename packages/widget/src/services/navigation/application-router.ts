@@ -6,6 +6,8 @@ import {
   type RouteObject,
 } from "react-router";
 
+import { makeScrollReset, type ScrollReset } from "./scroll-reset";
+
 /** The router's current location; match its pathname with registry routes. */
 export type ApplicationLocation = Readonly<Pick<Location, "pathname">>;
 
@@ -36,6 +38,8 @@ export class ApplicationRouter extends Context.Service<
   {
     readonly locations: Stream.Stream<ApplicationLocation>;
     readonly router: DataRouter;
+    /** The window scroll reset that waits for this router's next page. */
+    readonly scrollReset: ScrollReset;
   }
 >()(
   "@stakekit/widget/services/navigation/application-router/ApplicationRouter"
@@ -54,7 +58,11 @@ export class ApplicationRouter extends Context.Service<
         const locations = yield* locationStream(router).pipe(
           Stream.share({ capacity: 1, replay: 1, strategy: "sliding" })
         );
-        return ApplicationRouter.of({ locations, router });
+        return ApplicationRouter.of({
+          locations,
+          router,
+          scrollReset: makeScrollReset(),
+        });
       })
     );
 }

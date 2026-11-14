@@ -68,6 +68,39 @@ const defaultSimulation = {
 const isoAt = (milliseconds: number) =>
   DateTime.formatIso(DateTime.makeUnsafe(milliseconds));
 
+const providerNameById: Record<string, string> = {
+  benqi: "Benqi",
+  stakekit: "StakeKit",
+  stakewise: "Stakewise",
+  trust: "Trust",
+};
+
+/** Every provider the mocked Yields name, shaped like the API's `ProviderDto`. */
+const mockProviders = [
+  "aave",
+  "benqi",
+  "kelpdao",
+  "makina",
+  "morpho",
+  "paxos",
+  "sky",
+  "stakekit",
+  "stakewise",
+  "trust",
+  "upshift",
+].map((providerId) => {
+  const name = providerNameById[providerId] ?? providerId;
+  return {
+    ...yieldApiProviderFixture({
+      id: providerId,
+      logoURI: `https://assets.stakek.it/app/composition/providers/${providerId}.svg`,
+      name,
+    }),
+    description: `${name} provider`,
+    type: "protocol",
+  };
+});
+
 export const getYieldApiMock = () => [
   http.get(yieldApiRoute("/v1/networks"), async () => {
     await mockDelay();
@@ -146,23 +179,18 @@ export const getYieldApiMock = () => [
     });
   }),
 
-  http.get(yieldApiRoute("/v1/providers/:providerId"), async ({ params }) => {
+  http.get(yieldApiRoute("/v1/providers"), async ({ request }) => {
     await mockDelay();
-    const providerId = String(params.providerId);
-    const providerNameById: Record<string, string> = {
-      benqi: "Benqi",
-      stakekit: "StakeKit",
-      stakewise: "Stakewise",
-      trust: "Trust",
-    };
+    const url = new URL(request.url);
+    const offset = Number(url.searchParams.get("offset") ?? 0);
+    const limit = Number(url.searchParams.get("limit") ?? 20);
 
-    return HttpResponse.json(
-      yieldApiProviderFixture({
-        id: providerId,
-        logoURI: `https://assets.stakek.it/app/composition/providers/${providerId}.svg`,
-        name: providerNameById[providerId] ?? providerId,
-      })
-    );
+    return HttpResponse.json({
+      items: mockProviders.slice(offset, offset + limit),
+      total: mockProviders.length,
+      offset,
+      limit,
+    });
   }),
 
   http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async () => {
@@ -197,6 +225,24 @@ export const getYieldApiMock = () => [
       } satisfies YieldRewardsSummaryResponseDto);
     }
   ),
+
+  http.get(yieldApiRoute("/v1/campaigns"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json({ items: [], total: 0, offset: 0, limit: 100 });
+  }),
+
+  http.get(yieldApiRoute("/v1/campaigns/rewards"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json({ items: [] });
+  }),
+
+  http.get(yieldApiRoute("/v1/campaigns/:campaignId/payouts"), async () => {
+    await mockDelay();
+
+    return HttpResponse.json({ items: [], total: 0, offset: 0, limit: 20 });
+  }),
 
   http.get(
     yieldApiRoute("/v1/yields/:yieldId/reward-rate/history"),

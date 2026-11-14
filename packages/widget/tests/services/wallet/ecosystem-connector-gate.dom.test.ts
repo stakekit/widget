@@ -1,5 +1,4 @@
 import { describe, expect, it } from "@effect/vitest";
-import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Effect, Schema } from "effect";
 import { vi } from "vitest";
 
@@ -198,8 +197,7 @@ const buildControllerEffect = (
         isSafe: false,
         persistPublicKey: () => Effect.void,
         queryParams,
-        solanaConnection: {} as SolanaConnection,
-        solanaWallets: [],
+        solana: null,
         tonConnectManifestUrl: undefined,
         walletCatalogue: "default",
         ...overrides,
@@ -317,8 +315,7 @@ describe("ecosystem connector gate", () => {
           runWalletEffect,
           walletConnectPresentation: unusedWalletConnectPresentation,
           walletConnectProtocol: unusedWalletConnectProtocol,
-          solanaConnection: {} as SolanaConnection,
-          solanaWallets: [],
+          solana: null,
           tonConnectManifestUrl: undefined,
           walletCatalogue: "default",
           walletModal: stubWalletModal(),
@@ -406,8 +403,7 @@ describe("ecosystem connector gate", () => {
         runWalletEffect,
         walletConnectPresentation: unusedWalletConnectPresentation,
         walletConnectProtocol: unusedWalletConnectProtocol,
-        solanaConnection: {} as SolanaConnection,
-        solanaWallets: [],
+        solana: null,
         tonConnectManifestUrl: undefined,
         walletCatalogue: "default",
         walletModal: stubWalletModal(),
@@ -456,8 +452,7 @@ describe("ecosystem connector gate", () => {
             stellarWalletsKitPlatform,
             runWalletEffect,
             walletConnectProtocol: unusedWalletConnectProtocol,
-            solanaConnection: {} as SolanaConnection,
-            solanaWallets: [],
+            solana: null,
             tonConnectManifestUrl: undefined,
             walletCatalogue: "default",
             walletModal: stubWalletModal(),

@@ -458,10 +458,136 @@
       "other": "Autres"
     }
   },
+  "campaign": {
+    "label": "Campagne",
+    "label_upcoming": "À venir",
+    "details_link": "Détails",
+    "view_details": "Voir les détails de la campagne",
+    "time": {
+      "upcoming": "Commence le {{date}}",
+      "paused": "En pause · se termine le {{date}}",
+      "active": "Se termine le {{date}}"
+    },
+    "strip": {
+      "upcoming_note": "La campagne commence le {{date}}. Les récompenses s'accumulent à partir de ce jour.",
+      "paused_note": "Les récompenses sont en pause. Les récompenses déjà gagnées sont conservées."
+    },
+    "rate": {
+      "up_to": "Jusqu'à {{rate}}",
+      "up_to_from": "Jusqu'à {{rate}} dès le {{date}}",
+      "from": "Dès le {{date}}",
+      "paused": "En pause",
+      "incentive": "+{{rate}}",
+      "incentive_from": "+{{rate}} dès le {{date}}"
+    },
+    "tip": {
+      "label": "À propos du taux de campagne",
+      "total": "Total",
+      "total_today": "Total aujourd'hui",
+      "incentive": "Taux de campagne"
+    },
+    "metric": {
+      "active": "Dont +{{rate}} de campagne",
+      "upcoming": "+{{rate}} dès le {{date}}",
+      "paused": "Campagne en pause"
+    },
+    "footer": {
+      "active": "Récompenses de campagne en plus, {{payment}} jusqu'au {{date}}.",
+      "upcoming": "Récompenses de campagne en plus du {{start}} au {{end}}, {{payment}}.",
+      "paused": "Les récompenses de campagne sont en pause. Les récompenses déjà gagnées sont conservées.",
+      "active_sponsor": "{{sponsor}} ajoute des récompenses, {{payment}} jusqu'au {{date}}.",
+      "upcoming_sponsor": "{{sponsor}} ajoute des récompenses du {{start}} au {{end}}, {{payment}}.",
+      "paused_sponsor": "Les récompenses de la campagne {{sponsor}} sont en pause. Les récompenses déjà gagnées sont conservées."
+    },
+    "payment": {
+      "compound": "versées {{cadence}} dans votre position",
+      "normal": "versées {{cadence}} en {{symbol}}",
+      "compound_no_cadence": "versées dans votre position",
+      "normal_no_cadence": "versées en {{symbol}}"
+    },
+    "cadence": {
+      "daily": "chaque jour",
+      "weekly": "chaque semaine",
+      "six_hourly": "toutes les 6 heures",
+      "end_of_campaign": "à la fin de la campagne",
+      "monthly": "chaque mois"
+    },
+    "frequency": {
+      "daily": "Quotidiens",
+      "weekly": "Hebdomadaires",
+      "six_hourly": "Toutes les 6 heures",
+      "end_of_campaign": "À la fin de la campagne",
+      "monthly": "Mensuels"
+    },
+    "offer": {
+      "text": "Gagnez jusqu'à {{rate}} {{rateType}} avec des récompenses boostées sur {{name}}.",
+      "text_provider": "Gagnez jusqu'à {{rate}} {{rateType}} avec des récompenses boostées sur {{name}} de {{provider}}.",
+      "switch": "Changer"
+    },
+    "section": {
+      "title": "Campagne",
+      "payouts_compound": "{{frequency}}, ajoutés à votre position",
+      "payouts_normal": "{{frequency}}, en {{symbol}}",
+      "payouts_compound_unscheduled": "Ajoutés à votre position",
+      "payouts_normal_unscheduled": "En {{symbol}}",
+      "notice_upcoming": "Commence le {{date}}. D'ici là, vous gagnez le rendement propre de ce placement.",
+      "notice_paused": "En pause. Aucune nouvelle récompense ne s'accumule pour le moment. Les récompenses déjà gagnées sont conservées."
+    },
+    "details": {
+      "progress": "Avancement de la campagne",
+      "payouts": "Versements",
+      "next_payout": "Prochain versement prévu le {{date}}",
+      "first_payout": "Premier versement après le début",
+      "payouts_resume": "Les versements reprennent à la reprise de la campagne",
+      "reward_token": "Token de récompense",
+      "funded_by": "Financée par {{sponsor}}",
+      "terms": "Lire les conditions de la campagne"
+    },
+    "rewards": {
+      "title": "Récompenses de campagne",
+      "earned_line": "Récompenses de campagne gagnées",
+      "total_earned": "Total gagné",
+      "paid_out": "Versé",
+      "pending": "En attente",
+      "final_payout": "Dernier versement",
+      "paused_caption": "En pause. Les récompenses gagnées sont conservées",
+      "notice": {
+        "paused": "La campagne est en pause : aucune nouvelle récompense ne s'accumule. Ce que vous avez gagné vous reste acquis.",
+        "final_payout": "Cette campagne est terminée. Votre dernier versement arrive, et votre position continue de rapporter le rendement propre de ce placement.",
+        "paid_out": "Cette campagne est terminée et toutes ses récompenses ont été versées. Votre position continue de rapporter le rendement propre de ce placement.",
+        "over_cap": "Seuls les premiers {{cap}} rapportent des récompenses de campagne. Les {{rest}} restants rapportent toujours le rendement propre de ce placement.",
+        "below_minimum_title": "Pas encore de récompenses de campagne",
+        "below_minimum": "Déposez encore {{shortfall}} pour commencer à gagner. Les récompenses de campagne demandent au moins {{minimum}} dans cette position.",
+        "below_minimum_unknown": "Cette position détient moins que le minimum de la campagne : elle ne rapporte pas encore de récompenses de campagne.",
+        "not_eligible_title": "Pas de récompenses de campagne",
+        "not_eligible": "Ce portefeuille ne gagne pas de récompenses de campagne. Si vous pensez qu'il s'agit d'une erreur, contactez le support.",
+        "unavailable": "Les récompenses de campagne ne peuvent pas être chargées pour le moment. Vos récompenses sont en sécurité et continuent de s'accumuler.",
+        "retry": "Réessayer"
+      },
+      "compound_payouts": "Les versements sont ajoutés à votre position en {{symbol}}. {{amount}} de votre solde provient des récompenses de campagne.",
+      "payouts": {
+        "recent": "Versements récents",
+        "all": "Tous les versements ({{count}})",
+        "show_all": "Tout afficher ({{count}})",
+        "show_less": "Afficher moins",
+        "show_more": "Afficher plus",
+        "pending": "En attente",
+        "unavailable": "Les versements ne peuvent pas être chargés pour le moment.",
+        "retry": "Recharger les versements"
+      },
+      "row_not_earning": "Ne rapporte pas",
+      "row_below_minimum": "Sous le minimum"
+    },
+    "selector": {
+      "paused": "Récompenses en pause",
+      "upcoming": "Dès le {{date}}",
+      "incentive": "+{{rate}} de campagne"
+    }
+  },
   "details": {
-    "earn": "Earn",
+    "earn": "Gagner",
     "estimated_reward": "Récompenses estimées",
-    "earn_with": "Earn avec",
+    "earn_with": "Gagner avec",
     "restake_with": "Restake avec",
     "yield_strategy": "Stratégie de rendement",
     "via": "via {{providerName}}",
@@ -565,12 +691,7 @@
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} autres",
     "selected_validators_summary_other": "{{providerName}} et autres",
-    "campaign_susd_description": "Après avoir staké sUSD, la position est bloquée jusqu'au 20 avril 2026.",
-    "campaign_susd_extra": "Les récompenses gagnées sont distribuées périodiquement sous forme de SNX et se débloquent linéairement sur 3 mois après la fin du programme.",
-    "campaign_susd_position_locked": "La position est bloquée jusqu'au 20 avril 2026. <link0>En savoir plus</link0>.",
-    "campaign_susd": "En savoir plus sur le programme de staking sUSD <link0>ici</link0>.",
-    "confidential_campaign": "Consultez les incitations et les options de délégation de ce vault sur Zama. <link0>En savoir plus</link0>.",
-    "campaign": "Les récompenses sont bloquées jusqu'au 28 mai 2026. Les retraits anticipés peuvent entraîner des pénalités. <link0>En savoir plus</link0>.",
+    "confidential_incentives": "Consultez les incitations et les options de délégation de ce vault sur Zama. <link0>En savoir plus</link0>.",
     "lockup_period_one": "La période de blocage minimum est de {{count}} jour.",
     "lockup_period_other": "La période de blocage minimum est de {{count}} jours.",
     "native_staking": {
@@ -656,9 +777,9 @@
     "provider_search_title": "Sélectionnez un fournisseur",
     "reward_token": "Vous recevrez des <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tabs": {
-      "earn": "Earn",
-      "positions": "Manage",
-      "activity": "Activity"
+      "earn": "Gagner",
+      "positions": "Gérer",
+      "activity": "Activité"
     },
     "validators_preferred": "Préférés",
     "validators_other": "Tous les validateurs",
@@ -685,8 +806,13 @@
     "apy_composition": {
       "title": "Composition de l'APY",
       "native": "APY natif",
+      "native_apr": "APR natif",
       "protocol_incentive": "APY d'incitation protocolaire",
+      "protocol_incentive_apr": "APR d'incitation protocolaire",
       "campaign": "APY de campagne",
+      "campaign_apr": "APR de campagne",
+      "total": "APY total",
+      "total_apr": "APR total",
       "up_to": "Jusqu'a {{value}}"
     }
   },
@@ -1113,6 +1239,10 @@
     "action_title_deposit": "Dépôt en attente <bold>{{amount}} {{symbol}}</bold>",
     "action_title_withdrawal": "Retrait en attente <bold>{{amount}} {{symbol}}</bold>",
     "action_title_instant_withdrawal": "Retrait instantané en cours <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_no_amount": "{{pendingAction}}",
+    "action_title_no_amount_deposit": "Dépôt en attente",
+    "action_title_no_amount_withdrawal": "Retrait en attente",
+    "action_title_no_amount_instant_withdrawal": "Retrait instantané en cours",
     "cancel_returns": "L'annulation vous renvoie immédiatement tout ce que vous avez dans ce lot, en {{symbol}}",
     "cancelling": "Annulation en cours…",
     "claim": "Réclamer",
@@ -1185,7 +1315,8 @@
       "preparing": "En cours de préparation",
       "rewards": "Récompenses",
       "locked": "Bloqué",
-      "unlocking": "En cours de déblocage"
+      "unlocking": "En cours de déblocage",
+      "campaign_rewards": "Récompenses de campagne en attente"
     },
     "duration": {
       "less_than_minute": "moins d'une minute",
@@ -1331,12 +1462,12 @@
     },
     "details": {
       "tabs": {
-        "earn": "Earn",
+        "earn": "Gagner",
         "stake": "Stake",
         "defi": "DeFi",
         "rwa": "RWA",
         "borrow": "Emprunter",
-        "manage": "Manage",
+        "manage": "Gérer",
         "overview": "Aperçu",
         "rewards": "Récompenses",
         "activity": "Activité"
@@ -1377,6 +1508,10 @@
       "read_docs": "Lire la documentation d'intégration",
       "chart_history": "Historique : {{chart}}",
       "chart_period": "Période : {{chart}}",
+      "period_1m": "1M",
+      "period_3m": "3M",
+      "period_1y": "1A",
+      "period_all": "Tout",
       "no_chart_data": "Aucune donnée de graphique",
       "chart_data_to": "Données jusqu'au {{date}}",
       "tvl_in_token": "≈ {{amount}}",
@@ -1669,6 +1804,8 @@
         "debt": "Dette",
         "total_rewards": "Total des récompenses",
         "average_apy": "APY moyen",
+        "average_apy_apr": "APR moyen",
+        "average_apy_mixed": "Taux moyen",
         "claimable_rewards": "Récompenses à réclamer",
         "partial": "Partiel",
         "net_worth": "Valeur nette",

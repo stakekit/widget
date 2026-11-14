@@ -10,8 +10,9 @@ import type {
 } from "../../services/api/resource-sources";
 import { YieldResourceSource } from "../../services/api/resource-sources";
 import { withApiResourcePolicy } from "../../shared/effect/api-resource";
+import { liveCampaignRateAtom } from "../project-campaigns/project-campaigns";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
-import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
+import { yieldProviderAtom } from "../yield-provider/yield-provider";
 
 class YieldOpportunityError extends Data.TaggedError("YieldOpportunityError")<{
   readonly cause: ApiRequestError | ResponseDecodeError;
@@ -49,16 +50,16 @@ const enrichedYieldOpportunityCanonicalAtom = Atom.family((yieldId: YieldId) =>
       // Provider details are optional enrichment; a failed lookup must not
       // take the opportunity down with it.
       const provider = yield* get
-        .result(yieldProviderResourceAtom.local(yieldModel.providerId))
+        .result(yieldProviderAtom(yieldModel.providerId))
         .pipe(
           Effect.map(Option.getOrUndefined),
           Effect.orElseSucceed(() => undefined)
         );
 
-      return {
+      return get(liveCampaignRateAtom)({
         ...yieldModel,
         ...(provider ? { provider } : {}),
-      } satisfies EarnYieldWithProvider;
+      } satisfies EarnYieldWithProvider);
     })
   )
 );

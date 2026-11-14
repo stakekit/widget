@@ -29,6 +29,7 @@ const projectEnter = (
     input: {
       amountInitialization: "PreserveIntent",
       availableAmount: new BigNumber("2"),
+      campaign: null,
       connected: true,
       entry: {
         amount: new BigNumber(amount),
@@ -256,5 +257,50 @@ describe("executable token amount truncation", () => {
     });
 
     expect(Result.isFailure(prepared)).toBe(true);
+  });
+
+  it("sends no amount for a Pending Action that takes none, whatever its balance holds", () => {
+    // One withdrawable balance carries a WITHDRAW per stake account, each
+    // with its own amount in its passthrough; the balance is their sum.
+    const integration = yieldApiYieldFixture();
+    const yieldBalance = Schema.decodeSync(EarnBalance)(
+      yieldBalanceFixture({
+        address,
+        amount: "0.023218103",
+        pendingActions: [
+          {
+            amount: "0.00264645",
+            arguments: {
+              fields: [
+                {
+                  label: "Receiver Address",
+                  name: "receiverAddress" as const,
+                  required: false,
+                  type: "string" as const,
+                },
+              ],
+            },
+            intent: "manage" as const,
+            passthrough: "withdraw-stake-account",
+            type: "WITHDRAW" as const,
+          },
+        ],
+        type: "withdrawable",
+      })
+    );
+    const prepared = preparePendingActionCommand({
+      additionalAddresses: null,
+      address,
+      integration,
+      pendingAction: yieldBalance.pendingActions[0]!,
+      pendingActionsState: new Map(),
+      selectedValidators: [],
+      yieldBalance,
+    });
+
+    expect(Result.getOrThrow(prepared).command.arguments).toEqual({});
+    expect(Result.getOrThrow(prepared).amount?.amount.toFixed()).toBe(
+      "0.00264645"
+    );
   });
 });

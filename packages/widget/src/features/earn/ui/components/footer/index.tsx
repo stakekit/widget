@@ -1,17 +1,18 @@
 import type { ComponentProps } from "react";
 
-import { MetaInfo } from "../../../../yield-summary/views";
+import { CampaignMetaInfo } from "../../../../campaigns/views";
 import { useEarnEntry } from "../../use-earn-facades";
 
+/** The selected yield's notes, with how its campaign pays among them. */
 export const Footer = ({
   textSize,
 }: {
-  textSize?: ComponentProps<typeof MetaInfo>["textSize"];
+  textSize?: ComponentProps<typeof CampaignMetaInfo>["textSize"];
 }) => {
   const { view } = useEarnEntry();
 
   return (
-    <MetaInfo
+    <CampaignMetaInfo
       isLoading={view.appLoading || view.footerIsLoading}
       selectedStake={view.selectedStake}
       selectedValidators={view.selectedValidators}

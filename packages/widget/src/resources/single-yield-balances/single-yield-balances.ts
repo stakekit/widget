@@ -2,7 +2,12 @@ import { Data, Duration, Effect } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-import type { WalletAddress, YieldId } from "../../domain/identity/identifiers";
+import type { YieldId } from "../../domain/identity/identifiers";
+import {
+  type WalletScopeKey,
+  type WalletScopeOwnerKey,
+  walletScopeOwnerKey,
+} from "../../domain/wallet/wallet-scope";
 import { appRuntime } from "../../runtime/app-runtime";
 import type {
   ApiRequestError,
@@ -14,12 +19,20 @@ import { withApiResourcePolicy } from "../../shared/effect/api-resource";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import { fillRevealedPositions } from "../revealed-balances/revealed-balances";
 
+/** One yield's balances of a Wallet Scope Owner, in any address casing. */
 export class SingleYieldBalancesKey extends Data.TaggedClass(
   "SingleYieldBalancesKey"
 )<{
-  readonly address: WalletAddress;
+  readonly scope: WalletScopeOwnerKey;
   readonly yieldId: YieldId;
-}> {}
+}> {
+  constructor(input: {
+    readonly scope: WalletScopeKey | WalletScopeOwnerKey;
+    readonly yieldId: YieldId;
+  }) {
+    super({ scope: walletScopeOwnerKey(input.scope), yieldId: input.yieldId });
+  }
+}
 
 class SingleYieldBalancesError extends Data.TaggedError(
   "SingleYieldBalancesError"
@@ -39,7 +52,7 @@ const singleYieldBalancesCanonicalAtom = Atom.family(
           const source = yield* YieldResourceSource;
           return yield* source
             .getSingleYieldBalances({
-              address: key.address,
+              address: key.scope.address,
               yieldId: key.yieldId,
             })
             .pipe(
@@ -51,7 +64,7 @@ const singleYieldBalancesCanonicalAtom = Atom.family(
       )
       .pipe(
         Atom.withReactivity(
-          resourceInvalidationKeys.singleYieldBalances(key.address)
+          resourceInvalidationKeys.singleYieldBalances(key.scope)
         ),
         balancesPolicy,
         Atom.withLabel("singleYieldBalancesResourceAtom")

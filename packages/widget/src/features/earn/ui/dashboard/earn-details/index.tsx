@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { SelectedValidators } from "../../../../../domain/earn/reward-rate";
@@ -7,6 +7,12 @@ import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-sch
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { Card, EmptyState, Skeleton, Stack } from "../../../../../ui/index";
+import {
+  getCampaignMetricCaption,
+  getCampaignStatusBadge,
+  yieldCampaignAtom,
+} from "../../../../campaigns/index";
+import { CampaignSection } from "../../../../campaigns/views";
 import {
   YieldDetailsHeader,
   YieldFactsSection,
@@ -120,13 +126,13 @@ const EarnDetailsPanel = ({
 
   return (
     <Stack gap={16}>
-      <YieldDetailsHeader
+      <EarnDetailsHeader
         headerBadges={headerBadges}
         providerName={providerName}
         yieldDto={yieldDto}
       />
 
-      <EarnDetailsMetrics cards={metricCards} />
+      <EarnDetailsCampaignMetrics cards={metricCards} yieldDto={yieldDto} />
 
       {providers}
 
@@ -160,6 +166,8 @@ const EarnDetailsPanel = ({
           view={tvlChart.view}
         />
       )}
+
+      <CampaignSection yieldDto={yieldDto} />
 
       <YieldFactsSection
         omit={omittedYieldFacts}
@@ -213,3 +221,44 @@ const EarnDetailsSkeleton = () => (
     </Stack>
   </Stack>
 );
+
+/** The yield header, led by its campaign's state when it runs one. */
+const EarnDetailsHeader = (
+  props: Omit<ComponentProps<typeof YieldDetailsHeader>, "status">
+) => {
+  const { t } = useTranslation();
+  const campaign = useAtomValue(yieldCampaignAtom(props.yieldDto.id));
+
+  return (
+    <YieldDetailsHeader
+      {...props}
+      status={campaign ? getCampaignStatusBadge(campaign, t) : null}
+    />
+  );
+};
+
+/** The metric cards, the reward rate's saying what its campaign adds. */
+const EarnDetailsCampaignMetrics = ({
+  cards,
+  yieldDto,
+}: {
+  readonly cards: ComponentProps<typeof EarnDetailsMetrics>["cards"];
+  readonly yieldDto: EarnYieldWithProvider;
+}) => {
+  const { t } = useTranslation();
+  const { locale } = useWidgetPresentation();
+  const campaign = useAtomValue(yieldCampaignAtom(yieldDto.id));
+  const caption = campaign
+    ? getCampaignMetricCaption(campaign, yieldDto, t, locale)
+    : null;
+
+  return (
+    <EarnDetailsMetrics
+      cards={cards.map((card) =>
+        card.id === "reward-rate" && caption
+          ? { ...card, subValue: caption }
+          : card
+      )}
+    />
+  );
+};

@@ -20,17 +20,22 @@ const badgeTones = {
 /**
  * A yield's or position's header. A position's page passes `compact`: the
  * title is the yield's own name, as the line under it already names the
- * provider.
+ * provider. A `status`, such as the yield's campaign state, leads the badges.
  */
 export const YieldDetailsHeader = ({
   density = "default",
   headerBadges,
   providerName,
+  status,
   yieldDto,
 }: {
   readonly density?: "default" | "compact";
   readonly headerBadges: ReadonlyArray<YieldDetailsHeaderBadge>;
   readonly providerName: string;
+  readonly status?: {
+    readonly label: string;
+    readonly tone: "info" | "neutral" | "warning";
+  } | null;
   readonly yieldDto: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
@@ -67,10 +72,13 @@ export const YieldDetailsHeader = ({
               formatDisplayTokenSymbol(yieldDto),
             ]
       }
-      badges={headerBadges.map((badge) => ({
-        label: badge.label,
-        tone: badgeTones[badge.tone],
-      }))}
+      badges={[
+        ...(status ? [status] : []),
+        ...headerBadges.map((badge) => ({
+          label: badge.label,
+          tone: badgeTones[badge.tone],
+        })),
+      ]}
     />
   );
 };

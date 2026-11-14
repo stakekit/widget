@@ -14,6 +14,7 @@ import {
   BackButtonProvider,
 } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
+import { PositionCampaignRewards } from "../components/position-campaign-rewards";
 import { PositionDetailsDisclosure } from "../components/position-details-disclosure";
 import { PositionDetailsLoadFailed } from "../components/position-details-load-failed";
 import { PositionHeader } from "../components/position-header";
@@ -123,6 +124,7 @@ const PositionDetailsPageComponent = () => {
             ) : (
               <>
                 <PositionSummaryCard />
+                <PositionCampaignRewards />
                 <PositionDetailsDisclosure />
                 <PositionYieldFacts />
               </>

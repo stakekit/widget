@@ -18,6 +18,7 @@ import { appRuntime } from "../../../runtime/app-runtime";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import {
   removeValidator,
+  selectCatalogYield,
   selectCategory,
   selectProviderOption,
   selectToken,
@@ -35,7 +36,7 @@ import {
   earnValidatorsPageAtom,
   loadMoreEarnValidatorsPageAtom,
 } from "./earn-selection/state/view-resources";
-import type { EarnTokenKey } from "./earn-selection/types";
+import type { CatalogYieldTarget, EarnTokenKey } from "./earn-selection/types";
 import { earnProviderOptionAtom } from "./flow-target";
 
 export type { EarnSelection, EarnTokenOption } from "./earn-selection/types";
@@ -185,6 +186,15 @@ export const selectEarnSelectionTokenAtom = Atom.fnSync(
       selectToken(context(earnEntryIntentAtom), tokenKey)
     )
 ).pipe(Atom.withLabel("selectEarnSelectionTokenAtom"));
+
+/** Selects a yield anywhere in Earn's catalog, with its category and token. */
+export const selectEarnSelectionCatalogYieldAtom = Atom.fnSync(
+  (target: CatalogYieldTarget, context) =>
+    context.set(
+      earnEntryIntentAtom,
+      selectCatalogYield(context(earnEntryIntentAtom), target)
+    )
+).pipe(Atom.withLabel("selectEarnSelectionCatalogYieldAtom"));
 
 export const selectEarnSelectionYieldAtom = Atom.fnSync(
   (yieldId: YieldId, context) =>

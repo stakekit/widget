@@ -3,15 +3,7 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-import {
-  getPendingActionStateKey,
-  type PendingActionStateKey,
-} from "../../../domain/action/action-command";
-import {
-  getPendingActionAmountConfig,
-  isPendingActionAmountRequired,
-} from "../../../domain/action/pending-action";
-import type { PendingAction } from "../../../domain/earn/action-models";
+import { getPendingActionStateKey } from "../../../domain/action/action-command";
 import {
   getExitUnit,
   getSharesExitBalance,
@@ -19,10 +11,7 @@ import {
 } from "../../../domain/earn/denomination";
 import { isYieldActionAmountEditable } from "../../../domain/earn/stake";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
-import {
-  exactZero,
-  truncateToTokenDecimals,
-} from "../../../domain/finance/exact";
+import { truncateToTokenDecimals } from "../../../domain/finance/exact";
 import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import {
   getSingleExitTokenSum,
@@ -49,6 +38,10 @@ import {
   getYieldEntryPriceToken,
 } from "../../yield-entry/index";
 import { resolvePositionDetailsExitReceiveTokenSelection } from "../model/exit-receive-token";
+import {
+  getPendingActionOffers,
+  type PendingActionOffer,
+} from "../model/pending-action-offers";
 import type { PricesStatus } from "../model/priced-fiat";
 import {
   type PendingActionAmountChange,
@@ -59,49 +52,15 @@ import {
   reducePositionDetailsWorkflow,
 } from "./workflow";
 
-const getPendingActionIndex = (
-  positionBalancesByType: PositionBalancesByType | null
-) =>
-  new Map(
-    positionBalancesByType
-      ? [...positionBalancesByType.values()].flatMap((balances) =>
-          balances.flatMap((balance) =>
-            balance.pendingActions.map(
-              (pendingAction) =>
-                [
-                  getPendingActionStateKey({
-                    actionType: pendingAction.type,
-                    balanceType: balance.type,
-                    passthrough: pendingAction.passthrough,
-                    token: balance.token,
-                  }),
-                  { balance, pendingAction },
-                ] as const
-            )
-          )
-        )
-      : []
-  );
-
-type PendingActionAmountValidation =
-  | "AboveMaximum"
-  | "BelowMinimum"
-  | "Required"
-  | null;
-
-type PendingActionAmountProjection = Readonly<{
-  readonly amount: BigNumber | null;
-  readonly validation: PendingActionAmountValidation;
-}>;
-
+/** Keeps an entered amount only for an action the position offers. */
 const setPendingActionAmount = ({
   action,
   current,
-  index,
+  offers,
 }: {
   readonly action: PendingActionAmountChange["data"];
   readonly current: PositionDetailsWorkflowState["pendingActions"];
-  readonly index: ReturnType<typeof getPendingActionIndex>;
+  readonly offers: ReadonlyArray<PendingActionOffer<PricedEarnBalance>>;
 }) => {
   const key = getPendingActionStateKey({
     actionType: action.actionType,
@@ -109,55 +68,11 @@ const setPendingActionAmount = ({
     passthrough: action.passthrough,
     token: action.token,
   });
-  const pending = index.get(key);
-  if (!pending) return current;
+  if (!offers.some((offer) => offer.key === key)) return current;
 
   const next = new Map(current);
   next.set(key, action.amount);
   return next;
-};
-
-const projectPendingActionAmount = ({
-  balanceAmount,
-  current,
-  decimals,
-  key,
-  pendingAction,
-}: {
-  readonly balanceAmount: BigNumber;
-  readonly current: ReadonlyMap<PendingActionStateKey, BigNumber>;
-  readonly decimals: number;
-  readonly key: PendingActionStateKey;
-  readonly pendingAction: PendingAction;
-}): PendingActionAmountProjection => {
-  if (!isPendingActionAmountRequired(pendingAction)) {
-    return { amount: null, validation: null };
-  }
-
-  const config = getPendingActionAmountConfig(pendingAction);
-  const configuredMaximum = config?.maximum;
-  const maximum =
-    configuredMaximum == null || configuredMaximum.isEqualTo(-1)
-      ? balanceAmount
-      : BigNumber.min(balanceAmount, configuredMaximum);
-  const configuredMinimum = config?.minimum;
-  const minimum =
-    configuredMinimum == null || configuredMinimum.isEqualTo(-1)
-      ? exactZero()
-      : configuredMinimum;
-  const selectedAmount = config?.forceMax
-    ? balanceAmount
-    : (current.get(key) ??
-      BigNumber.max(minimum, BigNumber.min(maximum, balanceAmount)));
-  const amount = truncateToTokenDecimals(selectedAmount, decimals);
-  const validation = (() => {
-    if (!amount.isGreaterThan(0)) return "Required" as const;
-    if (amount.isLessThan(minimum)) return "BelowMinimum" as const;
-    if (amount.isGreaterThan(maximum)) return "AboveMaximum" as const;
-    return null;
-  })();
-
-  return { amount, validation };
 };
 
 /** An exit in Shares also carries its value in the Value Token. */
@@ -277,22 +192,13 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       const unstakeAmountGreaterThanAvailable = exitBalance
         ? unstakeAmount.isGreaterThan(exitBalance.amount)
         : false;
-      const pendingActionIndex = getPendingActionIndex(positionBalancesByType);
-      const pendingActionProjections = new Map(
-        [...pendingActionIndex].map(([pendingKey, pending]) => [
-          pendingKey,
-          projectPendingActionAmount({
-            balanceAmount: pending.balance.amount,
-            current: workflow.pendingActions,
-            decimals: pending.balance.token.decimals,
-            key: pendingKey,
-            pendingAction: pending.pendingAction,
-          }),
-        ])
-      );
+      const pendingActionOffers = getPendingActionOffers({
+        balances: [...(positionBalancesByType?.values() ?? [])].flat(),
+        enteredAmounts: workflow.pendingActions,
+      });
       const pendingActions = new Map(
-        [...pendingActionProjections].flatMap(([pendingKey, projection]) =>
-          projection.amount ? [[pendingKey, projection.amount] as const] : []
+        pendingActionOffers.flatMap((offer) =>
+          offer.amount ? [[offer.key, offer.amount] as const] : []
         )
       );
       return {
@@ -304,8 +210,7 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
         integrationData,
         maxUnstakeAmount: amountConstraints.allowedMaximum,
         minUnstakeAmount: amountConstraints.allowedMinimum,
-        pendingActionIndex,
-        pendingActionProjections,
+        pendingActionOffers,
         pendingActions,
         pendingActionType: key.pendingActionType,
         positionBalances,
@@ -338,7 +243,7 @@ export const dispatchPositionDetailsWorkflowAtom = Atom.family(
           ? setPendingActionAmount({
               action: action.data,
               current: view.pendingActions,
-              index: view.pendingActionIndex,
+              offers: view.pendingActionOffers,
             })
           : undefined;
       context.set(
@@ -363,15 +268,12 @@ type PricedEarnBalance =
     ? Balance
     : never;
 
-type PositionDetailsPendingActionView = {
-  readonly amount: BigNumber | null;
-  readonly amountUsd: BigNumber | null;
-  /** Whether the prices that value `amount` are in, so `amountUsd` is too. */
-  readonly amountUsdStatus: PricesStatus;
-  readonly pendingAction: PendingAction;
-  readonly validation: PendingActionAmountValidation;
-  readonly yieldBalance: PricedEarnBalance;
-};
+type PositionDetailsPendingActionView = PendingActionOffer<PricedEarnBalance> &
+  Readonly<{
+    readonly amountUsd: BigNumber | null;
+    /** Whether the prices that value `amount` are in, so `amountUsd` is too. */
+    readonly amountUsdStatus: PricesStatus;
+  }>;
 
 export const positionDetailsPricesAtom = Atom.family(
   (key: PositionDetailsWorkflowKey) =>
@@ -411,44 +313,25 @@ export const positionDetailsPendingActionsViewAtom = Atom.family(
       const amountUsdStatus = toPresentable(pricesResult)._tag;
       const prices = pricesResult.pipe(AsyncResult.value, Option.getOrNull);
       return view.positionBalancesByType
-        ? [...view.positionBalancesByType.values()].flatMap((balances) =>
-            balances.flatMap((balance) =>
-              balance.pendingActions.map((pendingAction) => {
-                const pendingKey = getPendingActionStateKey({
-                  actionType: pendingAction.type,
-                  balanceType: balance.type,
-                  passthrough: pendingAction.passthrough,
-                  token: balance.token,
-                });
-                const projection =
-                  view.pendingActionProjections.get(pendingKey);
-                const amount = projection?.amount ?? null;
-                // Encrypted rows carry the unpriced confidential asset.
-                const amountUsd =
-                  prices && amount && baseToken
-                    ? getTokenPriceInUSD({
-                        amount,
-                        baseToken,
-                        pricePerShare: null,
-                        prices,
-                        token:
-                          getYieldEntryPriceToken(
-                            view.integrationData,
-                            balance.token
-                          ) ?? balance.token,
-                      })
-                    : null;
-                return {
-                  amount,
-                  amountUsd,
-                  amountUsdStatus,
-                  pendingAction,
-                  validation: projection?.validation ?? null,
-                  yieldBalance: balance,
-                };
-              })
-            )
-          )
+        ? view.pendingActionOffers.map((offer) => ({
+            ...offer,
+            // Encrypted rows carry the unpriced confidential asset.
+            amountUsd:
+              prices && offer.amount && baseToken
+                ? getTokenPriceInUSD({
+                    amount: offer.amount,
+                    baseToken,
+                    pricePerShare: null,
+                    prices,
+                    token:
+                      getYieldEntryPriceToken(
+                        view.integrationData,
+                        offer.yieldBalance.token
+                      ) ?? offer.yieldBalance.token,
+                  })
+                : null,
+            amountUsdStatus,
+          }))
         : null;
     }).pipe(Atom.withLabel("positionDetailsPendingActionsViewAtom"))
 );

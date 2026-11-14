@@ -132,6 +132,10 @@ export const glyphs = {
   ShieldIcon: (
     <path d="M12 3.5 5 6v5.5c0 4.25 2.9 7.6 7 9 4.1-1.4 7-4.75 7-9V6l-7-2.5Z" />
   ),
+  /** A four-point spark, such as for a campaign's incentive. */
+  SparkleIcon: (
+    <path d="M12 3.5c.6 4.4 2.1 5.9 6.5 6.5-4.4.6-5.9 2.1-6.5 6.5-.6-4.4-2.1-5.9-6.5-6.5 4.4-.6 5.9-2.1 6.5-6.5ZM18.5 15.5c.25 1.6.9 2.25 2.5 2.5-1.6.25-2.25.9-2.5 2.5-.25-1.6-.9-2.25-2.5-2.5 1.6-.25 2.25-.9 2.5-2.5Z" />
+  ),
   /** A wallet, such as for a step waiting for the wallet's signature. */
   WalletIcon: (
     <>

@@ -38,6 +38,7 @@ export const TosModal = ({ onAccept, onDecline, isOpen }: TosModalProps) => {
       }}
       title={t("tos_modal.title")}
       closeLabel={t("tos_modal.close")}
+      initialFocus="dialog"
       footer={
         <>
           <Checkbox
@@ -244,8 +245,9 @@ const TermsSection = ({
   </Stack>
 );
 
+/** The terms are the dialog's message, so they read in the default tone. */
 const TermsText = ({ children }: { readonly children: ReactNode }) => (
-  <Text variant="caption" tone="muted" as="p">
+  <Text tone="default" as="p">
     {children}
   </Text>
 );

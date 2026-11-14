@@ -585,6 +585,91 @@ describe("Position Details action model", () => {
     registry.dispose();
   });
 
+  it("offers an action several balances share once", () => {
+    const claim = {
+      amount: null,
+      arguments: null,
+      intent: "manage",
+      passthrough: "claim-all",
+      type: "CLAIM_REWARDS",
+    } as const;
+    const withClaim = (
+      type: "active" | "claimable",
+      amount: string,
+      pendingActions: ReadonlyArray<typeof claim>
+    ) =>
+      Schema.decodeSync(EarnBalance)(
+        yieldBalanceFixture({
+          amount,
+          amountUsd: amount,
+          pendingActions: [...pendingActions],
+          token: selectedYield.token,
+          type,
+        })
+      );
+    const read = (balances: ReadonlyArray<EarnBalance>) => {
+      const { registry, workflowKey } = makeWorkflowRegistry(
+        "default",
+        balances
+      );
+      const view = registry
+        .get(positionDetailsPendingActionsViewAtom(workflowKey))
+        ?.map(({ pendingAction, yieldBalance }) => ({
+          passthrough: pendingAction.passthrough,
+          type: yieldBalance.type,
+        }));
+      registry.dispose();
+      return view;
+    };
+
+    expect(
+      read([
+        withClaim("active", "1.5", [claim]),
+        withClaim("claimable", "0.000001", [claim]),
+      ])
+    ).toEqual([{ passthrough: "claim-all", type: "active" }]);
+  });
+
+  it("projects a shared action's amount from the balance its row shows", () => {
+    const withdraw = {
+      amount: null,
+      arguments: {
+        fields: [
+          { label: "Amount", name: "amount", required: true, type: "string" },
+        ],
+      },
+      intent: "manage",
+      passthrough: "withdraw-locked",
+      type: "WITHDRAW",
+    } as const;
+    // Two locked balances of one token, such as two campaigns' unpaid rewards.
+    const locked = (amount: string) =>
+      Schema.decodeSync(EarnBalance)(
+        yieldBalanceFixture({
+          amount,
+          amountUsd: amount,
+          pendingActions: [withdraw],
+          token: selectedYield.token,
+          type: "locked",
+        })
+      );
+    const { registry, workflowKey } = makeWorkflowRegistry("default", [
+      locked("1"),
+      locked("5"),
+    ]);
+
+    expect(
+      registry
+        .get(positionDetailsPendingActionsViewAtom(workflowKey))
+        ?.map(({ amount, yieldBalance }) => [
+          yieldBalance.amount.toFixed(),
+          amount?.toFixed(),
+        ])
+    ).toEqual([["1", "1"]]);
+
+    registry.dispose();
+  });
+
   it("withdraws a confidential position in its revealed vault shares, valued in the underlying", () => {
     const { cShare, cUsdc } = confidentialFixture;
     const view = readWorkflowView(

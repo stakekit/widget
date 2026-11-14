@@ -1,7 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
-import { exactDecimal } from "../../../../../domain/finance/exact";
 import {
   formatTokenAmountInUSD,
   getGasFeeInUSD,
@@ -32,21 +31,11 @@ export const usePendingActionReview = () => {
   const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;
 
-  // A cancel returns what was committed, its Shares when there are any; one
-  // taking an amount shows that amount in the balance's Value Token.
-  const returnToken = manageFlow.cancelReturn?.token ?? null;
-  const requestAmount = manageFlow.request.arguments?.amount;
-  const shown = requestAmount
-    ? {
-        amount: exactDecimal(requestAmount),
-        token: manageFlow.interactedToken,
-      }
-    : (manageFlow.cancelReturn ?? {
-        amount: exactDecimal(0),
-        token: manageFlow.interactedToken,
-      });
-  const amount = shown.amount;
-  const interactedToken = shown.token;
+  // A cancel names what it returns; an action without an amount shows none.
+  const returnToken = manageFlow.cancelReturnToken ?? null;
+  const shown = manageFlow.balanceHidden ? null : manageFlow.amount;
+  const interactedToken =
+    manageFlow.amount?.token ?? manageFlow.interactedToken;
   const integrationData = manageFlow.integration;
 
   const prices = review.prices;
@@ -83,11 +72,8 @@ export const usePendingActionReview = () => {
       ? {
           label: t("review.you_receive"),
           testId: "review-receive",
-          // A cancel returns its whole request, unless still encrypted.
-          value:
-            requestAmount || manageFlow.balanceHidden
-              ? returnToken.symbol
-              : `${formatTokenAmount(amount, locale, "down")} ${returnToken.symbol}`,
+          // Its amount, when it has one, heads the review.
+          value: returnToken.symbol,
           logo: resolveTokenLogo(returnToken, { badge: "none" }),
         }
       : null,
@@ -104,18 +90,22 @@ export const usePendingActionReview = () => {
     yieldName: integrationData.metadata.name,
   });
 
-  // An encrypted balance has no known amount until it is revealed.
-  const formattedAmount = manageFlow.balanceHidden
-    ? t("shared.confidential.hidden")
-    : formatTokenAmount(amount, locale, "down");
-  const amountFiat = manageFlow.balanceHidden
-    ? null
-    : formatTokenAmountInUSD({
-        amount,
+  // An encrypted balance's amount is unknown until it is revealed; an
+  // action without an amount names its token alone.
+  const getFormattedAmount = () => {
+    if (!manageFlow.amount) return null;
+    if (manageFlow.balanceHidden) return t("shared.confidential.hidden");
+    return formatTokenAmount(manageFlow.amount.amount, locale, "down");
+  };
+  const formattedAmount = getFormattedAmount();
+  const amountFiat = shown
+    ? formatTokenAmountInUSD({
+        amount: shown.amount,
         locale,
         prices,
         token: interactedToken,
-      });
+      })
+    : null;
   // Claiming rewards the network fee eats is worth a warning.
   const feeWarning = getNetworkFeeWarning({
     feeUsd: getReviewUsdValue({
@@ -126,9 +116,13 @@ export const usePendingActionReview = () => {
     subject:
       manageFlow.pendingActionType === "CLAIM_REWARDS" ? "rewards" : "amount",
     t,
-    valueUsd: manageFlow.balanceHidden
-      ? null
-      : getReviewUsdValue({ amount, prices, token: interactedToken }),
+    valueUsd: shown
+      ? getReviewUsdValue({
+          amount: shown.amount,
+          prices,
+          token: interactedToken,
+        })
+      : null,
   });
 
   return {

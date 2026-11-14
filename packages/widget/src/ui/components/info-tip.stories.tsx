@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, screen, userEvent, waitFor, within } from "storybook/test";
+import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
@@ -88,6 +88,25 @@ export const KeyboardFocus: Story = {
 
     await userEvent.keyboard("{Enter}");
     await screen.findByText(explanation);
+  },
+};
+
+/**
+ * An action at its end, such as opening a campaign's details: pressing it
+ * runs the action and closes the tip, so what it opens takes its place.
+ */
+export const WithAction: Story = {
+  args: {
+    action: { label: "View campaign details", onClick: fn() },
+  },
+  play: async ({ args }) => {
+    await userEvent.tab();
+    const action = await screen.findByRole("button", {
+      name: "View campaign details",
+    });
+    await userEvent.click(action);
+    await expect(args.action?.onClick).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.queryByText(explanation)).toBeNull());
   },
 };
 

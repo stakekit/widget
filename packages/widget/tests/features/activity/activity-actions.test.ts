@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import { Cause, Effect, Layer, Option, Schema } from "effect";
+import { Cause, Effect, Layer, Schema } from "effect";
 import { Atom, AtomRegistry } from "effect/reactivity";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 
@@ -37,7 +37,10 @@ import {
   borrowResourceSourceLayer,
   unconfiguredBorrowResourceSourceLayer,
 } from "../../utils/services/borrow-resource-source";
-import { yieldResourceSourceLayer } from "../../utils/services/resource-sources";
+import {
+  emptyProviderList,
+  yieldResourceSourceLayer,
+} from "../../utils/services/resource-sources";
 
 const address = Schema.decodeSync(
   Schema.NonEmptyString.pipe(Schema.brand("WalletAddress"))
@@ -137,7 +140,7 @@ describe("activity action atom boundary", () => {
           appRuntime.layer,
           yieldResourceSourceLayer({
             getOpportunity,
-            getProvider: () => Effect.succeedNone,
+            listProviders: emptyProviderList,
             listActivity,
           }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
         ),
@@ -216,7 +219,10 @@ describe("activity action atom boundary", () => {
     const getOpportunity = vi.fn((yieldId: (typeof yields)[number]["id"]) =>
       tracked(yieldsById.get(yieldId)!)
     );
-    const getProvider = vi.fn(() => tracked(Option.none()));
+    const listProviders = vi.fn(
+      (request: { readonly limit: number; readonly offset: number }) =>
+        tracked({ ...request, items: [], total: 0 })
+    );
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
       tracked(validatorPage(request))
     );
@@ -234,7 +240,7 @@ describe("activity action atom boundary", () => {
           appRuntime.layer,
           yieldResourceSourceLayer({
             getOpportunity,
-            getProvider,
+            listProviders,
             listActivity,
             listValidators,
           }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
@@ -259,7 +265,7 @@ describe("activity action atom boundary", () => {
     expect(maxInFlight).toBeGreaterThan(1);
     expect(maxInFlight).toBeLessThanOrEqual(5);
     expect(getOpportunity).toHaveBeenCalledTimes(yields.length);
-    expect(getProvider).toHaveBeenCalledTimes(yields.length);
+    expect(listProviders).toHaveBeenCalledOnce();
     expect(listValidators).toHaveBeenCalledTimes(yields.length);
 
     unmount();
@@ -317,7 +323,7 @@ const makeEnrichmentRegistry = (
       Atom.initialValue(
         appRuntime.layer,
         yieldResourceSourceLayer({
-          getProvider: () => Effect.succeedNone,
+          listProviders: emptyProviderList,
           ...source,
         }).pipe(Layer.merge(unconfiguredBorrowResourceSourceLayer))
       ),

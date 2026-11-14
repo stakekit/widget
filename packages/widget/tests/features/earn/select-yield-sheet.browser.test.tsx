@@ -26,6 +26,7 @@ vi.mock(
         selectCategory: vi.fn(),
         setSearch: vi.fn(),
         view: {
+          campaigns: new Map(),
           filtered: hookState.filtered,
           search: "",
           selected: hookState.filtered[0] ?? null,

@@ -36,7 +36,11 @@ const uuidFaker = () =>
 
 type ExactDecimalFixtureInput = Parameters<typeof exactDecimal>[0];
 type YieldRewardComponent = YieldRewardRate["components"][number];
-type YieldRewardComponentFixtureInput = Omit<YieldRewardComponent, "rate"> & {
+type YieldRewardComponentFixtureInput = Omit<
+  YieldRewardComponent,
+  "origin" | "rate"
+> & {
+  readonly origin?: YieldRewardComponent["origin"];
   readonly rate: ExactDecimalFixtureInput;
 };
 type YieldRewardRateFixtureInput = Omit<
@@ -58,6 +62,7 @@ export const yieldRewardRateFixture = (
     total: exactDecimal(total),
     components: components.map((component) => ({
       ...component,
+      origin: component.origin ?? "api",
       rate: exactDecimal(component.rate),
     })),
   };
@@ -83,11 +88,14 @@ export const encodeYieldRewardRateFixture = (
   return {
     rateType: rewardRate.rateType ?? "APY",
     total: exactDecimal(rewardRate.total ?? apyFaker()).toNumber(),
-    components: (rewardRate.components ?? []).map((component) => ({
-      ...component,
-      rate: exactDecimal(component.rate).toNumber(),
-      yieldSource: decodeWireYieldSource(component.yieldSource),
-    })),
+    components: (rewardRate.components ?? []).map(
+      ({ rate, rateType, token, yieldSource }) => ({
+        rate: exactDecimal(rate).toNumber(),
+        rateType,
+        token,
+        yieldSource: decodeWireYieldSource(yieldSource),
+      })
+    ),
   };
 };
 
@@ -198,6 +206,82 @@ export const yieldApiYieldFixture = (
       : wire
   );
 };
+
+/** A live campaign on the default yield, as `GET /v1/yields/{id}/campaigns` sends it. */
+export const yieldApiCampaignDtoFixture = (
+  overrides?: Readonly<Record<string, unknown>>
+): Readonly<Record<string, unknown>> => ({
+  id: "8f4f5c3a-1d2b-4c3e-9f00-2a7b6c5d4e01",
+  name: "Kamino × Utila USDC Boost",
+  createdAt: "2026-11-01T09:00:00.000Z",
+  updatedAt: "2026-11-01T09:00:00.000Z",
+  yieldId: "ethereum-eth-native-staking",
+  status: "active",
+  rewardMode: "compound",
+  rewardRate: {
+    total: 0.042,
+    rateType: "APR",
+    components: [],
+  },
+  totalBudget: "150000",
+  distributedBudget: "1200",
+  remainingBudget: "148800",
+  configuredHourlyEmission: null,
+  apyCeiling: 0.1,
+  qualificationConfig: {
+    type: "min_token_amount",
+    threshold: "10",
+    maxIncentivizedTvlToken: "50000",
+  },
+  startTime: "2026-11-16T12:00:00.000Z",
+  endTime: "2027-05-15T12:00:00.000Z",
+  lastProcessedHour: null,
+  nextPayoutDueAt: "2026-11-17T12:00:00.000Z",
+  payoutFrequency: "daily",
+  rewardToken: yieldApiTokenFixture({
+    name: "Allez USDC vault shares",
+    symbol: "kAllezUSDC",
+    decimals: 6,
+  }),
+  ...overrides,
+});
+
+/** A wallet's rewards in the default campaign, as `GET /v1/campaigns/rewards` sends them. */
+export const yieldApiCampaignRewardsDtoFixture = (
+  overrides?: Readonly<Record<string, unknown>>
+): Readonly<Record<string, unknown>> => ({
+  campaignId: "8f4f5c3a-1d2b-4c3e-9f00-2a7b6c5d4e01",
+  yieldId: "ethereum-eth-native-staking",
+  status: "active",
+  rewardMode: "compound",
+  rewardToken: yieldApiTokenFixture({
+    name: "Allez USDC vault shares",
+    symbol: "kAllezUSDC",
+    decimals: 6,
+  }),
+  totals: { earned: "77.1", paid: "74.68", unpaid: "2.42" },
+  inputTokenTotals: { earned: "80.39", paid: "77.87", unpaid: "2.52" },
+  accruedThrough: "2026-12-14T08:00:00.000Z",
+  nextPayoutDueAt: "2026-12-14T12:00:00.000Z",
+  qualification: {
+    status: "qualified",
+    qualifyingBalance: "25000",
+    incentivizedBalance: "25000",
+  },
+  ...overrides,
+});
+
+/** One payout, as `GET /v1/campaigns/{campaignId}/payouts` sends it. */
+export const yieldApiCampaignPayoutDtoFixture = (
+  overrides?: Readonly<Record<string, unknown>>
+): Readonly<Record<string, unknown>> => ({
+  paidAt: "2026-12-13T12:04:00.000Z",
+  amount: "2.9197",
+  inputTokenAmount: "3.04",
+  txHash: "5h3cK7Lm9QxR2uV8yWzA1bC4dE6fG8hJ0kL2mN4pQ6rS8tU0vW2xY4zA6bC8dE0f",
+  status: "paid",
+  ...overrides,
+});
 
 export const yieldApiValidatorFixture = (
   overrides?: Omit<Partial<ValidatorDto>, "rewardRate"> & {

@@ -30,6 +30,7 @@ import {
 } from "../../../services/navigation/widget-routes";
 import { PageTransition } from "../../../ui/index";
 import { BorrowFeatureRoute } from "../../routes/ui/borrow-feature-route";
+import { PageScrollReset } from "../../routes/ui/page-scroll-reset";
 import { dashboardEarnRoute } from "./dashboard-earn-route";
 import {
   DashboardEarnFlowOverview,
@@ -222,6 +223,7 @@ export const DashboardRoutes = () => {
           onExitComplete={onExitComplete}
         >
           {/* The leaving page keeps its location, so it renders the page being left. */}
+          <PageScrollReset locationKey={location.key} />
           <Routes location={location}>
             {createDashboardRoutes({ registerEarnFooterButton })}
           </Routes>

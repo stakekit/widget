@@ -49,7 +49,7 @@ describe("External Provider", () => {
       eth: "Ethereum",
       avalanche: "Avalanche",
       solana: "Solana",
-      ton: "Ton",
+      ton: "TON",
     } as const;
 
     const chainText = app.getByText(

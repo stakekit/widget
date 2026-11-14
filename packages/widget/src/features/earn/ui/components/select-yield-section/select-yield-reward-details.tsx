@@ -15,12 +15,15 @@ import {
   Stack,
   Text,
 } from "../../../../../ui/index";
+import {
+  CampaignRateBreakdown,
+  CampaignStrip,
+} from "../../../../campaigns/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
   EstimatedRewardAmounts,
   getRewardTokenSymbols,
   isMorphoProvider,
-  RewardRateBreakdown,
 } from "../../../../yield-summary/views";
 import { useEarnEntry } from "../../use-earn-facades";
 import { formatEntryFigure, formatEstimatedRewards } from "./entry-figure";
@@ -132,16 +135,15 @@ export const SelectYieldRewardDetails = ({
 
   return (
     <Stack gap={16}>
-      {showYieldStrategyDetails && (
-        <>
-          {strategyDetails &&
-          (alwaysShowStrategy || strategyDetails.outputToken) ? (
-            <YieldStrategyDetails {...strategyDetails} />
-          ) : null}
+      {showYieldStrategyDetails &&
+      strategyDetails &&
+      (alwaysShowStrategy || strategyDetails.outputToken) ? (
+        <YieldStrategyDetails {...strategyDetails} />
+      ) : null}
 
-          {alwaysShowStrategy && <Divider />}
-        </>
-      )}
+      {selectedStake ? <CampaignStrip yieldDto={selectedStake} /> : null}
+
+      {showYieldStrategyDetails && alwaysShowStrategy && <Divider />}
 
       {earnPresentation.zerion && rewardToken ? (
         <Stack direction="row" align="center" justify="between" gap={8}>
@@ -174,10 +176,10 @@ export const SelectYieldRewardDetails = ({
 
       <EstimatedRewardAmounts figures={estimatedRewardFigures} />
 
-      {rewardRateDetails ? (
-        <RewardRateBreakdown
+      {selectedStake && rewardRateDetails ? (
+        <CampaignRateBreakdown
+          yieldDto={selectedStake}
           rewardRate={rewardRateDetails}
-          showUpToCampaign
           title={t("details.apy_composition.title")}
           testId="reward-rate-breakdown"
         />

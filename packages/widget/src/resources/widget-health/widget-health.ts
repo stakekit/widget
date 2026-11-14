@@ -3,6 +3,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
 import { appRuntime } from "../../runtime/app-runtime";
+import { withVisibleRefresh } from "../../runtime/page-visibility";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -30,7 +31,7 @@ const healthRequestAtom = appRuntime
   );
 
 const widgetHealthCanonicalAtom = healthRequestAtom.pipe(
-  Atom.withRefresh(Duration.seconds(30)),
+  withVisibleRefresh(Duration.seconds(30)),
   Atom.withLabel("widgetHealthResourceAtom")
 );
 

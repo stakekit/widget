@@ -10,7 +10,7 @@ import { getBalanceShares, type TokenAmount } from "../earn/denomination";
 import type { YieldRewardRate } from "../earn/reward-rate";
 import { type EarnValidator, EarnValidatorKey } from "../earn/validator";
 import { exactDecimal, exactZero } from "../finance/exact";
-import type { YieldId } from "../identity/identifiers";
+import type { CampaignId, YieldId } from "../identity/identifiers";
 import { type TokenString, tokenString } from "../token/token";
 
 export type PositionBalancesByType = Map<
@@ -200,6 +200,8 @@ export const sumBalancesByToken = (
 
 export type PositionBalanceRow = PositionTokenSum &
   Readonly<{
+    /** The Campaign whose unpaid rewards this `locked` row holds. */
+    readonly campaignId?: CampaignId;
     /** A cancel for this pending balance is broadcast but not yet confirmed. */
     readonly cancelling: boolean;
     readonly date: EarnBalance["date"];
@@ -212,9 +214,9 @@ export type PositionBalanceRow = PositionTokenSum &
 /**
  * Display rows for raw balances: equal status, token identity, and date are
  * summed exactly; different maturity/unlock dates stay apart so countdowns
- * remain correct, and a balance being cancelled stays apart from the rest.
- * Order follows first appearance. Raw balances (and their pending actions)
- * are left untouched for execution.
+ * remain correct, and a balance being cancelled or holding a Campaign's
+ * rewards stays apart from the rest. Order follows first appearance. Raw
+ * balances (and their pending actions) are left untouched for execution.
  */
 export const groupPositionBalanceRows = (
   balances: ReadonlyArray<
@@ -222,6 +224,7 @@ export const groupPositionBalanceRows = (
       EarnBalance,
       | "amount"
       | "amountUsd"
+      | "campaignId"
       | "date"
       | "isEncrypted"
       | "shares"
@@ -239,7 +242,7 @@ export const groupPositionBalanceRows = (
         balance.date ? DateTime.toEpochMillis(balance.date) : ""
       }::${cancelling}::${
         balance.shareToken ? tokenString(balance.shareToken) : ""
-      }`;
+      }::${balance.campaignId ?? ""}`;
       const previous = rows.get(key);
       const isEncrypted = previous?.isEncrypted || balance.isEncrypted;
       const balanceShares = getBalanceShares(balance);
@@ -255,6 +258,7 @@ export const groupPositionBalanceRows = (
         amountUsd: (previous?.amountUsd ?? exactZero()).plus(
           balance.amountUsd ?? 0
         ),
+        ...(balance.campaignId ? { campaignId: balance.campaignId } : {}),
         cancelling,
         date: balance.date,
         ...(isEncrypted === undefined ? {} : { isEncrypted }),

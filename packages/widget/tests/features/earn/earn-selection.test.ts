@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { EarnPosition } from "../../../src/domain/earn/balance";
 import type { EarnLegacyTokenOptionsResponse } from "../../../src/domain/earn/responses";
+import { getApiYieldTypesForYieldCategory } from "../../../src/domain/earn/yield";
 import type { EarnYield } from "../../../src/domain/earn/yield-schema";
 import { TokenBalancesResponse } from "../../../src/domain/finance/models";
 import { type PriceRequest, Prices } from "../../../src/domain/finance/prices";
@@ -45,6 +46,7 @@ import {
   yieldBalanceFixture,
 } from "../../fixtures";
 import {
+  emptyProviderList,
   legacyResourceSourceLayer,
   yieldResourceSourceLayer,
 } from "../../utils/services/resource-sources";
@@ -82,7 +84,7 @@ const tokenCatalog = [firstYield, secondYield].map((yieldModel) => ({
 
 const makeRegistry = ({
   entry = compactEntry,
-  getProvider = () => Effect.succeedNone,
+  listProviders = emptyProviderList,
   listYields = () =>
     Effect.succeed({
       items: [firstYield, secondYield],
@@ -96,16 +98,19 @@ const makeRegistry = ({
   prices = { USDC: 1 },
   scanTokenBalances,
   tokenOptions = tokenCatalog,
+  /** Answers token catalog reads; by default every read lists `tokenOptions`. */
+  getTokenOptions: tokenOptionsSource = () => Effect.succeed(tokenOptions),
 }: {
   readonly entry?: EarnEntry;
-  readonly getProvider?: YieldResourceSource["Service"]["getProvider"];
+  readonly listProviders?: YieldResourceSource["Service"]["listProviders"];
+  readonly getTokenOptions?: LegacyResourceSource["Service"]["getTokenOptions"];
   readonly listYields?: YieldResourceSource["Service"]["listYields"];
   readonly positions?: ReadonlyArray<EarnPosition>;
   readonly prices?: Readonly<Record<string, number>>;
   readonly scanTokenBalances: LegacyResourceSource["Service"]["scanTokenBalances"];
   readonly tokenOptions?: typeof EarnLegacyTokenOptionsResponse.Type;
 }) => {
-  const getTokenOptions = vi.fn(() => Effect.succeed(tokenOptions));
+  const getTokenOptions = vi.fn(tokenOptionsSource);
   const registry = AtomRegistry.make({
     initialValues: [
       applicationRuntimeInitInitialValue(),
@@ -140,7 +145,7 @@ const makeRegistry = ({
           }),
           yieldResourceSourceLayer({
             getPositions: () => Effect.succeed({ items: [...positions] }),
-            getProvider,
+            listProviders,
             listYields,
           })
         )
@@ -1133,10 +1138,10 @@ describe("Earn Selection", () => {
 
     const makeProviderOptionsRegistry = (
       yieldModel: EarnYield,
-      getProvider?: YieldResourceSource["Service"]["getProvider"]
+      listProviders?: YieldResourceSource["Service"]["listProviders"]
     ) =>
       makeRegistry({
-        ...(getProvider === undefined ? {} : { getProvider }),
+        ...(listProviders === undefined ? {} : { listProviders }),
         listYields: () =>
           Effect.succeed({
             items: [yieldModel],
@@ -1195,8 +1200,8 @@ describe("Earn Selection", () => {
           options: ["unlisted-operator", "P2P"],
           required: false,
         }),
-        (providerId) =>
-          providerId === "P2P" ? Effect.succeedSome(p2p) : Effect.succeedNone
+        ({ limit, offset }) =>
+          Effect.succeed({ items: [p2p], limit, offset, total: 1 })
       );
       const unmountView = registry.mount(earnSelectionViewAtom);
       const unmountOptions = registry.mount(
@@ -1592,6 +1597,313 @@ describe("Earn Selection", () => {
           amountTouched: true,
           stakeAmount: "",
         });
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+  });
+
+  describe("default Yield Category", () => {
+    const categories = ["defi", "stake", "rwa"] as const;
+    const rwaYield = yieldApiYieldFixture({
+      id: "ethereum-usdc-rwa",
+      token: secondYield.token,
+    });
+    const catalogs = {
+      defi: [{ availableYields: [secondYield.id], token: secondYield.token }],
+      rwa: [{ availableYields: [rwaYield.id], token: secondYield.token }],
+      stake: [{ availableYields: [firstYield.id], token: firstYield.token }],
+    };
+    const groupedEntry: EarnEntry = {
+      ...compactEntry,
+      categoryGrouping: true,
+      categoryOrder: [...categories],
+    };
+    type Category = (typeof categories)[number];
+    type CatalogResponse = Effect.Effect<
+      typeof EarnLegacyTokenOptionsResponse.Type,
+      ApiRequestError
+    >;
+    const offline: CatalogResponse = Effect.fail(
+      new ApiRequestError({
+        cause: new Error("offline"),
+        failure: { _tag: "Unreachable" },
+        operation: "legacy-token-options",
+      })
+    );
+
+    /** Each category's token catalog answers only when the test settles it. */
+    const makeCategoryRegistry = (entry: EarnEntry = groupedEntry) => {
+      const gates = new Map(
+        categories.map((category) => [
+          category,
+          Promise.withResolvers<CatalogResponse>(),
+        ])
+      );
+      const settled = new Set<Category>();
+      const listYields = vi.fn(() =>
+        Effect.succeed({
+          items: [firstYield, secondYield, rwaYield],
+          limit: 100,
+          offset: 0,
+          total: 3,
+        })
+      );
+      const { registry } = makeRegistry({
+        entry,
+        getTokenOptions: (request) => {
+          const category = categories.find((candidate) =>
+            getApiYieldTypesForYieldCategory(candidate).every((yieldType) =>
+              request.yieldTypes?.includes(yieldType)
+            )
+          );
+          const gate = category ? gates.get(category) : undefined;
+          if (!request.enter || !category || !gate) return Effect.succeed([]);
+          return Effect.promise(() => gate.promise).pipe(
+            Effect.flatten,
+            Effect.ensuring(Effect.sync(() => settled.add(category)))
+          );
+        },
+        listYields,
+        scanTokenBalances: () =>
+          Effect.succeed(Schema.decodeSync(TokenBalancesResponse)([])),
+      });
+      const settle = (category: Category, response: CatalogResponse) =>
+        gates.get(category)?.resolve(response);
+      return { listYields, registry, settle, settled };
+    };
+
+    /** What the tab bar and the Earn page show of the Yield Category. */
+    const categoryView = (registry: AtomRegistry.AtomRegistry) => {
+      const status = registry.get(earnSelectionStatusViewAtom);
+      return {
+        blockingFailure: status.blockingFailure,
+        category: registry.get(earnSelectionViewAtom).selection.category,
+        empty: status.empty.categories,
+        loading: status.loading.categories,
+        tabs: registry.get(earnSelectionYieldOptionsViewAtom)
+          .availableCategories,
+      };
+    };
+
+    it("selects DeFi as soon as its catalog lists tokens, while the others load", async () => {
+      const { listYields, registry, settle } = makeCategoryRegistry();
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        settle("defi", Effect.succeed(catalogs.defi));
+
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionViewAtom).selection).toMatchObject({
+            category: "defi",
+            yield: { id: secondYield.id },
+          })
+        );
+        expect(listYields).toHaveBeenCalled();
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("waits for Stake when DeFi lists nothing, even once RWA lists tokens", async () => {
+      const { registry, settle, settled } = makeCategoryRegistry();
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        settle("defi", Effect.succeed([]));
+        settle("rwa", Effect.succeed(catalogs.rwa));
+
+        await vi.waitFor(() =>
+          expect(settled).toEqual(new Set(["defi", "rwa"]))
+        );
+        expect(categoryView(registry)).toEqual({
+          blockingFailure: false,
+          category: null,
+          empty: false,
+          loading: true,
+          tabs: [],
+        });
+
+        settle("stake", Effect.succeed(catalogs.stake));
+
+        await vi.waitFor(() =>
+          expect(categoryView(registry)).toEqual({
+            blockingFailure: false,
+            category: "stake",
+            empty: false,
+            loading: false,
+            tabs: ["stake", "rwa"],
+          })
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("waits for the catalog of the deep-linked yield", async () => {
+      const { registry, settle, settled } = makeCategoryRegistry({
+        ...groupedEntry,
+        initParams: decodeInitParams({
+          externalProviderInitToken: null,
+          href: `https://host.test/?tab=earn&yieldId=${rwaYield.id}`,
+        }),
+      });
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        settle("defi", Effect.succeed(catalogs.defi));
+        settle("stake", Effect.succeed(catalogs.stake));
+
+        await vi.waitFor(() =>
+          expect(settled).toEqual(new Set(["defi", "stake"]))
+        );
+        expect(categoryView(registry)).toEqual({
+          blockingFailure: false,
+          category: null,
+          empty: false,
+          loading: true,
+          tabs: [],
+        });
+
+        settle("rwa", Effect.succeed(catalogs.rwa));
+
+        await vi.waitFor(() =>
+          expect(registry.get(earnSelectionViewAtom).selection).toMatchObject({
+            category: "rwa",
+            yield: { id: rwaYield.id },
+          })
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("skips a failed DeFi catalog for Stake while RWA loads", async () => {
+      const { registry, settle } = makeCategoryRegistry();
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        settle("defi", offline);
+        settle("stake", Effect.succeed(catalogs.stake));
+
+        await vi.waitFor(() =>
+          expect(categoryView(registry)).toEqual({
+            blockingFailure: false,
+            category: "stake",
+            empty: false,
+            loading: false,
+            tabs: ["stake"],
+          })
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("shows no categories only once every catalog answers empty", async () => {
+      const { registry, settle, settled } = makeCategoryRegistry();
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        settle("defi", Effect.succeed([]));
+        settle("stake", Effect.succeed([]));
+
+        await vi.waitFor(() =>
+          expect(settled).toEqual(new Set(["defi", "stake"]))
+        );
+        expect(categoryView(registry)).toEqual({
+          blockingFailure: false,
+          category: null,
+          empty: false,
+          loading: true,
+          tabs: [],
+        });
+
+        settle("rwa", Effect.succeed([]));
+
+        await vi.waitFor(() =>
+          expect(categoryView(registry)).toEqual({
+            blockingFailure: false,
+            category: null,
+            empty: true,
+            loading: false,
+            tabs: [],
+          })
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("fails only once every catalog answers without tokens and one failed", async () => {
+      const { registry, settle, settled } = makeCategoryRegistry();
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        settle("defi", offline);
+        settle("stake", Effect.succeed([]));
+
+        await vi.waitFor(() =>
+          expect(settled).toEqual(new Set(["defi", "stake"]))
+        );
+        expect(categoryView(registry)).toEqual({
+          blockingFailure: false,
+          category: null,
+          empty: false,
+          loading: true,
+          tabs: [],
+        });
+
+        settle("rwa", Effect.succeed([]));
+
+        await vi.waitFor(() =>
+          expect(categoryView(registry)).toEqual({
+            blockingFailure: true,
+            category: null,
+            empty: false,
+            loading: false,
+            tabs: [],
+          })
+        );
+      } finally {
+        unmount();
+        registry.dispose();
+      }
+    });
+
+    it("shows tabs once the category is decided, adding one as each catalog lists tokens", async () => {
+      const { registry, settle, settled } = makeCategoryRegistry();
+      const unmount = registry.mount(earnSelectionViewAtom);
+
+      try {
+        settle("stake", Effect.succeed(catalogs.stake));
+        await vi.waitFor(() => expect(settled).toEqual(new Set(["stake"])));
+        expect(categoryView(registry)).toMatchObject({
+          category: null,
+          tabs: [],
+        });
+
+        settle("defi", Effect.succeed(catalogs.defi));
+        await vi.waitFor(() =>
+          expect(categoryView(registry)).toMatchObject({
+            category: "defi",
+            tabs: ["defi", "stake"],
+          })
+        );
+
+        settle("rwa", Effect.succeed(catalogs.rwa));
+        await vi.waitFor(() =>
+          expect(categoryView(registry)).toMatchObject({
+            category: "defi",
+            tabs: ["defi", "stake", "rwa"],
+          })
+        );
       } finally {
         unmount();
         registry.dispose();

@@ -162,14 +162,19 @@ export const bootstrapWallet = Effect.gen(function* () {
     !walletConfig.isLedgerLive &&
     !walletConfig.isSafe &&
     !connectorSource.walletListFactory;
-  const solanaRuntime = yield* solana
-    .makeRuntime({ includeWalletAdapters: includeSolanaWalletAdapters })
-    .pipe(
-      Effect.mapError((cause) =>
-        WalletBootstrapError.make({ cause, stage: "solana" })
+  const solanaRuntime = includeSolanaWalletAdapters
+    ? yield* solana.makeRuntime.pipe(
+        Effect.mapError((cause) =>
+          WalletBootstrapError.make({ cause, stage: "solana" })
+        )
       )
-    );
-  const solanaSnapshot = yield* solanaRuntime.current;
+    : null;
+  const solanaWallets = solanaRuntime
+    ? {
+        connection: solanaRuntime.connection,
+        wallets: (yield* solanaRuntime.current).wallets,
+      }
+    : null;
   const controller = yield* wagmi
     .buildConfig({
       ...walletConfig,
@@ -177,8 +182,7 @@ export const bootstrapWallet = Effect.gen(function* () {
       externalProviders: snapshot.externalProviders,
       persistPublicKey: persistence.upsertStoredPublicKey,
       queryParams: snapshot.initParams,
-      solanaConnection: solanaRuntime.connection,
-      solanaWallets: solanaSnapshot.wallets,
+      solana: solanaWallets,
       walletListFactory: connectorSource.walletListFactory,
     })
     .pipe(
@@ -193,12 +197,13 @@ export const bootstrapWallet = Effect.gen(function* () {
         WalletBootstrapError.make({ cause, stage: "wagmi-observation" })
       )
     );
-  if (includeSolanaWalletAdapters && controller.solanaConnectorMode) {
+  if (solanaRuntime && controller.solanaConnectorMode) {
     yield* installSolanaConnectorMembership({
       actions: controller.actions,
       config: controller.wagmiConfig,
       core,
-      createConnector: controller.createSolanaConnector,
+      createConnector: (wallet) =>
+        controller.createSolanaConnector(wallet, solanaRuntime.connection),
       runtime: solanaRuntime,
     });
   }

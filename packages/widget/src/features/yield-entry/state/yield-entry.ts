@@ -10,7 +10,7 @@ import {
   ActionSimulationKey,
   actionSimulationResourceAtom,
 } from "../../../resources/action-simulation/action-simulation";
-import { yieldProviderResourceAtom } from "../../../resources/yield-provider/yield-provider";
+import { yieldProviderAtom } from "../../../resources/yield-provider/yield-provider";
 import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { TrackingService } from "../../../services/tracking/tracking-service";
@@ -21,6 +21,7 @@ import {
 } from "../../../services/wallet/wallet-command-identity";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
+import { yieldCampaignAtom } from "../../campaigns/index";
 import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/index";
 import {
   CurrentYieldKycGateKey,
@@ -168,6 +169,9 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
       projection: {
         amountInitialization: input.amountInitialization,
         availableAmount: input.availableAmount,
+        campaign: input.entry.yield
+          ? get(yieldCampaignAtom(input.entry.yield.id))
+          : null,
         connected,
         entry: input.entry,
         externalProviders: Boolean(config.externalProviders),
@@ -355,9 +359,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
                     selectedProviderOption: providerOption
                       ? {
                           provider: context(
-                            yieldProviderResourceAtom.local(
-                              ProviderId.make(providerOption)
-                            )
+                            yieldProviderAtom(ProviderId.make(providerOption))
                           ).pipe(
                             AsyncResult.value,
                             Option.flatten,

@@ -321,6 +321,42 @@ export const connectPickerEcosystems = <E>({
     )
   );
 
+/** What the picker shows: whether it is open, and its rows. */
+export type ConnectPickerState<A> = Readonly<{
+  open: boolean;
+  rows: ReadonlyArray<A>;
+}>;
+
+/**
+ * The picker across its open sessions, its open flag and rows changing
+ * together. Each open starts empty, so a reopened picker never shows rows its
+ * new session would then move, and then follows that session. A close keeps
+ * the rows: the dialog animates away with the list it showed.
+ */
+export const connectPickerSessions = <A, E, R>(
+  open: Stream.Stream<boolean, E, R>,
+  session: Stream.Stream<ReadonlyArray<A>, E, R>
+): Stream.Stream<ConnectPickerState<A>, E, R> =>
+  open.pipe(
+    Stream.switchMap((isOpen) =>
+      isOpen
+        ? Stream.concat(Stream.succeed<ReadonlyArray<A>>([]), session).pipe(
+            Stream.map((rows) => ({ open: true, rows }))
+          )
+        : Stream.succeed({ open: false })
+    ),
+    Stream.mapAccum(
+      (): ReadonlyArray<A> => [],
+      (
+        last,
+        state: { readonly open: boolean; readonly rows?: ReadonlyArray<A> }
+      ) => {
+        const rows = state.rows ?? last;
+        return [rows, [{ open: state.open, rows }]] as const;
+      }
+    )
+  );
+
 const evmChainIds = new Set<number>(Object.values(EvmChainIds));
 
 /**

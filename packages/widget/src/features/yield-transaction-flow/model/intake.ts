@@ -60,12 +60,17 @@ export type ExitYieldTransactionFlowIntake = {
 
 type ManageYieldTransactionFlowIntake = {
   readonly _tag: "Manage";
+  /**
+   * What the action shows; null when it names no amount, never its
+   * balance's: see `getPendingActionAmount`.
+   */
+  readonly amount: TokenAmount | null;
   /** Balance the pending action acts on; names e.g. which request is cancelled. */
   readonly balanceType: YieldBalanceType;
   /** The balance is still encrypted, so its amount is unknown here. */
   readonly balanceHidden?: boolean;
-  /** What a cancel returns, presented instead of the request. */
-  readonly cancelReturn?: TokenAmount;
+  /** The token a cancel returns, named as what the user receives. */
+  readonly cancelReturnToken?: Token;
   readonly confidentialHandle?: ConfidentialHandle;
   readonly gasFeeToken: Token;
   readonly integration: EarnYieldWithProvider;

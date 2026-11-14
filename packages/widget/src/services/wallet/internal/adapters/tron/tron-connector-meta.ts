@@ -11,7 +11,7 @@ export const configMeta = {
   },
   tronWc: {
     id: "tronWc",
-    name: "Wallet Connect",
+    name: "WalletConnect",
     type: "tronWcProvider",
   },
   tronBg: {

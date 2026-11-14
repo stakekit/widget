@@ -39,6 +39,8 @@ type SelectSheetOption = {
   readonly value?: string | undefined;
   /** Under the value, such as its fiat equivalent. */
   readonly subvalue?: string | undefined;
+  /** `accent` marks the subvalue as an incentive, such as a campaign's rate. */
+  readonly subvalueTone?: "muted" | "accent" | undefined;
   /** The leading logo, with its network badge. */
   readonly logo?: TokenLogo;
   /**
@@ -149,7 +151,9 @@ type SelectSheetProps = OptionsOrGroups &
     readonly onSelect: (id: string) => void;
     /**
      * The search field over the options. Filtering is the caller's: it passes
-     * the options that match `value`. Closing the sheet clears the query.
+     * the options that match `value`. Each option marks the query's
+     * whitespace-separated terms where they show in its title and subtitle,
+     * matched as typed but for case. Closing the sheet clears the query.
      * With a search field the sheet holds its height, so it never moves as
      * the matches change; with a fine pointer the field takes focus as the
      * sheet opens, and with a touch it waits for a tap, so no on-screen
@@ -335,8 +339,11 @@ export const SelectSheet = ({
       title: option.title,
       density,
       subtitle: option.subtitle,
+      // Each row marks the query's terms in its title and subtitle.
+      highlight: search?.value,
       value: option.value,
       subvalue: option.subvalue,
+      subvalueTone: option.subvalueTone ?? "muted",
       details: option.details,
       testId: option.testId,
       leading,
