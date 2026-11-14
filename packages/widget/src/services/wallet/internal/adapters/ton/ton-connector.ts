@@ -1,4 +1,3 @@
-import { Cell, loadMessageRelaxed } from "@ton/core";
 import {
   TonConnectUI,
   toUserFriendlyAddress,
@@ -25,7 +24,11 @@ import {
   type ExtraProps,
   type StorageItem,
 } from "./ton-connector-meta";
-import { unsignedTonTransactionTonConnectCodec } from "./transaction";
+import {
+  decodeTonInternalTransfer,
+  tonCellHash,
+  unsignedTonTransactionTonConnectCodec,
+} from "./transaction";
 
 type TonConnectorOptions = Readonly<{
   runWalletEffect: RunWalletEffect;
@@ -111,36 +114,22 @@ const createTonConnector = (
                 })
             )
           );
-          const parsedTx = yield* Effect.try({
-            try: () =>
-              loadMessageRelaxed(Cell.fromBase64(message).beginParse()),
-            catch: (cause) =>
-              new WalletIntegrationError({
-                cause,
-                message: String(cause),
-                operation: "ton-decode-message",
-              }),
-          });
-
-          const info = parsedTx.info;
-          if (info.type !== "internal") {
-            return yield* new WalletIntegrationError({
-              message: "Unsupported TON message: expected an internal message",
-              operation: "ton-decode-message",
-            });
-          }
+          const transfer = yield* decodeTonInternalTransfer(message).pipe(
+            Effect.mapError(
+              (cause) =>
+                new WalletIntegrationError({
+                  cause,
+                  message: cause.message,
+                  operation: "ton-decode-message",
+                })
+            )
+          );
           const now = yield* Clock.currentTimeMillis;
 
           const result = yield* Effect.tryPromise({
             try: () =>
               tonconnectUI.sendTransaction({
-                messages: [
-                  {
-                    address: info.dest.toString(),
-                    amount: info.value.coins.toString(),
-                    payload: parsedTx.body.toBoc().toString("base64"),
-                  },
-                ],
+                messages: [transfer],
                 validUntil: now + Duration.toMillis(Duration.days(1)),
               }),
             catch: (cause) =>
@@ -151,10 +140,16 @@ const createTonConnector = (
               }),
           });
 
-          const externalMessageCell = Cell.fromBase64(result.boc);
-          const txHash = externalMessageCell.hash().toString("hex");
-
-          return txHash;
+          return yield* tonCellHash(result.boc).pipe(
+            Effect.mapError(
+              (cause) =>
+                new WalletIntegrationError({
+                  cause,
+                  message: cause.message,
+                  operation: "ton-transaction-hash",
+                })
+            )
+          );
         }),
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });

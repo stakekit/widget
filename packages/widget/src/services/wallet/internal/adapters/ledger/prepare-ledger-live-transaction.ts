@@ -7,7 +7,6 @@ import {
   type RawTronTransaction,
   schemaRawTransaction,
 } from "@ledgerhq/wallet-api-core";
-import { Cell, loadMessageRelaxed } from "@ton/core";
 import BigNumber from "bignumber.js";
 import { Effect, Option, Result, Schema } from "effect";
 import { hexToBytes } from "viem";
@@ -27,7 +26,10 @@ import type { YieldTransactionMeta } from "../../../wallet-transactions";
 import { decodeWalletPayload } from "../decode-wallet-payload";
 import { unsignedEVMTransactionCodec } from "../evm/transaction";
 import { substratePayloadCodec } from "../substrate/transaction";
-import { unsignedTonTransactionCodec } from "../ton/transaction";
+import {
+  normalizeTonTransactionToRaw,
+  unsignedTonTransactionCodec,
+} from "../ton/transaction";
 import { unsignedTronTransactionCodec } from "../tron/transaction";
 import type { BuildPolkadotLedgerTransaction } from "./polkadot-ledger-transaction";
 
@@ -121,6 +123,17 @@ export const makePrepareLedgerLiveTransaction: Effect.Effect<PrepareLedgerLiveTr
                 );
           }
 
+          if (network === "ton") {
+            return Effect.fromResult(
+              requireYieldTransactionMeta({ family, txMeta })
+            ).pipe(
+              Effect.mapError(transactionPreparationError),
+              Effect.flatMap((yieldTxMeta) =>
+                prepareTonTransaction({ payload, txMeta: yieldTxMeta })
+              )
+            );
+          }
+
           return Effect.fromResult(
             prepareSynchronousTransaction({ family, network, payload, txMeta })
           ).pipe(Effect.mapError(transactionPreparationError));
@@ -181,14 +194,38 @@ const prepareSynchronousTransaction = ({
     );
   }
 
+  return requireYieldTransactionMeta({ family, txMeta }).pipe(
+    Result.flatMap((yieldTxMeta) =>
+      prepareYieldTransaction({ network, payload, txMeta: yieldTxMeta })
+    )
+  );
+};
+
+const requireYieldTransactionMeta = ({
+  family,
+  txMeta,
+}: {
+  family: "borrow" | "yield";
+  txMeta: YieldTransactionMeta | undefined;
+}): Result.Result<YieldTransactionMeta, string> => {
   if (family === "borrow") {
     return Result.fail("Unsupported Borrow network");
   }
 
-  if (!txMeta) {
-    return Result.fail("Missing yield transaction metadata");
-  }
+  return txMeta
+    ? Result.succeed(txMeta)
+    : Result.fail("Missing yield transaction metadata");
+};
 
+const prepareYieldTransaction = ({
+  network,
+  payload,
+  txMeta,
+}: {
+  network: Network;
+  payload: unknown;
+  txMeta: YieldTransactionMeta;
+}): Result.Result<RawTransaction, string> => {
   switch (network) {
     case "tron":
       return decodeWalletPayload(unsignedTronTransactionCodec, payload).pipe(
@@ -198,12 +235,6 @@ const prepareSynchronousTransaction = ({
       return buildNearLedgerTransaction(txMeta);
     case "tezos":
       return buildTezosLedgerTransaction(txMeta);
-    case "ton":
-      return decodeWalletPayload(unsignedTonTransactionCodec, payload).pipe(
-        Result.flatMap((decodedTx) =>
-          buildTonLedgerTransaction(decodedTx, txMeta)
-        )
-      );
     default:
       if (isCosmosWalletNetwork(network)) {
         return buildCosmosLedgerTransaction(txMeta);
@@ -419,54 +450,44 @@ const buildTezosLedgerTransaction = (
   return Result.succeed(ledgerTx);
 };
 
-const buildTonLedgerTransaction = (
-  tx: typeof unsignedTonTransactionCodec.Type,
-  txMeta: YieldTransactionMeta
-): Result.Result<RawTransaction, string> => {
-  const gasEstimate = parseGasEstimate(txMeta.gasEstimate);
-
-  if (!("message" in tx)) {
-    const firstMessage = tx[0];
-
-    if (!firstMessage) {
-      return Result.fail("Unsupported Ton Ledger transaction payload");
-    }
-
-    return Result.succeed({
-      family: "ton",
-      amount: firstMessage.amount,
-      recipient: firstMessage.address,
-      fees: getFeeInBaseUnits(gasEstimate).toString(),
-      comment: {
-        text: firstMessage.payload,
-        isEncrypted: false,
-      },
-    });
-  }
-
-  try {
-    const parsedTx = loadMessageRelaxed(
-      Cell.fromBase64(tx.message).beginParse()
-    );
-    const info = parsedTx.info;
-    if (info.type !== "internal") {
-      return Result.fail("Unsupported Ton Ledger transaction payload");
-    }
-
-    return Result.succeed({
-      family: "ton",
-      amount: info.value.coins.toString(),
-      recipient: info.dest.toString(),
-      fees: getFeeInBaseUnits(gasEstimate).toString(),
-      comment: {
-        text: parsedTx.body.toBoc().toString("base64"),
-        isEncrypted: false,
-      },
-    });
-  } catch {
-    return Result.fail("Unsupported Ton Ledger transaction payload");
-  }
-};
+const prepareTonTransaction = ({
+  payload,
+  txMeta,
+}: {
+  payload: unknown;
+  txMeta: YieldTransactionMeta;
+}): Effect.Effect<RawTransaction, LedgerTransactionPreparationError> =>
+  Effect.fromResult(
+    decodeWalletPayload(unsignedTonTransactionCodec, payload)
+  ).pipe(
+    Effect.mapError(transactionPreparationError),
+    Effect.flatMap((decodedTx) =>
+      normalizeTonTransactionToRaw(decodedTx).pipe(
+        Effect.mapError(() =>
+          transactionPreparationError(
+            "Unsupported Ton Ledger transaction payload"
+          )
+        )
+      )
+    ),
+    Effect.flatMap(([transfer]) =>
+      transfer
+        ? Effect.succeed({
+            family: "ton",
+            amount: transfer.amount,
+            recipient: transfer.address,
+            fees: getFeeInBaseUnits(
+              parseGasEstimate(txMeta.gasEstimate)
+            ).toString(),
+            comment: { text: transfer.payload, isEncrypted: false },
+          } satisfies RawTransaction)
+        : Effect.fail(
+            transactionPreparationError(
+              "Unsupported Ton Ledger transaction payload"
+            )
+          )
+    )
+  );
 
 const parseGasEstimate = (
   gasEstimate: YieldTransactionMeta["gasEstimate"]

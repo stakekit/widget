@@ -72,13 +72,25 @@ const makeConfigLayer = () =>
   });
 
 const emptySolanaPlatform = SolanaPlatform.of({
-  makeRuntime: () =>
-    Effect.succeed({
-      connection: {} as SolanaRuntime["connection"],
-      current: Effect.succeed({ wallets: [] }),
-      states: Stream.concat(Stream.succeed({ wallets: [] }), Stream.never),
-    }),
+  makeRuntime: Effect.succeed({
+    connection: {} as SolanaRuntime["connection"],
+    current: Effect.succeed({ wallets: [] }),
+    states: Stream.concat(Stream.succeed({ wallets: [] }), Stream.never),
+  }),
 });
+
+/** A Solana platform that records each runtime it makes. */
+const countingSolanaPlatform = () => {
+  const made = vi.fn();
+  return {
+    made,
+    platform: SolanaPlatform.of({
+      makeRuntime: Effect.sync(made).pipe(
+        Effect.andThen(emptySolanaPlatform.makeRuntime)
+      ),
+    }),
+  };
+};
 
 const makeWalletServiceLayer = ({
   configLayer = makeConfigLayer(),
@@ -967,9 +979,7 @@ describe("WalletService acquisition", () => {
       const buildInputs: Array<
         Parameters<WagmiPlatformService["buildConfig"]>[0]
       > = [];
-      const solanaRuntimeInputs: Array<{
-        readonly includeWalletAdapters: boolean;
-      }> = [];
+      const solana = countingSolanaPlatform();
       const wagmiConfig = makeDefaultConfig();
       const controller = makeWalletTestController({
         actions: {},
@@ -981,12 +991,7 @@ describe("WalletService acquisition", () => {
         enabledNetworks: Effect.succeed(
           new Set<WalletNetwork>(["ethereum", "solana"])
         ),
-        solana: SolanaPlatform.of({
-          makeRuntime: (input) => {
-            solanaRuntimeInputs.push(input);
-            return emptySolanaPlatform.makeRuntime(input);
-          },
-        }),
+        solana: solana.platform,
         wagmi: {
           buildConfig: (input) =>
             Effect.sync(() => {
@@ -1000,11 +1005,47 @@ describe("WalletService acquisition", () => {
 
       yield* Effect.scoped(WalletService.pipe(Effect.provide(layer)));
 
-      expect(solanaRuntimeInputs).toEqual([{ includeWalletAdapters: false }]);
+      expect(solana.made).not.toHaveBeenCalled();
       expect(buildInputs).toEqual([
         expect.objectContaining({ walletListFactory }),
       ]);
     })
+  );
+
+  it.effect.each([
+    { name: "Solana disabled", networks: ["ethereum"], runtimes: 0 },
+    {
+      name: "Solana enabled",
+      networks: ["ethereum", "solana"],
+      runtimes: 1,
+    },
+  ] as const)(
+    "makes a Solana runtime only for ecosystem Solana wallets ($name)",
+    ({ networks, runtimes }) =>
+      Effect.gen(function* () {
+        const solana = countingSolanaPlatform();
+        const wagmiConfig = makeDefaultConfig();
+        const layer = makeWalletServiceLayer({
+          enabledNetworks: Effect.succeed(new Set<WalletNetwork>(networks)),
+          solana: solana.platform,
+          wagmi: {
+            buildConfig: () =>
+              Effect.succeed(
+                makeWalletTestController({
+                  actions: {},
+                  queryParamsInitChainId: undefined,
+                  wagmiConfig,
+                })
+              ),
+            initialize: () => Effect.void,
+            observeCore: () => Effect.succeed(observeConfig(wagmiConfig)),
+          },
+        });
+
+        yield* Effect.scoped(WalletService.pipe(Effect.provide(layer)));
+
+        expect(solana.made).toHaveBeenCalledTimes(runtimes);
+      })
   );
 
   it.effect(

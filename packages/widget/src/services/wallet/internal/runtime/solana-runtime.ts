@@ -41,6 +41,11 @@ export type SolanaWalletSnapshot = {
   readonly wallets: ReadonlyArray<SolanaWalletDescriptor>;
 };
 
+/** The Solana wallets a Wallet Topology offers and the connection they use. */
+export type SolanaWallets = SolanaWalletSnapshot & {
+  readonly connection: Connection;
+};
+
 export type HeadlessSolanaRuntime = {
   readonly connection: Connection;
   readonly getWalletSnapshot: () => SolanaWalletSnapshot;
@@ -85,7 +90,6 @@ type HeadlessSolanaRuntimeOptions = {
   readonly runWalletEffect: RunWalletEffect;
   readonly endpoint?: string;
   readonly includeFallbackAdapters?: boolean;
-  readonly includeWalletAdapters?: boolean;
   readonly network?: SolanaFallbackNetwork;
 };
 
@@ -224,7 +228,6 @@ const makeHeadlessSolanaRuntime = (
       const endpoint = options.endpoint ?? clusterApiUrl(network);
       const connection = deps.createConnection(endpoint);
       const fallbackAdapters =
-        (options.includeWalletAdapters ?? true) &&
         (options.includeFallbackAdapters ?? true)
           ? deps.createFallbackAdapters({ network })
           : [];
@@ -378,22 +381,15 @@ const makeHeadlessSolanaRuntime = (
         });
       };
 
-      const includeWalletAdapters = options.includeWalletAdapters ?? true;
-      const unregisterListeners = includeWalletAdapters
-        ? [
-            deps.registry.on("register", (...wallets) =>
-              addStandardWallets(wallets)
-            ),
-            deps.registry.on("unregister", (...wallets) =>
-              removeStandardWallets(wallets)
-            ),
-          ]
-        : [];
-      if (includeWalletAdapters) {
-        addStandardWallets(deps.registry.get());
-      } else {
-        void publish();
-      }
+      const unregisterListeners = [
+        deps.registry.on("register", (...wallets) =>
+          addStandardWallets(wallets)
+        ),
+        deps.registry.on("unregister", (...wallets) =>
+          removeStandardWallets(wallets)
+        ),
+      ];
+      addStandardWallets(deps.registry.get());
 
       return {
         runtime: {
@@ -429,7 +425,6 @@ const makeHeadlessSolanaRuntime = (
 export const makeDefaultHeadlessSolanaRuntime = (options: {
   readonly walletConnectProtocol: WalletConnectProtocol;
   readonly runWalletEffect: RunWalletEffect;
-  readonly includeWalletAdapters?: boolean;
   /** Defaults to off in test mode, where the extension adapters are unwanted. */
   readonly includeFallbackAdapters?: boolean;
 }) =>
