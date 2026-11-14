@@ -19,7 +19,6 @@ export type CategoryObservation =
   | Readonly<{ readonly _tag: "disabled" }>
   | Readonly<{
       readonly _tag: "enabled";
-      readonly result: EarnResourceResult<ReadonlyArray<YieldCategory>>;
       readonly catalogs: ReadonlyArray<{
         readonly category: YieldCategory;
         readonly result: EarnResourceResult<ReadonlyArray<EarnTokenOption>>;

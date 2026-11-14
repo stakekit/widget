@@ -3555,6 +3555,11 @@ export const NetworkDto = Schema.Struct({
     examples: ["https://assets.stakek.it/networks/ethereum.svg"],
   }),
 }).annotate({ identifier: "NetworkDto" });
+export type HealthStatus = "OK" | "FAIL";
+export const HealthStatus = Schema.Literals(["OK", "FAIL"]).annotate({
+  description: "The health status of the service",
+  identifier: "HealthStatus",
+});
 export type ProviderDto = {
   readonly name: string;
   readonly id: string;
@@ -3600,11 +3605,6 @@ export const ProviderDto = Schema.Struct({
     })
   ),
 }).annotate({ identifier: "ProviderDto" });
-export type HealthStatus = "OK" | "FAIL";
-export const HealthStatus = Schema.Literals(["OK", "FAIL"]).annotate({
-  description: "The health status of the service",
-  identifier: "HealthStatus",
-});
 export type BalancesQueryDto = {
   readonly yieldId?: string;
   readonly address: string;
@@ -10328,16 +10328,64 @@ export const NetworksControllerGetNetworks500 = Schema.Struct({
     Schema.String.annotate({ examples: ["Internal server error"] })
   ),
 });
-export type ProvidersControllerGetProvider200 = ProviderDto;
-export const ProvidersControllerGetProvider200 = ProviderDto;
-export type ProvidersControllerGetProvider400 = {
+export type ProvidersControllerGetProvidersParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export const ProvidersControllerGetProvidersParams = Schema.Struct({
+  offset: Schema.optionalKey(
+    Schema.Number.annotate({ default: 0, examples: [0] })
+      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+      .check(
+        Schema.isGreaterThanOrEqualTo(0).annotate({
+          expected: "a value greater than or equal to 0",
+        })
+      )
+  ),
+  limit: Schema.optionalKey(
+    Schema.Number.annotate({ default: 20, examples: [20] })
+      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+      .check(
+        Schema.isGreaterThanOrEqualTo(1).annotate({
+          expected: "a value greater than or equal to 1",
+        })
+      )
+      .check(
+        Schema.isLessThanOrEqualTo(100).annotate({
+          expected: "a value less than or equal to 100",
+        })
+      )
+  ),
+});
+export type ProvidersControllerGetProviders200 = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items?: never;
+};
+export const ProvidersControllerGetProviders200 = Schema.Struct({
+  total: Schema.Number.annotate({
+    description: "Total number of items available",
+    examples: [100],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  offset: Schema.Number.annotate({
+    description: "Offset of the current page",
+    examples: [0],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  limit: Schema.Number.annotate({
+    description: "Limit of the current page",
+    examples: [20],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  items: Schema.optionalKey(Schema.Never),
+});
+export type ProvidersControllerGetProviders400 = {
   readonly statusCode?: number;
   readonly timestamp?: string;
   readonly path?: string;
   readonly message?: string;
   readonly validation?: { readonly message?: ReadonlyArray<string> };
 };
-export const ProvidersControllerGetProvider400 = Schema.Struct({
+export const ProvidersControllerGetProviders400 = Schema.Struct({
   statusCode: Schema.optionalKey(
     Schema.Number.annotate({ examples: [400] }).check(
       Schema.isFinite().annotate({ expected: "a finite number" })
@@ -10362,12 +10410,12 @@ export const ProvidersControllerGetProvider400 = Schema.Struct({
     })
   ),
 });
-export type ProvidersControllerGetProvider401 = {
+export type ProvidersControllerGetProviders401 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
 };
-export const ProvidersControllerGetProvider401 = Schema.Struct({
+export const ProvidersControllerGetProviders401 = Schema.Struct({
   message: Schema.optionalKey(
     Schema.String.annotate({ examples: ["Invalid API key"] })
   ),
@@ -10380,13 +10428,13 @@ export const ProvidersControllerGetProvider401 = Schema.Struct({
     )
   ),
 });
-export type ProvidersControllerGetProvider429 = {
+export type ProvidersControllerGetProviders429 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
   readonly retryAfter?: number;
 };
-export const ProvidersControllerGetProvider429 = Schema.Struct({
+export const ProvidersControllerGetProviders429 = Schema.Struct({
   message: Schema.optionalKey(
     Schema.String.annotate({ examples: ["Rate limit exceeded"] })
   ),
@@ -10404,13 +10452,13 @@ export const ProvidersControllerGetProvider429 = Schema.Struct({
     )
   ),
 });
-export type ProvidersControllerGetProvider500 = {
+export type ProvidersControllerGetProviders500 = {
   readonly statusCode?: number;
   readonly timestamp?: string;
   readonly path?: string;
   readonly message?: string;
 };
-export const ProvidersControllerGetProvider500 = Schema.Struct({
+export const ProvidersControllerGetProviders500 = Schema.Struct({
   statusCode: Schema.optionalKey(
     Schema.Number.annotate({ examples: [500] }).check(
       Schema.isFinite().annotate({ expected: "a finite number" })

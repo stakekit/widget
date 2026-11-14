@@ -1,6 +1,7 @@
-import { Data, Duration, Effect, Option, Result, Schedule } from "effect";
+import { Data, Duration, Effect, Result, Schedule } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 
+import type { EarnProvider } from "../../domain/earn/provider";
 import type {
   EarnYield,
   EarnYieldWithProvider,
@@ -24,7 +25,7 @@ import {
 import { liveCampaignRateAtom } from "../project-campaigns/project-campaigns";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
 import type { YieldProviderError } from "../yield-provider/yield-provider";
-import { yieldProviderResourceAtom } from "../yield-provider/yield-provider";
+import { yieldProvidersResourceAtom } from "../yield-provider/yield-provider";
 
 const CONCURRENCY = 5;
 
@@ -66,7 +67,7 @@ type EnrichedYieldDirectoryResult = {
   readonly items: ReadonlyArray<EarnYieldWithProvider>;
   readonly missingProviderIds: ReadonlyArray<ProviderId>;
   readonly missingYieldIds: ReadonlyArray<YieldId>;
-  readonly providerFailures: ReadonlyArray<YieldProviderError>;
+  readonly providerFailure: YieldProviderError | null;
 };
 
 const directoryPolicy = withApiResourcePolicy({
@@ -164,50 +165,45 @@ const enrichedYieldDirectoryCanonicalAtom = Atom.family(
     appRuntime
       .atom((context) =>
         Effect.gen(function* () {
-          const directory = yield* context.result(
-            yieldDirectoryResourceAtom.local(key)
+          // Provider details are optional enrichment, read alongside the
+          // directory; a failed provider list leaves every Yield without them.
+          const [directory, providers] = yield* Effect.all(
+            [
+              context.result(yieldDirectoryResourceAtom.local(key)),
+              context
+                .result(yieldProvidersResourceAtom.local)
+                .pipe(Effect.result),
+            ],
+            { concurrency: "unbounded" }
           );
           const providerIds = [
             ...new Set(
               directory.items.map((yieldModel) => yieldModel.providerId)
             ),
           ];
-          const providerResults = yield* Effect.forEach(
-            providerIds,
-            (providerId) =>
-              context.result(yieldProviderResourceAtom.local(providerId)).pipe(
-                Effect.result,
-                Effect.map((provider) => [providerId, provider] as const)
-              ),
-            { concurrency: CONCURRENCY }
-          );
-          const providers = new Map(
-            providerResults.flatMap(([providerId, provider]) =>
-              Result.isSuccess(provider) && Option.isSome(provider.success)
-                ? [[providerId, provider.success.value]]
-                : []
-            )
+          const providersById = Result.getOrElse(
+            providers,
+            (): ReadonlyMap<ProviderId, EarnProvider> => new Map()
           );
           const addLiveCampaignRate = context(liveCampaignRateAtom);
 
           return {
             items: directory.items.map((yieldModel) => {
-              const provider = providers.get(yieldModel.providerId);
+              const provider = providersById.get(yieldModel.providerId);
               return addLiveCampaignRate({
                 ...yieldModel,
                 ...(provider ? { provider } : {}),
               } satisfies EarnYieldWithProvider);
             }),
-            missingProviderIds: providerResults.flatMap(
-              ([providerId, provider]) =>
-                Result.isSuccess(provider) && Option.isNone(provider.success)
-                  ? [providerId]
-                  : []
-            ),
+            missingProviderIds: Result.isSuccess(providers)
+              ? providerIds.filter(
+                  (providerId) => !providers.success.has(providerId)
+                )
+              : [],
             missingYieldIds: directory.missingYieldIds,
-            providerFailures: providerResults.flatMap(([, provider]) =>
-              Result.isFailure(provider) ? [provider.failure] : []
-            ),
+            providerFailure: Result.isFailure(providers)
+              ? providers.failure
+              : null,
           } satisfies EnrichedYieldDirectoryResult;
         })
       )

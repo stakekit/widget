@@ -187,6 +187,35 @@ describe("application API services", () => {
       })
   );
 
+  it.effect(
+    "reads a provider page with its paging, leaving out an unreadable provider",
+    () =>
+      Effect.gen(function* () {
+        const ProvidersControllerGetProviders = vi.fn(() =>
+          Effect.succeed({
+            items: [
+              { ...yieldApiProviderFixture({ id: "lido" }), type: "protocol" },
+              { id: "broken", type: "protocol" },
+            ],
+            limit: 100,
+            offset: 100,
+            total: 102,
+          })
+        );
+        const source = makeYieldResourceSource({
+          ProvidersControllerGetProviders,
+        } as never);
+
+        const page = yield* source.listProviders({ limit: 100, offset: 100 });
+
+        expect(ProvidersControllerGetProviders).toHaveBeenCalledWith({
+          params: { limit: 100, offset: 100 },
+        });
+        expect(page.items.map((provider) => provider.id)).toEqual(["lido"]);
+        expect(page).toMatchObject({ limit: 100, offset: 100, total: 102 });
+      })
+  );
+
   const notFound = () =>
     HttpClientResponse.fromWeb(
       HttpClientRequest.get("https://api.test/missing"),
@@ -224,16 +253,6 @@ describe("application API services", () => {
             )
           );
         }),
-      },
-      {
-        read: "provider",
-        spec,
-        isAbsent: makeYieldResourceSource({
-          ProvidersControllerGetProvider: () =>
-            Effect.fail(yieldNotFound[spec]()),
-        } as never)
-          .getProvider(yieldApiProviderFixture().id)
-          .pipe(Effect.map(Option.isNone)),
       },
       {
         read: "rewards summary",

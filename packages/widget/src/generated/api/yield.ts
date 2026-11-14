@@ -1343,16 +1343,6 @@ export type NetworkDto = {
   readonly category: "evm" | "cosmos" | "substrate" | "misc";
   readonly logoURI: string;
 };
-export type ProviderDto = {
-  readonly name: string;
-  readonly id: string;
-  readonly logoURI: string;
-  readonly description: string;
-  readonly website: string;
-  readonly tvlUsd: string | null;
-  readonly type: "protocol" | "validator_provider";
-  readonly references?: ReadonlyArray<string> | null;
-};
 export type HealthStatus = "OK" | "FAIL";
 export type BalancesQueryDto = {
   readonly yieldId?: string;
@@ -3224,26 +3214,35 @@ export type NetworksControllerGetNetworks500 = {
   readonly path?: string;
   readonly message?: string;
 };
-export type ProvidersControllerGetProvider200 = ProviderDto;
-export type ProvidersControllerGetProvider400 = {
+export type ProvidersControllerGetProvidersParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type ProvidersControllerGetProviders200 = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items?: never;
+};
+export type ProvidersControllerGetProviders400 = {
   readonly statusCode?: number;
   readonly timestamp?: string;
   readonly path?: string;
   readonly message?: string;
   readonly validation?: { readonly message?: ReadonlyArray<string> };
 };
-export type ProvidersControllerGetProvider401 = {
+export type ProvidersControllerGetProviders401 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
 };
-export type ProvidersControllerGetProvider429 = {
+export type ProvidersControllerGetProviders429 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
   readonly retryAfter?: number;
 };
-export type ProvidersControllerGetProvider500 = {
+export type ProvidersControllerGetProviders500 = {
   readonly statusCode?: number;
   readonly timestamp?: string;
   readonly path?: string;
@@ -3964,25 +3963,20 @@ export const make = <E, R>(
           "500": "NetworksControllerGetNetworks500",
         })
       ),
-    ProvidersControllerGetProvider: (
-      providerId,
-      options: Parameters<YieldApi["ProvidersControllerGetProvider"]>[1]
+    ProvidersControllerGetProviders: (
+      options: Parameters<YieldApi["ProvidersControllerGetProviders"]>[0]
     ) =>
-      __makePathRequest(
-        HttpClientRequest.get,
-        [providerId],
-        () => "/v1/providers/" + __encodePathParam(providerId) + ""
-      ).pipe(
-        Effect.flatMap((request) =>
-          request.pipe(
-            onRequest(options?.config)(["2xx"], {
-              "400": "ProvidersControllerGetProvider400",
-              "401": "ProvidersControllerGetProvider401",
-              "429": "ProvidersControllerGetProvider429",
-              "500": "ProvidersControllerGetProvider500",
-            })
-          )
-        )
+      HttpClientRequest.get("/v1/providers").pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"], {
+          "400": "ProvidersControllerGetProviders400",
+          "401": "ProvidersControllerGetProviders401",
+          "429": "ProvidersControllerGetProviders429",
+          "500": "ProvidersControllerGetProviders500",
+        })
       ),
     HealthControllerHealth: (
       options: Parameters<YieldApi["HealthControllerHealth"]>[0]
@@ -5424,59 +5418,63 @@ export interface YieldApi<E = HttpClientError.HttpClientError, R = never> {
     >;
   };
   /**
-   * Returns detailed information about a specific provider.
+   * Returns a paginated list of all providers, including both protocol and validator providers.
    */
-  readonly ProvidersControllerGetProvider: {
-    <Config extends OperationConfig | undefined = undefined>(
-      providerId: string,
-      options: { readonly config: Config }
-    ): Effect.Effect<
-      WithOptionalResponse<ProvidersControllerGetProvider200, Config>,
+  readonly ProvidersControllerGetProviders: {
+    <Config extends OperationConfig | undefined = undefined>(options: {
+      readonly params?: ProvidersControllerGetProvidersParams | undefined;
+      readonly config: Config;
+    }): Effect.Effect<
+      WithOptionalResponse<ProvidersControllerGetProviders200, Config>,
       | E
       | HttpClientError.HttpClientError
       | YieldApiError<
-          "ProvidersControllerGetProvider400",
-          ProvidersControllerGetProvider400
+          "ProvidersControllerGetProviders400",
+          ProvidersControllerGetProviders400
         >
       | YieldApiError<
-          "ProvidersControllerGetProvider401",
-          ProvidersControllerGetProvider401
+          "ProvidersControllerGetProviders401",
+          ProvidersControllerGetProviders401
         >
       | YieldApiError<
-          "ProvidersControllerGetProvider429",
-          ProvidersControllerGetProvider429
+          "ProvidersControllerGetProviders429",
+          ProvidersControllerGetProviders429
         >
       | YieldApiError<
-          "ProvidersControllerGetProvider500",
-          ProvidersControllerGetProvider500
+          "ProvidersControllerGetProviders500",
+          ProvidersControllerGetProviders500
         >,
       R
     >;
     <Config extends OperationConfig | undefined = undefined>(
-      providerId: string,
-      options: { readonly config?: Config | undefined } | undefined
+      options:
+        | {
+            readonly params?: ProvidersControllerGetProvidersParams | undefined;
+            readonly config?: Config | undefined;
+          }
+        | undefined
     ): Effect.Effect<
       WithOptionalResponse<
-        ProvidersControllerGetProvider200,
+        ProvidersControllerGetProviders200,
         Config | undefined
       >,
       | E
       | HttpClientError.HttpClientError
       | YieldApiError<
-          "ProvidersControllerGetProvider400",
-          ProvidersControllerGetProvider400
+          "ProvidersControllerGetProviders400",
+          ProvidersControllerGetProviders400
         >
       | YieldApiError<
-          "ProvidersControllerGetProvider401",
-          ProvidersControllerGetProvider401
+          "ProvidersControllerGetProviders401",
+          ProvidersControllerGetProviders401
         >
       | YieldApiError<
-          "ProvidersControllerGetProvider429",
-          ProvidersControllerGetProvider429
+          "ProvidersControllerGetProviders429",
+          ProvidersControllerGetProviders429
         >
       | YieldApiError<
-          "ProvidersControllerGetProvider500",
-          ProvidersControllerGetProvider500
+          "ProvidersControllerGetProviders500",
+          ProvidersControllerGetProviders500
         >,
       R
     >;

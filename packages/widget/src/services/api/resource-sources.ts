@@ -31,7 +31,7 @@ import type {
   WalletCampaignRewardsPage,
 } from "../../domain/earn/campaign-rewards";
 import type { KycStatus } from "../../domain/earn/kyc";
-import type { EarnProvider } from "../../domain/earn/provider";
+import type { EarnProviderPage } from "../../domain/earn/provider";
 import type {
   EarnLegacyTokenOptionsResponse,
   EarnPositionsResponse,
@@ -53,7 +53,6 @@ import type { HealthStatus } from "../../domain/health/models";
 import type {
   ActionId,
   CampaignId,
-  ProviderId,
   WalletAddress,
   YieldId,
 } from "../../domain/identity/identifiers";
@@ -264,9 +263,6 @@ type YieldResourceSourceService = {
   readonly getPositions: (
     command: YieldBalancesCommand
   ) => Effect.Effect<typeof EarnPositionsResponse.Type, ApiReadFailure>;
-  readonly getProvider: (
-    providerId: ProviderId
-  ) => Effect.Effect<Option.Option<EarnProvider>, ApiReadFailure>;
   /** A wallet's fixed-window earnings; none when the Yield is untracked. */
   readonly getRewardsSummary: (request: {
     readonly address: WalletAddress;
@@ -289,6 +285,11 @@ type YieldResourceSourceService = {
   readonly listActivity: (
     query: ActivityActionsQuery
   ) => Effect.Effect<ActivityActionsPage, ApiReadFailure>;
+  /** One page of every Yield Provider. */
+  readonly listProviders: (request: {
+    readonly limit: number;
+    readonly offset: number;
+  }) => Effect.Effect<EarnProviderPage, ApiReadFailure>;
   readonly listValidators: (
     request: ValidatorDirectoryRequest
   ) => Effect.Effect<typeof EarnValidatorPage.Type, ApiReadFailure>;

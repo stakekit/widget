@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 
-import { YieldId } from "../../../src/domain/identity/identifiers";
+import { ProviderId, YieldId } from "../../../src/domain/identity/identifiers";
 import {
   enrichedYieldDirectoryResourceAtom,
   YieldDirectoryError,
@@ -167,8 +167,11 @@ describe("Yield Directory resource", () => {
     ]);
   });
 
-  it("deduplicates provider enrichment through the provider resource", () => {
-    const yields = [makeYield("yield-a"), makeYield("yield-b")];
+  it("enriches Yields of several providers from one provider list request", () => {
+    const yields = ["aave", "lido", "morpho"].map((providerId) => ({
+      ...makeYield(`yield-${providerId}`),
+      providerId: ProviderId.make(providerId),
+    }));
     const listYields = vi.fn((request: YieldDirectoryRequest) =>
       Effect.succeed({
         items: yields,
@@ -177,26 +180,38 @@ describe("Yield Directory resource", () => {
         total: yields.length,
       })
     );
-    const getProvider = vi.fn(() =>
-      Effect.succeedSome(yieldApiProviderFixture())
+    const listProviders = vi.fn(
+      (request: { readonly limit: number; readonly offset: number }) =>
+        Effect.succeed({
+          items: ["aave", "lido", "morpho"].map((id) =>
+            yieldApiProviderFixture({ id, name: `Provider ${id}` })
+          ),
+          limit: request.limit,
+          offset: request.offset,
+          total: 3,
+        })
     );
     const registry = makeRegistry(
-      YieldResourceSource.of({ getProvider, listYields } as never)
+      YieldResourceSource.of({ listProviders, listYields } as never)
     );
 
-    const enriched = registry.get(
-      enrichedYieldDirectoryResourceAtom(
-        new YieldDirectoryKey({ yieldIds: yields.map(({ id }) => id) })
+    const enriched = AsyncResult.getOrThrow(
+      registry.get(
+        enrichedYieldDirectoryResourceAtom(
+          new YieldDirectoryKey({ yieldIds: yields.map(({ id }) => id) })
+        )
       )
     );
 
-    expect(AsyncResult.getOrThrow(enriched).items).toHaveLength(2);
-    expect(AsyncResult.getOrThrow(enriched).missingProviderIds).toEqual([]);
-    expect(AsyncResult.getOrThrow(enriched).providerFailures).toEqual([]);
-    expect(getProvider).toHaveBeenCalledOnce();
+    expect(
+      enriched.items.map((yieldModel) => yieldModel.provider?.name)
+    ).toEqual(["Provider aave", "Provider lido", "Provider morpho"]);
+    expect(enriched.missingProviderIds).toEqual([]);
+    expect(enriched.providerFailure).toBeNull();
+    expect(listProviders).toHaveBeenCalledOnce();
   });
 
-  it("reports missing Yield identities separately from provider failures", () => {
+  it("keeps Yields without a provider when the provider list fails", () => {
     const present = makeYield("yield-present");
     const missingId = makeYield("yield-missing").id;
     const listYields = vi.fn((request: YieldDirectoryRequest) =>
@@ -207,16 +222,14 @@ describe("Yield Directory resource", () => {
         total: 1,
       })
     );
+    const requestError = new ApiRequestError({
+      cause: new Error("providers unavailable"),
+      failure: { _tag: "Unreachable" },
+      operation: "yield-providers",
+    });
     const registry = makeRegistry(
       YieldResourceSource.of({
-        getProvider: () =>
-          Effect.fail(
-            new ApiRequestError({
-              cause: new Error("provider unavailable"),
-              failure: { _tag: "Unreachable" },
-              operation: "yield-provider",
-            })
-          ),
+        listProviders: () => Effect.fail(requestError),
         listYields,
       } as never)
     );
@@ -232,15 +245,23 @@ describe("Yield Directory resource", () => {
     expect(result.items[0]).not.toHaveProperty("provider");
     expect(result.missingYieldIds).toEqual([missingId]);
     expect(result.missingProviderIds).toEqual([]);
-    expect(result.providerFailures).toHaveLength(1);
-    expect(result.providerFailures[0]?.providerId).toBe(present.providerId);
+    expect(result.providerFailure?.cause).toBe(requestError);
   });
 
-  it("reports confirmed missing provider identities", () => {
+  it("reports providers the provider list lacks as missing", () => {
     const present = makeYield("yield-present");
     const registry = makeRegistry(
       YieldResourceSource.of({
-        getProvider: () => Effect.succeedNone,
+        listProviders: (request: {
+          readonly limit: number;
+          readonly offset: number;
+        }) =>
+          Effect.succeed({
+            items: [yieldApiProviderFixture({ id: "other" })],
+            limit: request.limit,
+            offset: request.offset,
+            total: 1,
+          }),
         listYields: (request: YieldDirectoryRequest) =>
           Effect.succeed({
             items: [present],
@@ -258,8 +279,9 @@ describe("Yield Directory resource", () => {
       )
     );
 
-    expect(result.missingProviderIds).toEqual([present.providerId]);
-    expect(result.providerFailures).toEqual([]);
+    expect(result.items[0]).not.toHaveProperty("provider");
+    expect(result.missingProviderIds).toEqual(["stakekit"]);
+    expect(result.providerFailure).toBeNull();
   });
 
   it("asks again with backoff, then publishes typed failures and retries the exact directory", async () => {

@@ -3,17 +3,19 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 
 import { getConfidentialAssetToken } from "../../../../../domain/earn/confidential";
 import type { YieldCategory } from "../../../../../domain/earn/contract";
-import {
-  filterValidators,
-  type PreferredTokenYieldsPerNetwork,
-} from "../../../../../domain/earn/yield";
+import { filterValidators } from "../../../../../domain/earn/yield";
 import { orderYieldsByProvider } from "../../../../../domain/earn/yield-provider-order";
 import { YieldId } from "../../../../../domain/identity/identifiers";
 import {
   hostTokenKey,
   sameTokenContract,
 } from "../../../../../domain/token/token";
-import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
+import type {
+  EarnEntry,
+  EarnEntryIntent,
+  EarnSelectionView,
+  EarnTokenOption,
+} from "../types";
 import { canSubmitEarnForm, resolveForm } from "./form";
 import { findReachableDefaultToken, resolveToken } from "./token";
 import { resolveValidators } from "./validators";
@@ -49,23 +51,52 @@ const decodeInitYieldId = (entry: EarnEntry) =>
       )
     : null;
 
-const findPreferredCategory = ({
-  catalogs,
-  preferred,
-}: {
-  readonly catalogs: Extract<
-    EarnViewObservations["category"],
-    { readonly _tag: "enabled" }
-  >["catalogs"];
-  readonly preferred: PreferredTokenYieldsPerNetwork | null;
-}) =>
-  catalogs.find(({ result }) => {
-    const options = getAvailableValue(result, []);
-    return options.some((option) => {
-      const network = preferred?.[option.token.network];
-      return !!network?.[hostTokenKey(option.token)];
-    });
-  })?.category ?? null;
+type CategoryCatalogs = Extract<
+  EarnViewObservations["category"],
+  { readonly _tag: "enabled" }
+>["catalogs"];
+
+/** A category, none, or "pending" while a catalog it depends on loads. */
+type CategoryLookup = YieldCategory | "pending" | null;
+
+/**
+ * The first category, in category order, whose catalog lists a matching token
+ * option; "pending" while a catalog before it has not answered. An empty or
+ * failed catalog matches nothing.
+ */
+const findCategory = (
+  catalogs: CategoryCatalogs,
+  matches: (option: EarnTokenOption) => boolean
+): CategoryLookup => {
+  for (const { category, result } of catalogs) {
+    if (!hasAvailableValue(result) && !AsyncResult.isFailure(result)) {
+      return "pending";
+    }
+    if (getAvailableValue(result, []).some(matches)) return category;
+  }
+  return null;
+};
+
+/**
+ * The first candidate whose catalog lists tokens, decided as soon as no
+ * candidate before it can still win; "pending" until then.
+ */
+const selectCategory = (
+  catalogs: CategoryCatalogs,
+  candidates: ReadonlyArray<CategoryLookup>
+): CategoryLookup => {
+  for (const candidate of candidates) {
+    if (candidate === "pending") return candidate;
+    const available =
+      candidate &&
+      findCategory(
+        catalogs.filter(({ category }) => category === candidate),
+        () => true
+      );
+    if (available) return available;
+  }
+  return null;
+};
 
 const resolveCategorySelection = ({
   entry,
@@ -93,37 +124,46 @@ const resolveCategorySelection = ({
   }
 
   const catalogs = observations.category.catalogs;
-  const categoryResult = observations.category.result;
-  const available = getAvailableValue(categoryResult, []);
   const initYieldId = decodeInitYieldId(entry);
-  const initCategory = initYieldId
-    ? (catalogs.find(({ result }) =>
-        getAvailableValue(result, []).some((option) =>
+  const preferred = entry.preferredTokenYieldsPerNetwork ?? null;
+  const selected = selectCategory(catalogs, [
+    intent.selectedCategory,
+    initYieldId
+      ? findCategory(catalogs, (option) =>
           option.availableYields.includes(initYieldId)
         )
-      )?.category ?? null)
-    : null;
-  const preferredCategory = findPreferredCategory({
-    catalogs,
-    preferred: entry.preferredTokenYieldsPerNetwork ?? null,
-  });
-  const candidates = [
-    intent.selectedCategory,
-    initCategory,
+      : null,
     previous?.selection.category ?? null,
-    preferredCategory,
+    preferred
+      ? findCategory(
+          catalogs,
+          (option) =>
+            !!preferred[option.token.network]?.[hostTokenKey(option.token)]
+        )
+      : null,
     ...entry.categoryOrder,
-  ];
+  ]);
+
+  if (selected === "pending") {
+    // No tabs until one of them is selected.
+    return {
+      available: [],
+      blockingFailure: false,
+      category: null,
+      loading: true,
+    };
+  }
 
   return {
-    available,
-    blockingFailure: isBlockingFailure(categoryResult),
-    category:
-      candidates.find(
-        (candidate): candidate is YieldCategory =>
-          candidate !== null && available.includes(candidate)
-      ) ?? null,
-    loading: !hasAvailableValue(categoryResult) && isResolving(categoryResult),
+    available: catalogs
+      .filter(({ result }) => getAvailableValue(result, []).length > 0)
+      .map(({ category }) => category),
+    // Every catalog has answered, none with tokens.
+    blockingFailure:
+      selected === null &&
+      catalogs.some(({ result }) => isBlockingFailure(result)),
+    category: selected,
+    loading: false,
   };
 };
 

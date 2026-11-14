@@ -14,7 +14,7 @@ import {
 } from "../../../domain/earn/campaign-rewards";
 import { zeroEncryptedBalance } from "../../../domain/earn/confidential-balance";
 import { KycStatus } from "../../../domain/earn/kyc";
-import { EarnProvider } from "../../../domain/earn/provider";
+import { EarnProviderPage } from "../../../domain/earn/provider";
 import {
   EarnPositionsResponse,
   EarnValidatorPage,
@@ -26,7 +26,6 @@ import type { YieldBalancesCommand } from "../../../domain/finance/models";
 import { HealthStatus } from "../../../domain/health/models";
 import type {
   ActionId,
-  ProviderId,
   WalletAddress,
   YieldId,
 } from "../../../domain/identity/identifiers";
@@ -270,13 +269,13 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
       );
   });
 
-  const getProvider = Effect.fn("YieldResourceSource.getProvider")(function* (
-    providerId: ProviderId
-  ) {
-    return yield* yieldApi
-      .ProvidersControllerGetProvider(providerId, undefined)
-      .pipe(decodeOptionalApiResponse("yield-provider", EarnProvider));
-  });
+  const listProviders = Effect.fn("YieldResourceSource.listProviders")(
+    function* (request: { readonly limit: number; readonly offset: number }) {
+      return yield* yieldApi
+        .ProvidersControllerGetProviders({ params: request })
+        .pipe(decodeApiResponse("yield-providers", EarnProviderPage));
+    }
+  );
 
   // A simulation creates nothing, so it reads like any other request and
   // retries a transient failure.
@@ -300,7 +299,7 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
     getKycStatus,
     getOpportunity,
     getPositions,
-    getProvider,
+    listProviders,
     getSingleYieldBalances,
     getRewardsSummary,
     getRewardRateHistory,

@@ -5,13 +5,6 @@ import type { YieldId } from "../../../../../domain/identity/identifiers";
 import type { Network } from "../../../../../domain/network/network";
 import type { WalletScopeKey } from "../../../../../domain/wallet/wallet-scope";
 
-export class AvailableYieldCategoriesKey extends Data.TaggedClass(
-  "AvailableYieldCategoriesKey"
-)<{
-  network: Network | null;
-  categoryOrder: ReadonlyArray<YieldCategory>;
-}> {}
-
 export class YieldCatalogKey extends Data.TaggedClass("YieldCatalogKey")<{
   category: YieldCategory | null;
   network: Network;

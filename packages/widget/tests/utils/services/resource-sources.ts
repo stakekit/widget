@@ -26,6 +26,10 @@ export const legacyResourceSourceLayer = (
     })
   );
 
+/** A provider list without providers: every Yield shows without one. */
+export const emptyProviderList: YieldResourceSource["Service"]["listProviders"] =
+  ({ limit, offset }) => Effect.succeed({ items: [], limit, offset, total: 0 });
+
 /** Yield API reads the test configures; any other read dies naming it. */
 export const yieldResourceSourceLayer = (
   overrides: Partial<YieldResourceSource["Service"]>
@@ -43,7 +47,6 @@ export const yieldResourceSourceLayer = (
       getOpportunity: () =>
         unexpectedCall("YieldResourceSource.getOpportunity"),
       getPositions: () => unexpectedCall("YieldResourceSource.getPositions"),
-      getProvider: () => unexpectedCall("YieldResourceSource.getProvider"),
       getRewardsSummary: () =>
         unexpectedCall("YieldResourceSource.getRewardsSummary"),
       getRewardRateHistory: () =>
@@ -54,6 +57,7 @@ export const yieldResourceSourceLayer = (
       listActivity: () => unexpectedCall("YieldResourceSource.listActivity"),
       listCampaignPayouts: () =>
         unexpectedCall("YieldResourceSource.listCampaignPayouts"),
+      listProviders: () => unexpectedCall("YieldResourceSource.listProviders"),
       listValidators: () =>
         unexpectedCall("YieldResourceSource.listValidators"),
       listWalletCampaignRewards: () =>

@@ -43,7 +43,6 @@ export type CatalogYieldTarget = {
 };
 
 export type EarnCatalogOperation =
-  | "available-yield-categories"
   | "earn-token-catalog"
   | "earn-yield-catalog"
   | "positions-data"

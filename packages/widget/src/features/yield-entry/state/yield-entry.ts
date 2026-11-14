@@ -10,7 +10,7 @@ import {
   ActionSimulationKey,
   actionSimulationResourceAtom,
 } from "../../../resources/action-simulation/action-simulation";
-import { yieldProviderResourceAtom } from "../../../resources/yield-provider/yield-provider";
+import { yieldProviderAtom } from "../../../resources/yield-provider/yield-provider";
 import { walletRuntime } from "../../../runtime/wallet-runtime";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { TrackingService } from "../../../services/tracking/tracking-service";
@@ -359,9 +359,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
                     selectedProviderOption: providerOption
                       ? {
                           provider: context(
-                            yieldProviderResourceAtom.local(
-                              ProviderId.make(providerOption)
-                            )
+                            yieldProviderAtom(ProviderId.make(providerOption))
                           ).pipe(
                             AsyncResult.value,
                             Option.flatten,

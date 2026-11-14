@@ -47,6 +47,7 @@ import {
   yieldApiYieldFixture,
   yieldBalanceFixture,
 } from "../../fixtures";
+import { emptyProviderList } from "../../utils/services/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const makePosition = ({
@@ -284,7 +285,7 @@ describe("summary atom derivations", () => {
         Atom.initialValue(
           appRuntime.layer,
           Layer.succeed(YieldResourceSource, {
-            getProvider: () => Effect.succeedNone,
+            listProviders: emptyProviderList,
             listYields: () =>
               offline
                 ? Effect.fail(

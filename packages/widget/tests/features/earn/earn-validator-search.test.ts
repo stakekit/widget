@@ -21,6 +21,7 @@ import {
 } from "../../../src/services/api/resource-sources";
 import { getPullResultItems } from "../../../src/shared/effect/pagination";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
+import { emptyProviderList } from "../../utils/services/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const yieldId = yieldApiYieldFixture().id;
@@ -248,7 +249,7 @@ describe("Earn validator search", () => {
             Layer.succeed(
               YieldResourceSource,
               YieldResourceSource.of({
-                getProvider: () => Effect.succeedNone,
+                listProviders: emptyProviderList,
                 listValidators,
                 listYields,
               } as never)
