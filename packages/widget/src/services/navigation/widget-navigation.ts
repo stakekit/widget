@@ -2,7 +2,7 @@ import { Context, Data, Effect, Layer } from "effect";
 import type { DataRouter } from "react-router";
 
 import { ApplicationRouter } from "./application-router";
-import type { ScrollReset } from "./scroll-reset";
+import type { ScrollReset, ScrollResetRequest } from "./scroll-reset";
 import {
   type WidgetNavigationTarget,
   widgetTargetPath,
@@ -57,24 +57,24 @@ const blockerHoldsNavigation = (state: DataRouter["state"]): boolean =>
   );
 
 /**
- * Drops the reset requested from `from` once its navigation settles there.
- * A blocked navigation keeps it until the user leaves, which commits the
+ * Drops `request` once its navigation settles on the location it started
+ * from. A blocked navigation keeps it until the user leaves, which commits the
  * next page, or stays.
  */
 const settleScrollReset = (
   router: DataRouter,
   scrollReset: ScrollReset,
-  from: string
+  request: ScrollResetRequest
 ): void => {
-  if (router.state.location.key !== from) return;
+  if (router.state.location.key !== request.from) return;
   if (!blockerHoldsNavigation(router.state)) {
-    scrollReset.cancel(from);
+    scrollReset.cancel(request);
     return;
   }
   const unsubscribe = router.subscribe((state) => {
     if (blockerHoldsNavigation(state)) return;
     unsubscribe();
-    if (state.location.key === from) scrollReset.cancel(from);
+    if (state.location.key === request.from) scrollReset.cancel(request);
   });
 };
 
@@ -126,13 +126,15 @@ export class WidgetNavigation extends Context.Service<
           routerNavigation: () => Promise<void>
         ) =>
           Effect.suspend(() => {
-            const from = router.state.location.key;
-            if (options.scroll !== "preserve" && canResetScroll()) {
-              scrollReset.request(from);
+            if (options.scroll === "preserve" || !canResetScroll()) {
+              return runNavigation(routerNavigation);
             }
+            const request = scrollReset.request(router.state.location.key);
             return runNavigation(routerNavigation).pipe(
               Effect.ensuring(
-                Effect.sync(() => settleScrollReset(router, scrollReset, from))
+                Effect.sync(() =>
+                  settleScrollReset(router, scrollReset, request)
+                )
               )
             );
           });

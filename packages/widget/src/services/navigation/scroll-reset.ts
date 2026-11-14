@@ -7,26 +7,37 @@
  * reset runs when the next page commits instead.
  */
 export type ScrollReset = Readonly<{
-  /** Resets the window's scroll once a location other than `from` commits. */
-  readonly request: (from: string) => void;
-  /** Drops the request made from `from`: its navigation kept that location. */
-  readonly cancel: (from: string) => void;
+  /**
+   * Resets the window's scroll once a location other than `from` commits.
+   * Returns the request, which only its own navigation may cancel.
+   */
+  readonly request: (from: string) => ScrollResetRequest;
+  /**
+   * Drops `request`, whose navigation kept its location. A newer request,
+   * even from the same location, stays.
+   */
+  readonly cancel: (request: ScrollResetRequest) => void;
   /** Reports that the page for the location `key` is committed to the DOM. */
   readonly pageCommitted: (key: string) => void;
 }>;
 
+/** One navigation's request to reset the scroll. */
+export type ScrollResetRequest = Readonly<{ readonly from: string }>;
+
 export const makeScrollReset = (): ScrollReset => {
-  const pending: { from: string | null } = { from: null };
+  const pending: { request: ScrollResetRequest | null } = { request: null };
   return {
     request: (from) => {
-      pending.from = from;
+      const request = { from };
+      pending.request = request;
+      return request;
     },
-    cancel: (from) => {
-      if (pending.from === from) pending.from = null;
+    cancel: (request) => {
+      if (pending.request === request) pending.request = null;
     },
     pageCommitted: (key) => {
-      if (pending.from === null || pending.from === key) return;
-      pending.from = null;
+      if (pending.request === null || pending.request.from === key) return;
+      pending.request = null;
       globalThis.window?.scrollTo(0, 0);
     },
   };
