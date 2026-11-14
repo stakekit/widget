@@ -11,8 +11,10 @@ import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import {
   type ConnectPickerEcosystem,
+  type ConnectPickerState,
   connectionChainId,
   connectPickerEcosystems,
+  connectPickerSessions,
 } from "../model/connect-picker";
 
 // Modal flags are local streams; each read publishes the value, closed until
@@ -69,35 +71,36 @@ export const walletConnectionAttemptAtom = walletRuntime
     Atom.withLabel("walletConnectionAttemptAtom")
   );
 
-const noEcosystems: ReadonlyArray<ConnectPickerEcosystem> = [];
+const closedPicker: ConnectPickerState<ConnectPickerEcosystem> = {
+  open: false,
+  rows: [],
+};
 
 /**
- * The picker's ecosystems. Each open renders from the wallet service's latest
- * detection results at once and asks it to detect injected wallets again;
- * rows update in place as results change. A close clears the rows, so a
- * reopened picker never shows rows the new session would then move.
+ * The picker session's open flag and its ecosystems, changing together; see
+ * `connectPickerSessions`. Each open asks the wallet service to detect
+ * injected wallets again and renders from its detection results; rows update
+ * in place as results change. It trails `walletConnectModalOpenAtom`, which
+ * opens the dialog without waiting on the wallet runtime.
  */
 export const connectPickerAtom = walletRuntime
   .atom(
     Effect.gen(function* () {
       const modal = yield* WalletModal;
       const wallet = yield* WalletService;
-      return modal.connectOpen.changes.pipe(
-        Stream.switchMap((open) =>
-          open
-            ? connectPickerEcosystems({
-                availability: wallet.availability,
-                connectors: wallet.connectors,
-                isMobile: isMobileWalletEnvironment(),
-              }).pipe(Stream.onStart(wallet.detectAvailability))
-            : Stream.make(noEcosystems)
-        )
+      return connectPickerSessions(
+        modal.connectOpen.changes,
+        connectPickerEcosystems({
+          availability: wallet.availability,
+          connectors: wallet.connectors,
+          isMobile: isMobileWalletEnvironment(),
+        }).pipe(Stream.onStart(wallet.detectAvailability))
       );
     }).pipe(Stream.unwrap),
-    { initialValue: noEcosystems }
+    { initialValue: closedPicker }
   )
   .pipe(
-    Atom.map(AsyncResult.getOrElse(() => noEcosystems)),
+    Atom.map(AsyncResult.getOrElse(() => closedPicker)),
     Atom.withLabel("connectPickerAtom")
   );
 

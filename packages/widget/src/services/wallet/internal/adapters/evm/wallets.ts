@@ -430,6 +430,9 @@ export const coinbaseWallet: CreateWalletDescriptor = ({
       ...createCoinbaseConnector({
         appName,
         ...(appIcon === undefined ? {} : { appLogoUrl: appIcon }),
+        // The SDK otherwise posts analytics to cca-lite.coinbase.com once
+        // wagmi creates it, as when checking for a stored connection.
+        preference: { options: "all", telemetry: false },
       })(config),
       walletDetails: details.walletDetails,
     })) satisfies ReturnType<WalletDescriptor["createConnector"]>,
