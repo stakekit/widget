@@ -1,4 +1,3 @@
-import type { Connection } from "@solana/web3.js";
 import { Effect, Record } from "effect";
 
 import type { Network } from "../../../../domain/network/network";
@@ -10,15 +9,14 @@ import type { WalletModal } from "../../wallet-modal";
 import type { StellarWalletsKitPlatformService } from "../platform/stellar-wallets-kit-platform";
 import type { WalletConnectProtocol } from "../platform/wallet-connect-protocol";
 import type { RunWalletEffect } from "../runtime/effect-runner";
-import type { SolanaWalletDescriptor } from "../runtime/solana-runtime";
+import type { SolanaWallets } from "../runtime/solana-runtime";
 import { type MiscChainsMap, miscChainsMap } from "./configured-chains";
 import { loadStellarConnector } from "./stellar/config";
 
 const queryFn = async ({
   buildConnectors,
   enabledNetworks,
-  solanaWallets,
-  solanaConnection,
+  solana,
   walletCatalogue,
   tonConnectManifestUrl,
   stellarConnector,
@@ -28,8 +26,8 @@ const queryFn = async ({
 }: {
   buildConnectors: boolean;
   enabledNetworks: ReadonlySet<Network>;
-  solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
-  solanaConnection: Connection;
+  /** Absent when the Wallet Topology offers no Solana wallets. */
+  solana: SolanaWallets | null;
   walletCatalogue: HostProfile["walletCatalogue"];
   tonConnectManifestUrl: string | undefined;
   stellarConnector: WalletList[number] | null;
@@ -66,13 +64,9 @@ const queryFn = async ({
                 })
               )
             : null,
-          filteredMiscChainsMap.solana && !config.env.isTestMode
+          filteredMiscChainsMap.solana && solana && !config.env.isTestMode
             ? import("./solana/solana-connector").then((module) =>
-                module.getSolanaConnectors({
-                  wallets: solanaWallets,
-                  connection: solanaConnection,
-                  walletCatalogue,
-                })
+                module.getSolanaConnectors({ ...solana, walletCatalogue })
               )
             : null,
           filteredMiscChainsMap.cardano

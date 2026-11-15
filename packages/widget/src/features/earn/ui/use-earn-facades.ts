@@ -2,11 +2,13 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import { earnCampaignOfferAtom } from "../state/campaign-offer";
 import {
   hideEarnTokenBalanceAtom,
   revealEarnTokenBalanceAtom,
   revealEarnTokenBalanceStatusAtom,
 } from "../state/confidential";
+import { selectEarnSelectionCatalogYieldAtom } from "../state/earn-selection";
 import type { EarnProviderOption } from "../state/earn-selection/types";
 import {
   earnDetailsViewAtom,
@@ -66,6 +68,12 @@ export const useEarnYieldSelection = () => ({
 
 /** Selects a dashboard yield category without subscribing to the selection. */
 export const useSelectEarnCategory = () => useAtomSet(selectEarnCategoryAtom);
+
+/** The earning campaign Earn offers beside a yield without one. */
+export const useEarnCampaignOffer = () => ({
+  offer: useAtomValue(earnCampaignOfferAtom),
+  select: useAtomSet(selectEarnSelectionCatalogYieldAtom),
+});
 
 export const useEarnValidatorSelection = () => ({
   recordModalEvent: useAtomSet(earnValidatorModalEventAtom),

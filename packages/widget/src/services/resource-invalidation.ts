@@ -1,7 +1,6 @@
 import { Data } from "effect";
 
 import type { BorrowNetwork } from "../domain/borrow/network";
-import type { WalletAddress } from "../domain/identity/identifiers";
 import {
   type WalletScopeKey,
   type WalletScopeOwnerKey,
@@ -31,8 +30,12 @@ export class YieldPositionsInvalidationKey extends Data.TaggedClass(
 export class SingleYieldBalancesInvalidationKey extends Data.TaggedClass(
   "SingleYieldBalancesInvalidationKey"
 )<{
-  readonly address: WalletAddress;
-}> {}
+  readonly scope: WalletScopeOwnerKey;
+}> {
+  constructor(input: { readonly scope: WalletScopeKey | WalletScopeOwnerKey }) {
+    super({ scope: walletScopeOwnerKey(input.scope) });
+  }
+}
 
 export class ActivityInvalidationKey extends Data.TaggedClass(
   "ActivityInvalidationKey"
@@ -90,9 +93,9 @@ export const resourceInvalidationKeys = {
   borrowPositions: optionalWalletOwnerKeys(
     (scope) => new BorrowPositionsInvalidationKey({ scope })
   ),
-  singleYieldBalances: (address: WalletAddress) => [
-    new SingleYieldBalancesInvalidationKey({ address }),
-  ],
+  singleYieldBalances: optionalWalletOwnerKeys(
+    (scope) => new SingleYieldBalancesInvalidationKey({ scope })
+  ),
   walletBalances: optionalWalletOwnerKeys(
     (scope) => new WalletBalancesInvalidationKey({ scope })
   ),

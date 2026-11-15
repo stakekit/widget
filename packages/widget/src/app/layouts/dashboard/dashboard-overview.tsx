@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 
 import {
+  EarnCampaignOffer,
   EarnDetails,
   EarnFlowDetails,
 } from "../../../features/earn/composition";
@@ -22,9 +23,15 @@ export const DashboardEarnTab = () => (
   </AnimationPage>
 );
 
-/** The Earn form beside the details of its live selection. */
+/**
+ * The Earn form beside the details of its live selection, under the Campaign
+ * Offer, if any.
+ */
 export const DashboardOverview = () => (
-  <DashboardOverviewSplitView details={<EarnDetails />} />
+  <Stack grow gap={16}>
+    <EarnCampaignOffer />
+    <DashboardOverviewSplitView details={<EarnDetails />} />
+  </Stack>
 );
 
 /**

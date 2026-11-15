@@ -5,6 +5,7 @@ import { getCancellingHandles } from "../../domain/earn/confidential-balance";
 import type { YieldId } from "../../domain/identity/identifiers";
 import type { WalletScopeOwnerKey } from "../../domain/wallet/wallet-scope";
 import { appRuntime } from "../../runtime/app-runtime";
+import { withVisibleRefresh } from "../../runtime/page-visibility";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -58,7 +59,7 @@ const inFlightCancelsAtom = Atom.family((key: InFlightCancelsKey) =>
     .pipe(
       Atom.withReactivity(resourceInvalidationKeys.yieldPositions(key.scope)),
       inFlightCancelsPolicy,
-      Atom.withRefresh(Duration.minutes(1)),
+      withVisibleRefresh(Duration.minutes(1)),
       Atom.withLabel("inFlightCancelsResourceAtom")
     )
 );

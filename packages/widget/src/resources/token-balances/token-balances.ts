@@ -8,6 +8,7 @@ import {
   walletScopeOwnerKey,
 } from "../../domain/wallet/wallet-scope";
 import { appRuntime } from "../../runtime/app-runtime";
+import { withVisibleRefresh } from "../../runtime/page-visibility";
 import type {
   ApiRequestError,
   ResponseDecodeError,
@@ -53,7 +54,7 @@ const tokenBalancesRequestAtom = Atom.family((scope: WalletScopeOwnerKey) =>
 const tokenBalancesByOwnerCanonicalAtom = Atom.family(
   (scope: WalletScopeOwnerKey) =>
     tokenBalancesRequestAtom(scope).pipe(
-      Atom.withRefresh(scheduledRefreshInterval),
+      withVisibleRefresh(scheduledRefreshInterval),
       Atom.withLabel("tokenBalancesResourceAtom")
     )
 );

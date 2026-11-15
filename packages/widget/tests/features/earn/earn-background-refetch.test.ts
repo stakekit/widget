@@ -20,6 +20,7 @@ import {
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import { yieldApiYieldFixture } from "../../fixtures";
+import { emptyProviderList } from "../../utils/services/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const stake = yieldApiYieldFixture();
@@ -72,7 +73,7 @@ const makeRegistry = (
           } as never),
           Layer.succeed(YieldResourceSource, {
             getPositions: () => Effect.succeed({ errors: [], items: [] }),
-            getProvider: () => Effect.succeedNone,
+            listProviders: emptyProviderList,
             listYields: () =>
               Effect.succeed({
                 items: [stake],

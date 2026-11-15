@@ -35,6 +35,20 @@ export const formatRewardRateLabel = (
   t: TFunction
 ): string => formatRateTypeLabel(yieldDto.rewardRate.rateType, t);
 
+/**
+ * A rate composition row's label in the part's rate type: "Native APY",
+ * "Campaign APR"… so a campaign's APR inside an APY yield reads as one.
+ */
+export const formatRatePartLabel = (
+  part: "native" | "protocol_incentive" | "campaign" | "total",
+  rateType: string | null | undefined,
+  t: TFunction
+): string =>
+  t(
+    `details.apy_composition.${part}`,
+    rateType?.toLowerCase() === "apr" ? { context: "apr" } : {}
+  );
+
 export const formatRewardRate = (
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>,
   yieldDto: EarnYieldWithProvider,

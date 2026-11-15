@@ -17,7 +17,14 @@ import {
 } from "../../../../shared/lib/number-format";
 import { useTokenLogo } from "../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
-import { Box, ListRow, Skeleton, TokenAvatar } from "../../../../ui/index";
+import {
+  Badge,
+  Box,
+  ListRow,
+  Skeleton,
+  TokenAvatar,
+} from "../../../../ui/index";
+import type { CampaignRowBadgeTone } from "../../../campaigns/index";
 import { useWidgetLinkProps } from "../../../navigation/index";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
 import type { PositionItem } from "../../model/positions";
@@ -36,6 +43,11 @@ export type EarnPositionListItemDetails = {
   readonly totalFormatted: string | null;
   /** USD value beside a single-token total, when priced. */
   readonly totalAmountUsd: BigNumber | null;
+  /** The yield's Campaign: its badge's tone, and what the wallet earned. */
+  readonly campaign: {
+    readonly badgeTone: CampaignRowBadgeTone;
+    readonly line: { readonly label: string; readonly value: string } | null;
+  } | null;
 };
 
 type RowStatus = NonNullable<ComponentProps<typeof ListRow>["status"]>;
@@ -131,6 +143,11 @@ const EarnPositionRow = ({
   const rewardRate = showsRewardRate ? details.rewardRateAverage : null;
   // Success is for gains only: zero or an unknown rate reads muted.
   const rewardRateTone = rewardRate?.isPositive ? "success" : "muted";
+  const campaignDetails = details.campaign?.line ? [details.campaign.line] : [];
+  const pointsDetails = item.pointsRewardTokenBalances.map((balance) => ({
+    label: balance.token.symbol,
+    value: formatTokenAmount(balance.amount, locale, "down"),
+  }));
 
   return (
     <ListRow
@@ -157,12 +174,16 @@ const EarnPositionRow = ({
           }
         : {})}
       {...values}
-      {...(item.pointsRewardTokenBalances.length > 0
+      {...(campaignDetails.length + pointsDetails.length > 0
+        ? { details: [...campaignDetails, ...pointsDetails] }
+        : {})}
+      {...(details.campaign
         ? {
-            details: item.pointsRewardTokenBalances.map((balance) => ({
-              label: balance.token.symbol,
-              value: formatTokenAmount(balance.amount, locale, "down"),
-            })),
+            badges: (
+              <Badge tone={details.campaign.badgeTone}>
+                {t("campaign.label")}
+              </Badge>
+            ),
           }
         : {})}
     />

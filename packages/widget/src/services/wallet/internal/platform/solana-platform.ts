@@ -8,10 +8,10 @@ import {
   Stream,
 } from "effect";
 
-import {
-  type HeadlessSolanaRuntime,
-  makeDefaultHeadlessSolanaRuntime,
-  type SolanaWalletSnapshot,
+import { WalletIntegrationError } from "../../wallet-errors";
+import type {
+  HeadlessSolanaRuntime,
+  SolanaWalletSnapshot,
 } from "../runtime/solana-runtime";
 import { WalletConnectProtocolPlatform } from "./wallet-connect-protocol";
 
@@ -22,9 +22,11 @@ export type SolanaRuntime = {
 };
 
 type SolanaPlatformService = {
-  readonly makeRuntime: (options: {
-    readonly includeWalletAdapters: boolean;
-  }) => Effect.Effect<SolanaRuntime, never, Scope.Scope>;
+  readonly makeRuntime: Effect.Effect<
+    SolanaRuntime,
+    WalletIntegrationError,
+    Scope.Scope
+  >;
 };
 
 const fromHeadlessRuntime = (runtime: HeadlessSolanaRuntime): SolanaRuntime => {
@@ -64,18 +66,26 @@ export class SolanaPlatform extends Context.Service<
     SolanaPlatform,
     Effect.gen(function* () {
       const protocolPlatform = yield* WalletConnectProtocolPlatform;
-      const makeRuntime = Effect.fn("SolanaPlatform.makeRuntime")(
-        function* (options: { readonly includeWalletAdapters: boolean }) {
-          const walletConnectProtocol = yield* protocolPlatform.make;
-          const runWalletEffect = yield* FiberSet.makeRuntimePromise();
-          const runtime = yield* makeDefaultHeadlessSolanaRuntime({
-            ...options,
-            walletConnectProtocol,
-            runWalletEffect,
-          });
-          return fromHeadlessRuntime(runtime);
-        }
-      );
+      // `@solana/web3.js` and the wallet adapters load only for a topology
+      // that offers Solana wallets, never with the initial download.
+      const makeRuntime = Effect.gen(function* () {
+        const { makeDefaultHeadlessSolanaRuntime } = yield* Effect.tryPromise({
+          try: () => import("../runtime/solana-runtime"),
+          catch: (cause) =>
+            new WalletIntegrationError({
+              cause,
+              message: "Could not load Solana wallet support",
+              operation: "solana-runtime",
+            }),
+        });
+        const walletConnectProtocol = yield* protocolPlatform.make;
+        const runWalletEffect = yield* FiberSet.makeRuntimePromise();
+        const runtime = yield* makeDefaultHeadlessSolanaRuntime({
+          walletConnectProtocol,
+          runWalletEffect,
+        });
+        return fromHeadlessRuntime(runtime);
+      }).pipe(Effect.withSpan("SolanaPlatform.makeRuntime"));
       return SolanaPlatform.of({ makeRuntime });
     })
   );

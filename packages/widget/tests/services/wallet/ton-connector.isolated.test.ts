@@ -31,6 +31,10 @@ const tonConnect = vi.hoisted(() => {
     openModal: vi.fn(async () => {
       emitModal({ status: "opened", closeReason: null });
     }),
+    /** Answers with an empty cell as the signed external message. */
+    sendTransaction: vi.fn(async (_request: unknown) => ({
+      boc: "te6cckEBAQEAAgAAAEysuc0=",
+    })),
     reset: () => {
       statusListeners.clear();
       modalListeners.clear();
@@ -44,6 +48,7 @@ vi.mock("@tonconnect/ui", () => ({
   TonConnectUI: class {
     readonly connectionRestored = Promise.resolve(false);
     readonly openModal = tonConnect.openModal;
+    readonly sendTransaction = tonConnect.sendTransaction;
     onStatusChange(listener: (wallet: FakeWallet | null) => void) {
       tonConnect.statusListeners.add(listener);
       return () => tonConnect.statusListeners.delete(listener);
@@ -59,11 +64,20 @@ vi.mock("@tonconnect/ui", () => ({
 
 type TonConnector = Connector & {
   connect: () => Promise<{ accounts: ReadonlyArray<string> }>;
+  signTransaction: (tx: string) => Effect.Effect<string, Error>;
 };
+
+/** An internal transfer of 123 nanotons to the zero address, commented "Deposit". */
+const tonInternalMessage =
+  "te6cckEBAQEAPgAAeGIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL2AAAAAAAAAAAAAAAAAAAAAAARGVwb3NpdD094WI=";
+/** An inbound external message to the zero address. */
+const tonExternalMessage =
+  "te6cckEBAQEAJQAARYgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEuN2rAw==";
 
 const makeConnector = Effect.gen(function* () {
   tonConnect.reset();
   tonConnect.openModal.mockClear();
+  tonConnect.sendTransaction.mockClear();
   const walletModal = yield* WalletModal;
   const wallet = getTonConnectors({
     runWalletEffect,
@@ -167,6 +181,54 @@ describe("TonConnect connector", () => {
         yield* Effect.yieldNow;
 
         expect(yield* walletModal.presentationOpen.current).toBe(true);
+      }).pipe(Effect.provide(WalletModal.layer))
+  );
+
+  it.effect(
+    "sends a TON message as its raw transfer and returns the signed message hash",
+    () =>
+      Effect.gen(function* () {
+        const { connector } = yield* makeConnector;
+        tonConnect.emitStatus({ account: { address: "ton-address" } });
+
+        const hash = yield* connector.signTransaction(
+          JSON.stringify({ seqno: 0, message: tonInternalMessage })
+        );
+
+        expect(hash).toBe(
+          "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7"
+        );
+        expect(tonConnect.sendTransaction).toHaveBeenCalledOnce();
+        expect(tonConnect.sendTransaction.mock.calls[0]?.[0]).toMatchObject({
+          messages: [
+            {
+              address: "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
+              amount: "123",
+              payload: "te6cckEBAQEADQAAFgAAAABEZXBvc2l0CC6i0Q==",
+            },
+          ],
+        });
+      }).pipe(Effect.provide(WalletModal.layer))
+  );
+
+  it.effect(
+    "fails a TON message that is not an internal transfer before sending it",
+    () =>
+      Effect.gen(function* () {
+        const { connector } = yield* makeConnector;
+        tonConnect.emitStatus({ account: { address: "ton-address" } });
+
+        const failure = yield* Effect.flip(
+          connector.signTransaction(
+            JSON.stringify({ seqno: 0, message: tonExternalMessage })
+          )
+        );
+
+        expect(failure).toMatchObject({
+          _tag: "WalletIntegrationError",
+          operation: "ton-decode-message",
+        });
+        expect(tonConnect.sendTransaction).not.toHaveBeenCalled();
       }).pipe(Effect.provide(WalletModal.layer))
   );
 });

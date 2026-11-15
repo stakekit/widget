@@ -6,7 +6,12 @@ import type {
   PendingAction,
   YieldPendingActionType,
 } from "../earn/action-models";
-import type { EarnBalance, YieldBalanceType } from "../earn/balance";
+import type {
+  BalanceShares,
+  EarnBalance,
+  YieldBalanceType,
+} from "../earn/balance";
+import { getPendingActionAmount, type TokenAmount } from "../earn/denomination";
 import type { ValidatorInput as ValidatorDto } from "../earn/validator";
 import type { EarnYieldWithProvider } from "../earn/yield-schema";
 import { truncateToTokenDecimals } from "../finance/exact";
@@ -26,13 +31,16 @@ export type PendingActionStateKey = typeof PendingActionStateKey.Type;
 
 const makePendingActionStateKey = Schema.decodeSync(PendingActionStateKey);
 
-type PendingActionBalance = {
+type PendingActionBalance = BalanceShares & {
   amount: BigNumber;
+  shareToken?: Token;
   token: Token;
   type: EarnBalance["type"];
 };
 
 type PreparedPendingAction = {
+  /** What the action shows: see `getPendingActionAmount`. */
+  amount: TokenAmount | null;
   command: ManageActionCommand;
   integrationData: EarnYieldWithProvider;
   gasFeeToken: EarnYieldWithProvider["token"];
@@ -96,32 +104,38 @@ export const preparePendingActionCommand = ({
     return {};
   };
   const validatorArgs = resolveValidatorArgs();
-  const stateAmount = isPendingActionAmountRequired(pendingAction)
-    ? pendingActionsState.get(
-        getPendingActionStateKey({
-          balanceType: yieldBalance.type,
-          token: yieldBalance.token,
-          actionType: pendingAction.type,
-          passthrough: pendingAction.passthrough,
-        })
+  // Only an action whose arguments take an amount is sent one; any other
+  // carries its own in its passthrough, and the balance it sits on, such as
+  // several stake accounts' withdrawals summed, would contradict it.
+  const takesAmount = isPendingActionAmountRequired(pendingAction);
+  const executableAmount = takesAmount
+    ? truncateToTokenDecimals(
+        pendingActionsState.get(
+          getPendingActionStateKey({
+            balanceType: yieldBalance.type,
+            token: yieldBalance.token,
+            actionType: pendingAction.type,
+            passthrough: pendingAction.passthrough,
+          })
+        ) ?? yieldBalance.amount,
+        yieldBalance.token.decimals
       )
     : null;
-  const executableAmount = truncateToTokenDecimals(
-    stateAmount ?? yieldBalance.amount,
-    yieldBalance.token.decimals
-  );
-  if (
-    isPendingActionAmountRequired(pendingAction) &&
-    !executableAmount.isGreaterThan(0)
-  ) {
+  if (executableAmount && !executableAmount.isGreaterThan(0)) {
     return Result.fail(new Error("amount below one base unit"));
   }
   const args = {
-    amount: executableAmount.toFixed(),
+    ...(executableAmount ? { amount: executableAmount.toFixed() } : {}),
     ...validatorArgs,
   } satisfies NonNullable<ManageActionCommand["arguments"]>;
 
   return Result.succeed({
+    // An amount the action takes is the one it acts on, entered or defaulted.
+    amount: getPendingActionAmount({
+      balance: yieldBalance,
+      enteredAmount: executableAmount,
+      pendingAction,
+    }),
     command: {
       action: pendingAction.type,
       address,

@@ -2,7 +2,7 @@ import type { DateTime } from "effect";
 import type { TFunction } from "i18next";
 
 import { isConfidentialYield } from "../../../domain/earn/confidential";
-import { getConfidentialCampaignUrl } from "../../../domain/earn/confidential-campaign";
+import { getConfidentialIncentivesUrl } from "../../../domain/earn/confidential-incentives";
 import type { ValidatorInput } from "../../../domain/earn/validator";
 import {
   getExtendedYieldType,
@@ -25,44 +25,34 @@ export type YieldMetaValidator = {
   [Key in keyof Pick<ValidatorInput, "name" | "address">]?: ValidatorInput[Key];
 };
 
-/** Copy whose `link0` slot links to `href`, e.g. a campaign's "Learn more". */
+/** Copy whose `link0` slot links to `href`, e.g. a vault's "Learn more". */
 export type YieldMetaLinkedCopy = Readonly<{
-  readonly i18nKey:
-    | "details.campaign"
-    | "details.campaign_susd"
-    | "details.campaign_susd_position_locked"
-    | "details.confidential_campaign";
+  readonly i18nKey: "details.confidential_incentives";
   readonly href: string;
 }>;
 
 /** What entering and exiting a yield means for its holder, as notes. */
 export type YieldMetaInfo = Readonly<{
-  readonly campaign: YieldMetaLinkedCopy | null;
+  readonly confidentialIncentives: YieldMetaLinkedCopy | null;
   readonly description: string | null;
   readonly earnPeriod: string | null;
   readonly earnRewards: string | null;
   readonly extra: string | null;
   readonly lockupPeriod: string | null;
-  readonly positionLocked: YieldMetaLinkedCopy | null;
   readonly withdrawnNotAvailable: string | null;
   readonly withdrawnTime: string | null;
 }>;
 
 export const emptyYieldMetaInfo: YieldMetaInfo = {
-  campaign: null,
+  confidentialIncentives: null,
   description: null,
   earnPeriod: null,
   earnRewards: null,
   extra: null,
   lockupPeriod: null,
-  positionLocked: null,
   withdrawnNotAvailable: null,
   withdrawnTime: null,
 };
-
-const susdCampaignUrl =
-  "https://blog.synthetix.io/susd-staks-5-million-snx-rewards/";
-const snxCampaignUrl = "https://420.synthetix.io/?collateral=SNX";
 
 type VaultDescriptionContext =
   | "confidential"
@@ -116,19 +106,11 @@ const getProviderName = ({
   return yieldDto.provider ? yieldDto.provider.name : yieldDto.metadata.name;
 };
 
-const getCampaign = (
+const getConfidentialIncentives = (
   yieldDto: EarnYieldWithProvider
 ): YieldMetaLinkedCopy | null => {
-  const confidentialCampaignUrl = getConfidentialCampaignUrl(yieldDto);
-  if (confidentialCampaignUrl) {
-    return {
-      i18nKey: "details.confidential_campaign",
-      href: confidentialCampaignUrl,
-    };
-  }
-  return yieldDto.mechanics.rewardSchedule === "campaign"
-    ? { i18nKey: "details.campaign", href: snxCampaignUrl }
-    : null;
+  const href = getConfidentialIncentivesUrl(yieldDto);
+  return href ? { i18nKey: "details.confidential_incentives", href } : null;
 };
 
 const getStakingNotes = ({
@@ -349,7 +331,7 @@ const getTypeNotes = (facts: MetaFacts): TypeNotes | null => {
 /**
  * The notes on what staking `token` into the yield means: how it is
  * described, when it earns, how rewards arrive, and when it can be withdrawn.
- * Campaign and position-locked notes are linked copy for the view to render.
+ * A confidential vault's incentives note is linked copy for the view to render.
  * With `now`, a confidential vault's batch notes name the next batch's timing.
  */
 export const getYieldMetaInfo = ({
@@ -367,19 +349,6 @@ export const getYieldMetaInfo = ({
 }): YieldMetaInfo => {
   const rewardSchedule = yieldDto.mechanics.rewardSchedule;
   const stakeToken = token.symbol;
-
-  if (rewardSchedule === "campaign" && stakeToken.toUpperCase() === "SUSD") {
-    return {
-      ...emptyYieldMetaInfo,
-      description: t("details.campaign_susd_description"),
-      extra: t("details.campaign_susd_extra"),
-      positionLocked: {
-        i18nKey: "details.campaign_susd_position_locked",
-        href: susdCampaignUrl,
-      },
-      campaign: { i18nKey: "details.campaign_susd", href: susdCampaignUrl },
-    };
-  }
 
   const rewardTokens = getYieldRewardTokens(yieldDto)
     .filter((rewardToken) => !rewardToken.isPoints)
@@ -405,11 +374,10 @@ export const getYieldMetaInfo = ({
   const lockupDays = getYieldLockupPeriod(yieldDto)?.days;
   return {
     ...notes,
-    campaign: getCampaign(yieldDto),
+    confidentialIncentives: getConfidentialIncentives(yieldDto),
     extra: yieldDto.token.network === "tezos" ? t("details.extra_tezos") : null,
     lockupPeriod: lockupDays
       ? t("details.lockup_period", { count: lockupDays })
       : null,
-    positionLocked: null,
   };
 };

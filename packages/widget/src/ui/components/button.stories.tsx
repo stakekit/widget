@@ -19,6 +19,7 @@ const variants = [
   "soft",
   "danger",
   "dangerOutline",
+  "link",
 ] as const;
 const sizes = ["sm", "md", "lg", "cta"] as const;
 

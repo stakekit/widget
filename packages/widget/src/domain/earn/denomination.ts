@@ -173,6 +173,27 @@ export const getPendingActionReturn = (
   return amount ? { amount, token } : null;
 };
 
+/**
+ * The amount a pending action shows: the one the user entered, else the
+ * action's own amount, both in the balance's Value Token, else what a cancel
+ * returns. Null when it names none: the balance an action sits on is not its
+ * amount, as a claim of rewards offered on the staked principal shows.
+ */
+export const getPendingActionAmount = ({
+  balance,
+  enteredAmount,
+  pendingAction,
+}: {
+  readonly balance: SharesSource;
+  readonly enteredAmount: BigNumber | null;
+  readonly pendingAction: Pick<PendingAction, "amount" | "type">;
+}): TokenAmount | null => {
+  const amount = enteredAmount ?? pendingAction.amount ?? null;
+  return amount
+    ? { amount, token: balance.token }
+    : getPendingActionReturn(pendingAction.type, balance);
+};
+
 export type PositionShares =
   | Readonly<{ readonly _tag: "Hidden" }>
   | Readonly<{

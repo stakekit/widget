@@ -1,7 +1,6 @@
 import { getPendingActionLabelContext } from "../../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../../domain/earn/confidential";
 import { getExtendedYieldType } from "../../../../../domain/earn/yield";
-import { exactDecimal } from "../../../../../domain/finance/exact";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
@@ -12,20 +11,13 @@ export const PendingCompletePage = () => {
   const { locale } = useWidgetPresentation();
   const manageFlow = useYieldFlowIntake("Manage");
   const integrationData = manageFlow.integration;
-  const rawAmount = manageFlow.request.arguments?.amount;
-  // An entered amount is in the balance's Value Token; without one a cancel
-  // shows what it returns.
-  const returned = rawAmount ? null : (manageFlow.cancelReturn ?? null);
-  const token = returned?.token ?? manageFlow.interactedToken;
+  // The action's amount, or none; an encrypted balance's is unknown, not zero.
+  const token = manageFlow.amount?.token ?? manageFlow.interactedToken;
 
   useTrackPage("pendingActionCompelete");
-  // An encrypted balance's amount is unknown, not zero.
-  const getAmount = () => {
-    if (manageFlow.balanceHidden) return null;
-    if (rawAmount) return exactDecimal(rawAmount);
-    return returned?.amount ?? null;
-  };
-  const amount = getAmount();
+  const amount = manageFlow.balanceHidden
+    ? null
+    : (manageFlow.amount?.amount ?? null);
 
   return (
     <CompletePage

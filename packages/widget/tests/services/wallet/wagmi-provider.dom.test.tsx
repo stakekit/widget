@@ -329,17 +329,27 @@ describe("WagmiConfigProvider", () => {
 
     expect(initialConfig).toBeDefined();
 
+    // wagmi reports the connection before the Widget's wallet projection
+    // catches up, so wait for both.
     await expect
       .poll(
         () => ({
           connected: hook.result.current.account.isConnected,
+          projection: hook.result.current.walletProjection.pipe(
+            AsyncResult.value,
+            Option.getOrUndefined
+          ),
           ready: Option.isSome(
             AsyncResult.value(hook.result.current.walletConfig)
           ),
         }),
         { timeout: 10_000 }
       )
-      .toEqual({ connected: true, ready: true });
+      .toMatchObject({
+        connected: true,
+        projection: { address: account, status: "connected" },
+        ready: true,
+      });
     const walletConfig = hook.result.current.walletConfig.pipe(
       AsyncResult.value,
       Option.getOrUndefined
@@ -349,9 +359,6 @@ describe("WagmiConfigProvider", () => {
     }
     expect(hook.result.current.contextConfig).toBe(walletConfig);
     if (!walletConfig) throw new Error("Wallet config was not ready");
-    expect(
-      AsyncResult.getOrThrow(hook.result.current.walletProjection)
-    ).toMatchObject({ address: account, status: "connected" });
 
     await disconnect(walletConfig);
     await expect

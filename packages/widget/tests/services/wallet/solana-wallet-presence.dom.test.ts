@@ -90,23 +90,4 @@ describe("Solana provider presence", () => {
         expect(error).toMatchObject({ walletId: "Phantom" });
       }).pipe(Effect.ensuring(Effect.sync(removePhantom)), Effect.scoped)
   );
-
-  it.effect("exposes no wallet adapters when adapters are disabled", () =>
-    Effect.gen(function* () {
-      injectPhantom();
-      const makeRuntime = (includeWalletAdapters: boolean) =>
-        makeDefaultHeadlessSolanaRuntime({
-          walletConnectProtocol: unusedWalletConnectProtocol,
-          runWalletEffect,
-          includeFallbackAdapters: true,
-          includeWalletAdapters,
-        });
-
-      const enabled = yield* makeRuntime(true);
-      const disabled = yield* makeRuntime(false);
-
-      expect(enabled.getWalletSnapshot().wallets).not.toEqual([]);
-      expect(disabled.getWalletSnapshot().wallets).toEqual([]);
-    }).pipe(Effect.ensuring(Effect.sync(removePhantom)), Effect.scoped)
-  );
 });

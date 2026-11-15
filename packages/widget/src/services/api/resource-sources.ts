@@ -22,8 +22,16 @@ import type {
   ActionSimulation,
   YieldAction,
 } from "../../domain/earn/action-models";
+import type {
+  YieldCampaign,
+  YieldCampaignPage,
+} from "../../domain/earn/campaign";
+import type {
+  CampaignPayoutPage,
+  WalletCampaignRewardsPage,
+} from "../../domain/earn/campaign-rewards";
 import type { KycStatus } from "../../domain/earn/kyc";
-import type { EarnProvider } from "../../domain/earn/provider";
+import type { EarnProviderPage } from "../../domain/earn/provider";
 import type {
   EarnLegacyTokenOptionsResponse,
   EarnPositionsResponse,
@@ -44,7 +52,7 @@ import type { PriceRequest, PriceResponse } from "../../domain/finance/prices";
 import type { HealthStatus } from "../../domain/health/models";
 import type {
   ActionId,
-  ProviderId,
+  CampaignId,
   WalletAddress,
   YieldId,
 } from "../../domain/identity/identifiers";
@@ -82,6 +90,20 @@ export type ValidatorDirectoryRequest = {
   readonly preferred?: boolean;
   readonly status?: "active";
   readonly yieldId: YieldId;
+};
+
+/** One page of the project's campaigns in one status the widget shows. */
+export type ProjectCampaignsRequest = {
+  readonly limit: number;
+  readonly offset: number;
+  readonly status: Exclude<YieldCampaign["status"], "ended">;
+};
+
+export type CampaignPayoutsRequest = {
+  readonly address: WalletAddress;
+  readonly campaignId: CampaignId;
+  readonly limit: number;
+  readonly offset: number;
 };
 
 export type EarnTokenCatalogRequest = {
@@ -241,9 +263,6 @@ type YieldResourceSourceService = {
   readonly getPositions: (
     command: YieldBalancesCommand
   ) => Effect.Effect<typeof EarnPositionsResponse.Type, ApiReadFailure>;
-  readonly getProvider: (
-    providerId: ProviderId
-  ) => Effect.Effect<Option.Option<EarnProvider>, ApiReadFailure>;
   /** A wallet's fixed-window earnings; none when the Yield is untracked. */
   readonly getRewardsSummary: (request: {
     readonly address: WalletAddress;
@@ -266,6 +285,11 @@ type YieldResourceSourceService = {
   readonly listActivity: (
     query: ActivityActionsQuery
   ) => Effect.Effect<ActivityActionsPage, ApiReadFailure>;
+  /** One page of every Yield Provider. */
+  readonly listProviders: (request: {
+    readonly limit: number;
+    readonly offset: number;
+  }) => Effect.Effect<EarnProviderPage, ApiReadFailure>;
   readonly listValidators: (
     request: ValidatorDirectoryRequest
   ) => Effect.Effect<typeof EarnValidatorPage.Type, ApiReadFailure>;
@@ -276,6 +300,18 @@ type YieldResourceSourceService = {
   readonly simulateAction: (
     request: ActionSimulationRequest
   ) => Effect.Effect<ActionSimulation, ApiReadFailure | InputValidationError>;
+  /** One page of the project's campaigns in one status the widget shows. */
+  readonly listProjectCampaigns: (
+    request: ProjectCampaignsRequest
+  ) => Effect.Effect<typeof YieldCampaignPage.Type, ApiReadFailure>;
+  /** A wallet's rewards in every Campaign of the project it accrued in. */
+  readonly listWalletCampaignRewards: (request: {
+    readonly address: WalletAddress;
+  }) => Effect.Effect<typeof WalletCampaignRewardsPage.Type, ApiReadFailure>;
+  /** One page of a wallet's payouts in one Campaign, pending ones first. */
+  readonly listCampaignPayouts: (
+    request: CampaignPayoutsRequest
+  ) => Effect.Effect<CampaignPayoutPage, ApiReadFailure>;
 };
 
 export class BorrowResourceSource extends Context.Service<

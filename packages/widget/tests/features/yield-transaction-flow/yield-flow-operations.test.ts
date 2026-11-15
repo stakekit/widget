@@ -162,6 +162,7 @@ const makeManageIntake = (): Extract<
 
   return {
     _tag: "Manage",
+    amount: null,
     balanceType: "claimable",
     gasFeeToken: integration.mechanics.gasFeeToken,
     integration,

@@ -2,6 +2,7 @@ import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 
 import { ActionCommand } from "../../../domain/earn/action-models";
+import type { CampaignAtTime } from "../../../domain/earn/campaign";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import {
   getMaxAmount,
@@ -65,6 +66,7 @@ export type YieldEntryReadiness =
 export type YieldEntryProjectionInput = Readonly<{
   readonly additionalValidationErrors?: Readonly<Record<string, boolean>>;
   readonly availableAmount: BigNumber | null;
+  readonly campaign: CampaignAtTime | null;
   readonly connected: boolean;
   readonly amountInitialization: YieldEntryAmountInitialization;
   readonly entry: YieldEntryInput;
@@ -620,6 +622,7 @@ export const projectYieldEntry = ({
     }),
     estimatedRewards: getYieldEstimatedRewards({
       amount,
+      campaign: input.campaign,
       providers: input.providers,
       validators: input.entry.validators,
       yield: input.entry.yield,

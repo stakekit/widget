@@ -18,6 +18,7 @@ import {
 import { YieldFactValue } from "../../../../yield-summary/views";
 
 export type EarnDetailsMetricCard = {
+  id: YieldFactId;
   label: string;
   subValue?: string | undefined;
   value: ReactNode;
@@ -125,6 +126,7 @@ const getPromotedFacts = (
 };
 
 const toMetricCard = (fact: YieldFact): EarnDetailsMetricCard => ({
+  id: fact.id,
   label: fact.label,
   subValue: fact.subValue,
   value: <YieldFactValue value={fact.value} />,

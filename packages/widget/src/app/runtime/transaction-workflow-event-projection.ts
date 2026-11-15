@@ -49,7 +49,7 @@ const keysFor = (
         return [
           ...resourceInvalidationKeys.walletBalances(owner),
           ...resourceInvalidationKeys.yieldPositions(owner),
-          ...resourceInvalidationKeys.singleYieldBalances(owner.address),
+          ...resourceInvalidationKeys.singleYieldBalances(owner),
           ...resourceInvalidationKeys.activity(owner),
         ];
       }
@@ -70,7 +70,7 @@ const keysFor = (
         return [
           ...resourceInvalidationKeys.walletBalances(owner),
           ...resourceInvalidationKeys.yieldPositions(owner),
-          ...resourceInvalidationKeys.singleYieldBalances(owner.address),
+          ...resourceInvalidationKeys.singleYieldBalances(owner),
         ];
       }
 

@@ -14,6 +14,7 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
 
 import { hostBundlerOutputPlugin } from "./host-bundler-output.ts";
+import { productionDependenciesPlugin } from "./production-dependencies.ts";
 import { type StyleXInjection, stylexPlugins } from "./stylex.ts";
 
 declare module "vite" {
@@ -58,6 +59,14 @@ export const getConfig = (
 
     return mergeConfig(overides ?? {}, {
       root: path.resolve(import.meta.dirname, ".."),
+      // Library mode leaves `process.env.NODE_ENV` to the host, and the node
+      // polyfills route it to a `process` shim whose `env` is empty, so every
+      // bundled dependency would run its development build. Hosts cannot
+      // replace it after that; the Widget's dependencies ship as production.
+      // `productionDependenciesPlugin` fails a build that regresses this.
+      ...(isBuild && {
+        define: { "process.env.NODE_ENV": JSON.stringify("production") },
+      }),
       optimizeDeps: {
         include: [
           "vite-plugin-node-polyfills/shims/buffer",
@@ -115,6 +124,7 @@ export const getConfig = (
           ],
         }),
         hostBundlerOutputPlugin(),
+        productionDependenciesPlugin(),
       ],
       css: {
         postcss: {

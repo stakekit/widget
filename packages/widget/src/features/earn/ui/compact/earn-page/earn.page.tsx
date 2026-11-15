@@ -4,6 +4,7 @@ import { useTrackPage } from "../../../../tracking/index";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { PageContainer, PageCtaButton } from "../../../../widget-shell/views";
+import { EarnCampaignOffer } from "../../components/campaign-offer";
 import {
   AmountPanelSkeleton,
   EarnCardSkeleton,
@@ -16,6 +17,7 @@ import { Footer } from "../../components/footer";
 import { SelectTokenSection } from "../../components/select-token-section";
 import { SelectYieldSection } from "../../components/select-yield-section";
 import { useEarnPageStatus } from "../../use-earn-facades";
+import { EarnCampaignSection } from "./components/campaign-section";
 import { SelectProvider } from "./components/select-provider";
 import { SelectValidatorSection } from "./components/select-validator-section";
 
@@ -56,6 +58,8 @@ const EarnPage = () => {
             <Stack gap={12}>
               <ZerionChainModal />
 
+              <EarnCampaignOffer />
+
               <SelectTokenSection />
 
               <SelectYieldSection alwaysShowStrategy={false} showRiskSummary />
@@ -67,6 +71,8 @@ const EarnPage = () => {
               <SelectValidatorSection />
 
               <ExtraArgsSelection showDivider />
+
+              <EarnCampaignSection />
             </Stack>
 
             <Footer />

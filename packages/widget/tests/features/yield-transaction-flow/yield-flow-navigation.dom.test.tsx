@@ -40,6 +40,7 @@ import { applicationBaseRuntime } from "../../../src/runtime/application-base-ru
 import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { ApplicationRouter } from "../../../src/services/navigation/application-router";
+import { makeScrollReset } from "../../../src/services/navigation/scroll-reset";
 import { makeWidgetNavigation } from "../../../src/services/navigation/widget-navigation";
 import {
   widgetRoutes,
@@ -361,7 +362,11 @@ const FlowTestApp = ({
   const applicationRouterLayer = Layer.merge(
     Layer.succeed(
       ApplicationRouter,
-      ApplicationRouter.of({ locations: Stream.never, router })
+      ApplicationRouter.of({
+        locations: Stream.never,
+        router,
+        scrollReset: makeScrollReset(),
+      })
     ),
     WidgetConfigService.layer(hostConfiguration)
   );

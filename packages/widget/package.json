@@ -21,7 +21,9 @@
     }
   },
   "files": [
-    "dist",
+    "dist/package",
+    "dist/bundle",
+    "dist/types",
     "package.json",
     "README.md",
     "!**/.*"
@@ -103,7 +105,6 @@
     "@cosmos-kit/core": "catalog:",
     "@cosmos-kit/keplr-extension": "catalog:",
     "@cosmos-kit/leap-extension": "catalog:",
-    "@cosmos-kit/leap-metamask-cosmos-snap": "catalog:",
     "@creit-tech/stellar-wallets-kit": "catalog:",
     "@effect/atom-react": "catalog:",
     "@effect/openapi-generator": "catalog:",
@@ -124,7 +125,8 @@
     "@safe-global/safe-apps-sdk": "catalog:",
     "@solana-mobile/wallet-adapter-mobile": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
-    "@solana/wallet-adapter-wallets": "catalog:",
+    "@solana/wallet-adapter-phantom": "catalog:",
+    "@solana/wallet-adapter-trust": "catalog:",
     "@solana/wallet-standard-wallet-adapter-base": "catalog:",
     "@solana/web3.js": "catalog:",
     "@storybook/addon-a11y": "catalog:",

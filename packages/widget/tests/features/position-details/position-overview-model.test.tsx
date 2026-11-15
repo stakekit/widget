@@ -7,16 +7,23 @@ import {
   ConfidentialHandle,
   EarnBalance,
 } from "../../../src/domain/earn/balance";
+import { YieldCampaign } from "../../../src/domain/earn/campaign";
+import {
+  getPositionRate,
+  type PositionRateSources,
+} from "../../../src/domain/earn/position-rate";
+import type { YieldRewardRate } from "../../../src/domain/earn/reward-rate";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import { YieldRewardsSummary } from "../../../src/domain/portfolio/models";
 import type { PositionBalancesByType } from "../../../src/domain/portfolio/positions";
 import {
-  getPositionOverviewModel,
+  getPositionOverviewModel as overviewModel,
   getPositionProviderName,
 } from "../../../src/features/position-details/model/position-overview";
 import {
   confidentialFixture,
   confidentialYieldFixture,
+  yieldApiCampaignDtoFixture,
   yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
@@ -210,15 +217,48 @@ const makePositionBalances = (): PositionBalancesByType => {
   ]);
 };
 
-type OverviewInput = Parameters<typeof getPositionOverviewModel>[0];
+type OverviewInput = Omit<Parameters<typeof overviewModel>[0], "rate"> & {
+  /** The position's own rate, shown when it lists a campaign part. */
+  readonly personalizedRewardRate: YieldRewardRate | null;
+  readonly validators: PositionRateSources["validators"];
+};
+
+/** The overview of a position whose rate is its own, its validators' or its yield's. */
+const positionOverview = ({
+  personalizedRewardRate,
+  validators,
+  ...input
+}: OverviewInput) =>
+  overviewModel({
+    ...input,
+    rate: getPositionRate({
+      balanceRewardRate: personalizedRewardRate,
+      // Under a shown campaign's per-wallet cap, the position's own rate.
+      getShownCampaign: () =>
+        Schema.decodeUnknownSync(YieldCampaign)(yieldApiCampaignDtoFixture()),
+      canEarnCampaign: () => true,
+      validators,
+      yieldRewardRate: input.integrationData.rewardRate,
+    }),
+  });
 
 describe("getPositionOverviewModel", () => {
   it("sums the position up: its USD value, token amount, rate and projected earnings", () => {
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
-      personalizedRewardRate: yieldRewardRateFixture({ total: 0.025 }),
+      personalizedRewardRate: yieldRewardRateFixture({
+        total: 0.025,
+        components: [
+          {
+            rate: 0.025,
+            rateType: "APR",
+            token: yieldApiYieldFixture().token,
+            yieldSource: "campaign_incentive",
+          },
+        ],
+      }),
       positionBalancesByType: makePositionBalances(),
       t: t as TFunction,
       validators: null,
@@ -244,7 +284,7 @@ describe("getPositionOverviewModel", () => {
 
   it("projects nothing under a cent a year, as for a dust position", () => {
     const token = yieldApiYieldFixture().token;
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -274,7 +314,7 @@ describe("getPositionOverviewModel", () => {
   });
 
   it("reads a validator position's rate as its validators' average", () => {
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -282,8 +322,8 @@ describe("getPositionOverviewModel", () => {
       positionBalancesByType: makePositionBalances(),
       t: t as TFunction,
       validators: [
-        { rewardRate: new BigNumber("0.03") },
-        { rewardRate: new BigNumber("0.05") },
+        { rewardRate: yieldRewardRateFixture({ total: 0.03 }) },
+        { rewardRate: yieldRewardRateFixture({ total: 0.05 }) },
       ],
     });
 
@@ -293,7 +333,7 @@ describe("getPositionOverviewModel", () => {
   });
 
   it("averages only the validators with rates, in their rate type", () => {
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -301,8 +341,10 @@ describe("getPositionOverviewModel", () => {
       positionBalancesByType: makePositionBalances(),
       t: t as TFunction,
       validators: [
-        { rewardRate: new BigNumber("0.03"), rewardType: "apr" },
-        { rewardRate: null },
+        {
+          rewardRate: yieldRewardRateFixture({ total: 0.03, rateType: "APR" }),
+        },
+        {},
       ],
     });
 
@@ -310,7 +352,7 @@ describe("getPositionOverviewModel", () => {
   });
 
   it("estimates no earnings and leaves the rate to the yield's facts without one", () => {
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield({
@@ -329,7 +371,7 @@ describe("getPositionOverviewModel", () => {
 
   it("reads a fully hidden position as hidden, not as zero", () => {
     const { cShare, cUsdc } = confidentialFixture;
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -375,7 +417,7 @@ describe("getPositionOverviewModel", () => {
       tokenPriceInUsd: new BigNumber(0),
     });
 
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -408,7 +450,7 @@ describe("getPositionOverviewModel", () => {
       address: "0x00000000000000000000000000000000000000f1",
       symbol: "FOO",
     };
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -469,7 +511,7 @@ describe("getPositionOverviewModel", () => {
       tokenPriceInUsd: new BigNumber(0),
     });
 
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -536,14 +578,15 @@ describe("getPositionOverviewModel", () => {
       ...makeBalance(overrides),
       tokenPriceInUsd: new BigNumber(1),
     });
-    const dailyPath = (cutoffTime: string) => ({
-      cadence: "daily_cutoff",
-      cutoffTime,
-      kind: "standard",
-      status: "open",
-    });
+    const dailyPath = (cutoffTime: string) =>
+      ({
+        cadence: "daily_cutoff",
+        cutoffTime,
+        kind: "standard",
+        status: "open",
+      }) as const;
 
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       integrationData: makeYield({
         investmentSchedule: {
@@ -590,7 +633,7 @@ describe("getPositionOverviewModel", () => {
   });
 
   it("gives a confidential vault's undated pending balance no next-batch estimate", () => {
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       integrationData: {
         ...confidentialYieldFixture(),
@@ -697,7 +740,7 @@ describe("getPositionOverviewModel", () => {
       t: t as TFunction,
       validators: null,
     };
-    const model = getPositionOverviewModel(input);
+    const model = positionOverview(input);
 
     expect(model.breakdownRows.map(({ subValue }) => subValue)).toEqual([
       "Cancelling…",
@@ -712,7 +755,7 @@ describe("getPositionOverviewModel", () => {
       ...makeBalance({ amountUsd: "1", token, ...overrides }),
       tokenPriceInUsd: new BigNumber(1),
     });
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       integrationData: makeYield({
         investmentSchedule: {
@@ -757,7 +800,7 @@ describe("getPositionOverviewModel", () => {
   });
 
   it("renders balance breakdown rows and points metadata, leaving the rewards earned to the summary", () => {
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: makeYield(),
@@ -799,7 +842,7 @@ describe("getPositionOverviewModel", () => {
   });
   it("names a deposit's balances as a deposit does", () => {
     const integrationData = makeYield();
-    const model = getPositionOverviewModel({
+    const model = positionOverview({
       locale: "en",
       presentationTime: null,
       integrationData: {
@@ -832,7 +875,7 @@ describe("getPositionOverviewModel", () => {
       tokenPriceInUsd: new BigNumber(1),
     });
     const overview = (positionBalancesByType: PositionBalancesByType) =>
-      getPositionOverviewModel({
+      positionOverview({
         locale: "en",
         presentationTime: null,
         integrationData: makeYield(),
@@ -1036,12 +1079,8 @@ describe("getPositionOverviewModel", () => {
 });
 
 describe("the position's Earned rows", () => {
-  const overview = (
-    rewardsSummary: Parameters<
-      typeof getPositionOverviewModel
-    >[0]["rewardsSummary"]
-  ) =>
-    getPositionOverviewModel({
+  const overview = (rewardsSummary: OverviewInput["rewardsSummary"]) =>
+    positionOverview({
       locale: "en",
       integrationData: makeYield(),
       personalizedRewardRate: null,
@@ -1174,9 +1213,10 @@ describe("position reward eligibility", () => {
     tokenPriceInUsd: new BigNumber(1),
   });
   const overview = (positionBalancesByType: PositionBalancesByType) =>
-    getPositionOverviewModel({
+    positionOverview({
       integrationData: makeYield(),
       locale: "en",
+      personalizedRewardRate: null,
       positionBalancesByType,
       t: t as TFunction,
       validators: null,

@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, DateTime, Effect, Layer, Option } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { describe, expect, it, vi } from "vitest";
 
 import {
   underMaintenanceAtom,
@@ -12,8 +12,12 @@ import {
   ApiRequestError,
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
+import { readCountsAcrossHiddenPage } from "../../utils/services/page-visibility";
 
-const makeRegistry = (getHealth: YieldResourceSource["Service"]["getHealth"]) =>
+const makeRegistry = (
+  getHealth: YieldResourceSource["Service"]["getHealth"],
+  initialValues: ReadonlyArray<readonly [Atom.Atom<unknown>, unknown]> = []
+) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
@@ -23,6 +27,7 @@ const makeRegistry = (getHealth: YieldResourceSource["Service"]["getHealth"]) =>
           YieldResourceSource.of({ getHealth } as never)
         )
       ),
+      ...initialValues,
     ],
   });
 
@@ -150,4 +155,29 @@ describe("Widget Health resource", () => {
       vi.useRealTimers();
     }
   });
+
+  it.effect(
+    "skips checks while the page is hidden and checks once when it is shown",
+    () => {
+      const getHealth = vi.fn(() => ({
+        status: "OK" as const,
+        timestamp: DateTime.makeUnsafe(0),
+      }));
+      return readCountsAcrossHiddenPage({
+        mount: (pageVisibility) => {
+          const registry = makeRegistry(Effect.sync(getHealth), [
+            pageVisibility,
+          ]);
+          registry.mount(widgetHealthResourceAtom);
+          return registry;
+        },
+        periodSeconds: 30,
+        readCount: () => getHealth.mock.calls.length,
+      }).pipe(
+        Effect.map((readCounts) => {
+          expect(readCounts).toEqual([1, 2, 2, 3, 3, 4]);
+        })
+      );
+    }
+  );
 });

@@ -1,7 +1,7 @@
 import { DateTime } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { getConfidentialCampaignUrl } from "../../../src/domain/earn/confidential-campaign";
+import { getConfidentialIncentivesUrl } from "../../../src/domain/earn/confidential-incentives";
 import type {
   EarnInvestmentSchedule,
   EarnYieldWithProvider,
@@ -140,14 +140,14 @@ describe("getYieldMetaInfo", () => {
       );
     });
 
-    it("links its delegation campaign when it runs one", () => {
+    it("links its Zama incentives page when it has one", () => {
       const yieldDto = confidentialVault({
         id: "ethereum-usdc-zama-steakhouse-usdc-confidential-vault",
       });
 
-      expect(metaOf(yieldDto).campaign).toEqual({
-        i18nKey: "details.confidential_campaign",
-        href: getConfidentialCampaignUrl(yieldDto),
+      expect(metaOf(yieldDto).confidentialIncentives).toEqual({
+        i18nKey: "details.confidential_incentives",
+        href: getConfidentialIncentivesUrl(yieldDto),
       });
     });
   });
@@ -203,20 +203,8 @@ describe("getYieldMetaInfo", () => {
     });
   });
 
-  describe("campaign", () => {
-    it("links the campaign of a campaign-rewarded yield", () => {
-      const meta = metaOf(
-        makeYield({ type: "vault", rewardSchedule: "campaign" })
-      );
-
-      expect(meta.campaign).toEqual({
-        i18nKey: "details.campaign",
-        href: expect.any(String),
-      });
-      expect(meta.positionLocked).toBeNull();
-    });
-
-    it("gives sUSD's campaign its own notes and locked-position link", () => {
+  describe("campaign reward schedule", () => {
+    it("gives a campaign-rewarded vault its type's notes and no links", () => {
       const meta = metaOf(
         makeYield({
           type: "vault",
@@ -225,26 +213,11 @@ describe("getYieldMetaInfo", () => {
         })
       );
 
-      expect(meta).toEqual(
-        expect.objectContaining({
-          campaign: {
-            i18nKey: "details.campaign_susd",
-            href: expect.any(String),
-          },
-          positionLocked: {
-            i18nKey: "details.campaign_susd_position_locked",
-            href: meta.campaign?.href,
-          },
-          description: t("details.campaign_susd_description"),
-          extra: t("details.campaign_susd_extra"),
-          earnRewards: null,
-          withdrawnTime: null,
-        })
+      expect(meta.description).toBe(
+        metaOf(makeYield({ type: "vault", stakeSymbol: "sUSD" })).description
       );
-    });
-
-    it("has no campaign for a regularly rewarded yield", () => {
-      expect(metaOf(makeYield({ type: "vault" })).campaign).toBeNull();
+      expect(meta.extra).toBeNull();
+      expect(meta.confidentialIncentives).toBeNull();
     });
   });
 

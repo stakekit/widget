@@ -36,9 +36,7 @@ describe("Trust incentive APY", () => {
       .toBeInTheDocument();
     await expect
       .element(
-        app
-          .getByTestId("reward-rate-breakdown__campaign")
-          .getByText("Up to 0.20%")
+        app.getByTestId("reward-rate-breakdown__campaign").getByText("0.20%")
       )
       .toBeInTheDocument();
 
@@ -60,10 +58,12 @@ describe("Trust incentive APY", () => {
     await app.unmount();
   });
 
-  it("shows personalized APY on the position details page", async ({
+  it("shows personalized APY on the position details page under a per-wallet cap", async ({
     worker,
   }) => {
-    const { account, customConnectors, yieldId, setUrl } = await setup(worker);
+    const { account, customConnectors, yieldId, setUrl } = await setup(worker, {
+      cappedCampaign: true,
+    });
 
     setUrl({
       accountId: account,

@@ -32,7 +32,10 @@ import {
   yieldApiYieldFixture,
 } from "../../fixtures";
 import { unconfiguredBorrowResourceSourceLayer } from "../../utils/services/borrow-resource-source";
-import { yieldResourceSourceLayer } from "../../utils/services/resource-sources";
+import {
+  emptyProviderList,
+  yieldResourceSourceLayer,
+} from "../../utils/services/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const address = Schema.decodeSync(
@@ -71,7 +74,7 @@ const makeRegistry = (
         Layer.merge(
           yieldResourceSourceLayer({
             getOpportunity: () => Effect.succeed(opportunity),
-            getProvider: () => Effect.succeedNone,
+            listProviders: emptyProviderList,
             listActivity,
           }),
           unconfiguredBorrowResourceSourceLayer

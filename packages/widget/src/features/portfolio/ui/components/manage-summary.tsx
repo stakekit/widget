@@ -31,8 +31,13 @@ export const ManageSummary = () => {
           <Stack direction="row" wrap gap={24}>
             <SummaryMetric
               kind="percent"
-              label={t("dashboard.overview.summary.average_apy")}
-              figure={summary.averageApy}
+              label={t(
+                "dashboard.overview.summary.average_apy",
+                summary.averageRateType === "apy"
+                  ? {}
+                  : { context: summary.averageRateType }
+              )}
+              figure={summary.averageRate}
               isPartial={summary.isPartial}
             />
             <SummaryMetric

@@ -3,6 +3,11 @@ import { Schema } from "effect";
 export const YieldId = Schema.NonEmptyString.pipe(Schema.brand("YieldId"));
 export type YieldId = typeof YieldId.Type;
 
+export const CampaignId = Schema.NonEmptyString.pipe(
+  Schema.brand("CampaignId")
+);
+export type CampaignId = typeof CampaignId.Type;
+
 export const ProviderId = Schema.NonEmptyString.pipe(
   Schema.brand("ProviderId")
 );

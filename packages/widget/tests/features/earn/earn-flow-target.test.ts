@@ -11,7 +11,7 @@ import {
   earnFlowYieldAtom,
 } from "../../../src/features/earn/state/flow-target";
 import { enrichedYieldOpportunityResourceAtom } from "../../../src/resources/yield-opportunity/yield-opportunity";
-import { yieldProviderResourceAtom } from "../../../src/resources/yield-provider/yield-provider";
+import { yieldProviderAtom } from "../../../src/resources/yield-provider/yield-provider";
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../../fixtures";
 
 const provider = yieldApiProviderFixture({ name: "Kiln" });
@@ -56,7 +56,7 @@ describe("Earn flow target", () => {
     const registry = AtomRegistry.make({
       initialValues: [
         Atom.initialValue(
-          yieldProviderResourceAtom.local(ProviderId.make(value)),
+          yieldProviderAtom(ProviderId.make(value)),
           AsyncResult.success(Option.none())
         ),
       ],

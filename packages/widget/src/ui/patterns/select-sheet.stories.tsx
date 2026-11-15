@@ -327,6 +327,150 @@ export const Escape: Story = {
   },
 };
 
+const yieldOptions = [
+  {
+    id: "usdc",
+    title: "USDC Lending",
+    subtitle: "USD Coin on Aave",
+    keywords: "stablecoin",
+  },
+  {
+    id: "eeth",
+    title: "eETH",
+    subtitle: "Ether.fi staked ETH",
+    keywords: "restaking",
+  },
+  { id: "vault", title: "A+ (Vault)", subtitle: "Morpho [beta]", keywords: "" },
+  { id: "dot", title: "DOT Staking", subtitle: "Polkadot", keywords: "" },
+];
+
+/**
+ * Matches every whitespace-separated term, case-insensitively, in an option's
+ * title, subtitle or keywords it never shows, as a Feature would.
+ */
+const YieldSheet = ({
+  onSelect,
+}: {
+  readonly onSelect: (id: string) => void;
+}) => {
+  const [query, setQuery] = useState("");
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const options = yieldOptions
+    .filter(({ title, subtitle, keywords }) => {
+      const searched = [title, subtitle, keywords].join(" ").toLowerCase();
+      return terms.every((term) => searched.includes(term));
+    })
+    .map(({ keywords: _keywords, ...option }) => option);
+  return (
+    <SelectSheet
+      title="Select a yield"
+      closeLabel="Close"
+      listLabel="Yields"
+      trigger={<TokenTrigger token={{ name: "Yields" }} />}
+      options={options}
+      onSelect={onSelect}
+      empty={{ title: "No yields found" }}
+      search={{
+        value: query,
+        onValueChange: setQuery,
+        label: "Search yields",
+        clearLabel: "Clear search",
+      }}
+    />
+  );
+};
+
+/** The text an option marks, in order. */
+const marksIn = (option: HTMLElement) =>
+  Array.from(option.querySelectorAll("mark"), (mark) => mark.textContent);
+
+/**
+ * Each term of the query is marked where it shows in an option's title and
+ * subtitle, in the text's own case: every occurrence, overlapping terms as
+ * one run, pattern characters as typed. A match in a field the option never
+ * shows marks nothing, and a blank query marks nothing. The rows keep their
+ * text, names and height, and the keys still choose.
+ */
+export const HighlightsMatches: Story = {
+  render: (args) => <YieldSheet onSelect={args.onSelect} />,
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Yields" })
+    );
+    const sheet = await screen.findByRole("dialog", { name: "Select a yield" });
+    await waitFor(() => expect(sheet).toBeVisible());
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search yields",
+    });
+    await waitFor(() => expect(search).toHaveFocus());
+    const option = (name: RegExp) =>
+      within(sheet).getByRole("option", { name });
+    const searchFor = async (query: string, shown: number) => {
+      await userEvent.clear(search);
+      if (query !== "") {
+        await userEvent.type(search, query.replaceAll("[", "[["));
+      }
+      await waitFor(() =>
+        expect(within(sheet).getAllByRole("option")).toHaveLength(shown)
+      );
+    };
+    const rowHeight = option(/^eETH/).getBoundingClientRect().height;
+
+    // Case-insensitive, in the title and the subtitle, each occurrence.
+    await searchFor("eth", 1);
+    const eeth = option(/^eETH Ether\.fi staked ETH/);
+    await expect(marksIn(eeth)).toEqual(["ETH", "Eth", "ETH"]);
+    await expect(eeth.getBoundingClientRect().height).toBe(rowHeight);
+
+    // Several terms, surrounding and repeated spaces aside.
+    await searchFor("  usd   coin ", 1);
+    await expect(marksIn(option(/^USDC Lending USD Coin on Aave/))).toEqual([
+      "USD",
+      "USD",
+      "Coin",
+    ]);
+
+    // Overlapping terms mark one run, the text whole.
+    await searchFor("st staked", 1);
+    await expect(marksIn(option(/^eETH Ether\.fi staked ETH/))).toEqual([
+      "staked",
+    ]);
+
+    // Pattern characters match as typed.
+    await searchFor("a+ [beta] (vault)", 1);
+    await expect(marksIn(option(/^A\+ \(Vault\) Morpho \[beta\]/))).toEqual([
+      "A+",
+      "(Vault)",
+      "[beta]",
+    ]);
+
+    // A match in keywords the option never shows marks nothing.
+    await searchFor("stablecoin", 1);
+    await expect(marksIn(option(/^USDC Lending/))).toEqual([]);
+
+    // A blank query lists every option and marks nothing.
+    await searchFor("   ", yieldOptions.length);
+    await expect(sheet.querySelectorAll("mark")).toHaveLength(0);
+
+    // The keys still choose a marked option.
+    await searchFor("dot", 1);
+    await userEvent.keyboard("{ArrowDown}");
+    const active = sheet.ownerDocument.getElementById(
+      search.getAttribute("aria-activedescendant") ?? ""
+    );
+    if (active === null) throw new Error("No option is active.");
+    await expect(marksIn(active)).toEqual(["DOT", "dot"]);
+    await userEvent.keyboard("{Enter}");
+    await expect(args.onSelect).toHaveBeenCalledWith("dot");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  },
+};
+
+export const HighlightsMatchesDark: Story = {
+  ...HighlightsMatches,
+  globals: { colorScheme: "dark" },
+};
+
 /** A pointer chooses an option directly. */
 export const PointerSelection: Story = {
   play: async ({ args, canvasElement }) => {

@@ -3,7 +3,6 @@
  * composition: primitives, components, patterns and their finite prop types.
  */
 export { MorphoMark } from "./artwork/morpho-mark";
-export { Spot } from "./artwork/spot";
 export { AlertDialog } from "./components/alert-dialog";
 export { AmountInput } from "./components/amount-input";
 export { AnimatedNumber } from "./components/animated-number";

@@ -15,7 +15,7 @@ const invalidatePositions = (scope: WalletScopeKey) =>
     const reactivity = yield* Reactivity.Reactivity;
     yield* reactivity.invalidate([
       ...resourceInvalidationKeys.yieldPositions(scope),
-      ...resourceInvalidationKeys.singleYieldBalances(scope.address),
+      ...resourceInvalidationKeys.singleYieldBalances(scope),
     ]);
   });
 

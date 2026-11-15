@@ -55,7 +55,7 @@ const pendingActionDeepLinkResourceAtom = Atom.family(
         const position = yield* get.result(
           singleYieldBalancesResourceAtom.foreground(
             new SingleYieldBalancesKey({
-              address: key.scope.address,
+              scope: key.scope,
               yieldId: key.yieldId,
             })
           )

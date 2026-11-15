@@ -40,6 +40,16 @@ export const Static: Story = {};
 
 export const StaticDark: Story = { globals: { colorScheme: "dark" } };
 
+/** Search matches tint substrings without adding emphasis spacing. */
+export const Highlighted: Story = {
+  args: { highlight: "eth lido" },
+};
+
+export const HighlightedDark: Story = {
+  ...Highlighted,
+  globals: { colorScheme: "dark" },
+};
+
 export const WithBadges: Story = {
   args: {
     badges: (

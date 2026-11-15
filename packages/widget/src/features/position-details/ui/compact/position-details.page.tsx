@@ -5,6 +5,7 @@ import { Stack } from "../../../../ui/index";
 import { WidgetNavigate } from "../../../navigation/views";
 import { useTrackPage } from "../../../tracking/index";
 import { AnimationPage, PageContainer } from "../../../widget-shell/views";
+import { PositionCampaignRewards } from "../components/position-campaign-rewards";
 import { PositionDetailsActions } from "../components/position-details-actions";
 import { PositionDetailsDisclosure } from "../components/position-details-disclosure";
 import { PositionDetailsLoadFailed } from "../components/position-details-load-failed";
@@ -44,6 +45,7 @@ const PositionDetails = () => {
               <PositionHeader />
               <PositionSummaryCard />
               <PositionDetailsActions />
+              <PositionCampaignRewards />
               <PositionDetailsDisclosure />
               <PositionYieldFacts />
             </Stack>

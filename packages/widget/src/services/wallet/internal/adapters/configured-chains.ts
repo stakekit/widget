@@ -80,7 +80,7 @@ export const tron = {
 
 export const ton = {
   id: getWalletRoutingId("ton"),
-  name: "Ton",
+  name: "TON",
   iconUrl: getTokenLogo("ton"),
   nativeCurrency: {
     decimals: 9,

@@ -3,7 +3,6 @@ import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-import type { YieldCategory } from "../../../../../domain/earn/contract";
 import type { EarnValidator } from "../../../../../domain/earn/validator";
 import { filterValidators } from "../../../../../domain/earn/yield";
 import { exactZero } from "../../../../../domain/finance/exact";
@@ -42,7 +41,6 @@ import {
   type EarnValidatorsResource,
 } from "../types";
 import type {
-  AvailableYieldCategoriesKey,
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
@@ -72,55 +70,6 @@ export const earnTokenCatalogAtom = Atom.family((key: EarnTokenCatalogKey) =>
       mapAsyncResultError(toCatalogError("earn-token-catalog"))
     )
   ).pipe(Atom.withLabel("earnTokenCatalogAtom"))
-);
-
-export const availableYieldCategoriesAtom = Atom.family(
-  (key: AvailableYieldCategoriesKey) =>
-    Atom.make((get) => {
-      const results = key.categoryOrder.map((category) =>
-        get(
-          earnTokenCatalogAtom(
-            new EarnTokenCatalogKey({ category, network: key.network })
-          )
-        ).pipe(
-          mapAsyncResultError(toCatalogError("available-yield-categories"))
-        )
-      );
-      const available = key.categoryOrder.filter((_, index) =>
-        results[index]?.pipe(
-          AsyncResult.value,
-          Option.exists((items) => items.length > 0)
-        )
-      );
-
-      if (
-        results.some(
-          (result) =>
-            Option.isNone(AsyncResult.value(result)) &&
-            !AsyncResult.isFailure(result)
-        )
-      ) {
-        return AsyncResult.initial<
-          ReadonlyArray<YieldCategory>,
-          EarnCatalogError
-        >(true);
-      }
-
-      if (available.length > 0) {
-        return AsyncResult.success(available, {
-          waiting: results.some((result) => result.waiting),
-        });
-      }
-
-      const failure = results.find(
-        (result) =>
-          AsyncResult.isFailure(result) &&
-          Option.isNone(AsyncResult.value(result))
-      );
-      return failure
-        ? failure.pipe(AsyncResult.map(() => available))
-        : AsyncResult.success(available);
-    }).pipe(Atom.withLabel("availableYieldCategoriesAtom"))
 );
 
 export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {

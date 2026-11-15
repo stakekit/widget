@@ -11,6 +11,9 @@ import { chunkRelativeAssetUrls, getConfig } from "./vite.config.base.ts";
 // (tests/app/journeys/overlays-in-host-dialogs).
 const sharedDependencies = ["scheduler"];
 
+const isNodeModule = /[/\\]node_modules[/\\]/;
+const isCosmosKit = /[/\\]node_modules[/\\]@cosmos-kit[/\\]/;
+
 const config = getConfig({
   experimental: chunkRelativeAssetUrls,
   define: {
@@ -30,13 +33,18 @@ const config = getConfig({
         banner: '"use client";\n',
         // Keep @cosmos-kit with its circular helpers in one chunk. Splitting that
         // graph leaves `State` as an uninitialized live binding after a host
-        // re-bundles dist/package.
+        // re-bundles dist/package. A group also captures every dependency of
+        // its modules, so the dependencies the entry loads statically (Node
+        // polyfills, bn.js, …) take their own chunk first; in the cosmos-kit
+        // chunk they would make the entry import all of cosmos-kit.
         codeSplitting: {
           groups: [
             {
-              name: "cosmos-kit",
-              test: /[/\\]node_modules[/\\]@cosmos-kit[/\\]/,
+              name: "vendor",
+              tags: ["$initial"],
+              test: (id) => isNodeModule.test(id) && !isCosmosKit.test(id),
             },
+            { name: "cosmos-kit", test: isCosmosKit },
           ],
         },
       },

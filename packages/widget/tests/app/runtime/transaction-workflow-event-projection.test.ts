@@ -348,7 +348,7 @@ describe("Transaction Workflow resource event projection", () => {
           [
             new WalletBalancesInvalidationKey({ scope: owner }),
             new YieldPositionsInvalidationKey({ scope: owner }),
-            new SingleYieldBalancesInvalidationKey({ address: owner.address }),
+            new SingleYieldBalancesInvalidationKey({ scope: owner }),
             new ActivityInvalidationKey({ scope: owner }),
           ],
         ]);
@@ -370,9 +370,7 @@ describe("Transaction Workflow resource event projection", () => {
             [
               new WalletBalancesInvalidationKey({ scope: owner }),
               new YieldPositionsInvalidationKey({ scope: owner }),
-              new SingleYieldBalancesInvalidationKey({
-                address: owner.address,
-              }),
+              new SingleYieldBalancesInvalidationKey({ scope: owner }),
               new ActivityInvalidationKey({ scope: owner }),
             ],
           ]);
@@ -395,17 +393,13 @@ describe("Transaction Workflow resource event projection", () => {
             [
               new WalletBalancesInvalidationKey({ scope: owner }),
               new YieldPositionsInvalidationKey({ scope: owner }),
-              new SingleYieldBalancesInvalidationKey({
-                address: owner.address,
-              }),
+              new SingleYieldBalancesInvalidationKey({ scope: owner }),
               new ActivityInvalidationKey({ scope: owner }),
             ],
             ...Array.from({ length: 4 }, () => [
               new WalletBalancesInvalidationKey({ scope: owner }),
               new YieldPositionsInvalidationKey({ scope: owner }),
-              new SingleYieldBalancesInvalidationKey({
-                address: owner.address,
-              }),
+              new SingleYieldBalancesInvalidationKey({ scope: owner }),
             ]),
           ]);
         })

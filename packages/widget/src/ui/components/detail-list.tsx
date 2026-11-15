@@ -6,7 +6,7 @@ import { Text } from "../primitives/text";
 import { space } from "../tokens/space.stylex";
 import { Avatar } from "./avatar";
 import { CopyButton } from "./copy-button";
-import { InfoTip } from "./info-tip";
+import { InfoTip, type InfoTipAction } from "./info-tip";
 import { Meter } from "./meter";
 import { Skeleton } from "./skeleton";
 
@@ -45,7 +45,10 @@ type DetailRowTone = "default" | "muted" | "success" | "warning" | "danger";
 type DetailRowInfo = {
   /** Names the info button, such as "About the deposit fee". */
   readonly label: string;
-  readonly text: string;
+  /** A sentence, or a short summary, as `InfoTip` holds. */
+  readonly text: ReactNode;
+  /** Closes the tip as it runs, such as opening the full details. */
+  readonly action?: InfoTipAction | undefined;
 };
 
 type Copyable = {
@@ -112,7 +115,11 @@ export const DetailRow = ({
   >
     <dt {...stylex.props(styles.term)}>
       <Text tone="muted">{label}</Text>
-      {info && <InfoTip label={info.label}>{info.text}</InfoTip>}
+      {info && (
+        <InfoTip label={info.label} action={info.action}>
+          {info.text}
+        </InfoTip>
+      )}
     </dt>
     <dd {...stylex.props(styles.description)}>
       {logo && (

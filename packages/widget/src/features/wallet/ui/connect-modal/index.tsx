@@ -59,28 +59,34 @@ export const WalletModalsProvider = ({ children }: PropsWithChildren) => (
 const ConnectModal = () => {
   const { t } = useTranslation();
   const isOpen = useAtomValue(walletConnectModalOpenAtom);
+  const picker = useAtomValue(connectPickerAtom);
   const presentationOpen = useAtomValue(walletConnectPresentationOpenAtom);
   const setOpen = useAtomSet(setWalletConnectModalOpenAtom);
   const [ecosystemId, setEcosystemId] = useState<string | undefined>();
+  const [shownOpen, setShownOpen] = useState(isOpen);
   const connect = useAtomSet(connectWalletAtom);
   const attempt = useAtomValue(walletConnectionAttemptAtom);
 
-  const ecosystems = useAtomValue(connectPickerAtom);
+  // Each open starts on every ecosystem; a closing picker keeps its filter,
+  // so it animates away showing what it showed.
+  if (isOpen !== shownOpen) {
+    setShownOpen(isOpen);
+    if (isOpen) setEcosystemId(undefined);
+  }
+
+  // An open dialog shows no rows until its session starts, so it never shows
+  // the last session's; a closing one keeps the rows it showed.
+  const ecosystems = isOpen && !picker.open ? [] : picker.rows;
   const sections = connectPickerSections(ecosystems, ecosystemId);
   const filter =
     ecosystems.find(({ chainGroup }) => chainGroup.id === ecosystemId)
       ?.chainGroup.id ?? allEcosystems;
 
-  const setModalOpen = (nextIsOpen: boolean) => {
-    setOpen(nextIsOpen);
-    if (!nextIsOpen) setEcosystemId(undefined);
-  };
-
   return (
     <Modal
       open={isOpen}
       suspended={presentationOpen}
-      onOpenChange={setModalOpen}
+      onOpenChange={setOpen}
       testId="wallet-connect-dialog"
       bodyTestId="wallet-connect-list"
       title={t("wallet_modal.connect_wallet")}

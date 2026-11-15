@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "@effect/vitest";
-import type { Connection as SolanaConnection } from "@solana/web3.js";
 import { Cause, Effect, Exit, Schema } from "effect";
 import type { Connector, createConfig } from "wagmi";
 
@@ -362,8 +361,7 @@ describe("wallet Effect Atom boundaries", () => {
                 isSafe: false,
                 persistPublicKey: () => Effect.void,
                 queryParams,
-                solanaConnection: {} as SolanaConnection,
-                solanaWallets: [],
+                solana: null,
                 tonConnectManifestUrl: undefined,
                 walletCatalogue: "default",
               },
@@ -413,8 +411,7 @@ describe("wallet Effect Atom boundaries", () => {
                 isSafe: false,
                 persistPublicKey: () => Effect.void,
                 queryParams,
-                solanaConnection: {} as SolanaConnection,
-                solanaWallets: [],
+                solana: null,
                 tonConnectManifestUrl: undefined,
                 walletCatalogue: "default",
               },

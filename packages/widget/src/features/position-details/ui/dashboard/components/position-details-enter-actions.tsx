@@ -14,6 +14,7 @@ import {
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { AmountPanel, Skeleton } from "../../../../../ui/index";
+import { CampaignMetaInfo } from "../../../../campaigns/views";
 import { useWidgetRouteMatch } from "../../../../navigation/index";
 import { useWalletScopeRoute } from "../../../../wallet/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
@@ -23,7 +24,7 @@ import {
   TronResourceSelection,
   useConfidentialTokenBalance,
 } from "../../../../yield-entry/views";
-import { KycGateCard, MetaInfo } from "../../../../yield-summary/views";
+import { KycGateCard } from "../../../../yield-summary/views";
 import { getPricedFiat } from "../../../model/priced-fiat";
 import { PositionDetailsEnterKey } from "../../../state/enter-entry";
 import { PositionDetailsLoadFailed } from "../../components/position-details-load-failed";
@@ -181,7 +182,7 @@ const PositionDetailsEnterFooter = ({
 }: {
   stake: PositionDetailsEnterState;
 }) => (
-  <MetaInfo
+  <CampaignMetaInfo
     isLoading={stake.appLoading || stake.footerIsLoading}
     selectedStake={stake.selectedStake}
     selectedValidators={stake.selectedValidators}

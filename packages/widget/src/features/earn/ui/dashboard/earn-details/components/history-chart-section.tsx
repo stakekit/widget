@@ -12,13 +12,6 @@ import {
 import type { HistoryChart } from "../../../../model/history-chart";
 import type { YieldHistoryChartView } from "../../../../state/yield-history-charts";
 
-const periods = [
-  { value: "30d", label: "1M" },
-  { value: "90d", label: "3M" },
-  { value: "1y", label: "1Y" },
-  { value: "all", label: "ALL" },
-] as const satisfies ReadonlyArray<ToggleOption<HistoryPeriod>>;
-
 /**
  * A yield's history chart under its title and headline figure, and the
  * period control.
@@ -34,6 +27,12 @@ export const HistoryChartSection = ({
 }) => {
   const { t } = useTranslation();
   const refreshing = useDelayedBusy(view.isRefreshing, view.period);
+  const periods = [
+    { value: "30d", label: t("dashboard.earn_details.period_1m") },
+    { value: "90d", label: t("dashboard.earn_details.period_3m") },
+    { value: "1y", label: t("dashboard.earn_details.period_1y") },
+    { value: "all", label: t("dashboard.earn_details.period_all") },
+  ] as const satisfies ReadonlyArray<ToggleOption<HistoryPeriod>>;
 
   return (
     <Stack gap={12}>

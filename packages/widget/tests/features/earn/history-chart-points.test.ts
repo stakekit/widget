@@ -229,4 +229,76 @@ describe("Reward rate history chart", () => {
       )
     ).toBe("Nov 5, 2026");
   });
+
+  it("spans at least half a percentage point so a steady rate reads steady", () => {
+    const steady = toHistoryPoints(
+      [
+        {
+          timestamp: parse("2026-10-20T00:00:00.000Z"),
+          rewardRate: exactDecimal("0.0588"),
+        },
+        {
+          timestamp: parse("2026-11-05T00:00:00.000Z"),
+          rewardRate: exactDecimal("0.0583"),
+        },
+      ],
+      toRewardRateHistoryChartPoint
+    );
+
+    const chart = getRewardRateHistoryChart({
+      ...input,
+      points: steady,
+      rate: null,
+    });
+
+    expect(chart.valueAxis.ticks).toEqual([5.6, 5.8, 6, 6.2]);
+  });
+
+  it("keeps that span above zero for a rate near zero", () => {
+    const low = toHistoryPoints(
+      [
+        {
+          timestamp: parse("2026-10-20T00:00:00.000Z"),
+          rewardRate: exactDecimal("0.001"),
+        },
+        {
+          timestamp: parse("2026-11-05T00:00:00.000Z"),
+          rewardRate: exactDecimal("0.0012"),
+        },
+      ],
+      toRewardRateHistoryChartPoint
+    );
+
+    const chart = getRewardRateHistoryChart({
+      ...input,
+      points: low,
+      rate: null,
+    });
+
+    expect(chart.valueAxis.ticks).toEqual([0, 0.2, 0.4, 0.6]);
+  });
+
+  it("leaves a rate that moves by more than the span on its own range", () => {
+    const moving = toHistoryPoints(
+      [
+        {
+          timestamp: parse("2026-10-20T00:00:00.000Z"),
+          rewardRate: exactDecimal("0.01"),
+        },
+        {
+          timestamp: parse("2026-11-05T00:00:00.000Z"),
+          rewardRate: exactDecimal("0.05"),
+        },
+      ],
+      toRewardRateHistoryChartPoint
+    );
+
+    const chart = getRewardRateHistoryChart({
+      ...input,
+      points: moving,
+      rate: null,
+    });
+
+    expect(chart.valueAxis.ticks).toEqual([1, 2, 3, 4, 5]);
+  });
 });

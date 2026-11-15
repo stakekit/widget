@@ -8,7 +8,11 @@ import type {
   ProviderOption,
   YieldId,
 } from "../../../../../domain/identity/identifiers";
-import type { EarnEntryIntent, EarnTokenKey } from "../types";
+import type {
+  CatalogYieldTarget,
+  EarnEntryIntent,
+  EarnTokenKey,
+} from "../types";
 
 const resetYieldIntent = (
   intent: EarnEntryIntent,
@@ -53,6 +57,23 @@ export const selectYield = (
   intent.selectedYieldId === yieldId
     ? intent
     : resetYieldIntent(intent, yieldId);
+
+/**
+ * Selects a yield from anywhere in Earn's catalog: its category, when Earn
+ * groups by one, and its token along with it, as a deep link would.
+ */
+export const selectCatalogYield = (
+  intent: EarnEntryIntent,
+  { category, tokenKey, yieldId }: CatalogYieldTarget
+): EarnEntryIntent =>
+  resetYieldIntent(
+    {
+      ...intent,
+      selectedCategory: category ?? intent.selectedCategory,
+      selectedTokenKey: tokenKey,
+    },
+    yieldId
+  );
 
 export const selectValidator = ({
   fallbackSelection,

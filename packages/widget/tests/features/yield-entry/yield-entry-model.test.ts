@@ -80,6 +80,7 @@ const entryInput = ({
   ({
     amountInitialization: "PreserveIntent",
     availableAmount,
+    campaign: null,
     connected,
     entry: {
       amount: new BigNumber(amount),

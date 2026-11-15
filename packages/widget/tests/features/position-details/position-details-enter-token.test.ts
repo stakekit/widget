@@ -52,6 +52,7 @@ import {
   yieldBalanceFixture,
 } from "../../fixtures";
 import { makeConnectedWalletState } from "../../fixtures/wallet-state";
+import { emptyProviderList } from "../../utils/services/resource-sources";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { makeTestNavigation } from "../../utils/services/widget-navigation";
 import { makeTestZamaLayer } from "../../utils/services/zama-service";
@@ -487,7 +488,7 @@ describe("Position details stake entry load", () => {
               YieldResourceSource.of({
                 getOpportunity,
                 getPositions: () => Effect.never,
-                getProvider: () => Effect.succeedNone,
+                listProviders: emptyProviderList,
               } as never)
             )
           ) as never

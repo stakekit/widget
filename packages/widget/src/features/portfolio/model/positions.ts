@@ -6,7 +6,9 @@ import {
   type RiskBand,
 } from "../../../domain/borrow/risk-band";
 import type { EarnBalance } from "../../../domain/earn/balance";
+import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
 import type { TokenAmount } from "../../../domain/earn/denomination";
+import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
@@ -33,6 +35,8 @@ export type PositionItem = PositionAttention & {
   readonly allBalances: EarnBalance[];
   readonly balanceId: BalanceDataKey;
   readonly pointsRewardTokenBalances: ReadonlyArray<EarnBalance>;
+  /** The rate the balances endpoint gives the wallet's position, if any. */
+  readonly rewardRate: YieldRewardRate | null;
   /** Whether any balance earns the rate; without one, the row shows none. */
   readonly hasEarningBalances: boolean;
   /**
@@ -65,12 +69,16 @@ export const toPositionItems = (
         items.push({
           ...value,
           ...getPositionAttention({
-            balanceTypes: balancesWithAmount.map((balance) => balance.type),
+            // Unpaid campaign rewards pay out on their own; nothing to unlock.
+            balanceTypes: balancesWithAmount
+              .filter((balance) => !isCampaignRewardsBalance(balance))
+              .map((balance) => balance.type),
             pendingActions: balancesWithAmount.flatMap((balance) =>
               balance.pendingActions.map(({ type }) => ({ type, balance }))
             ),
           }),
           integrationId: position.yieldId,
+          rewardRate: position.rewardRate ?? null,
           balancesWithAmount,
           balanceId,
           allBalances: value.balances,

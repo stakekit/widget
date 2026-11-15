@@ -9,16 +9,26 @@ import {
 } from "../../services/navigation/application-router";
 import { widgetRoutes } from "../../services/navigation/widget-routes";
 
-export const applicationRouterAtom = applicationBaseRuntime
+const applicationRouterServiceAtom = applicationBaseRuntime
   .atom(
     ApplicationRouter.use((applicationRouter) =>
-      Effect.succeed(applicationRouter.router)
+      Effect.succeed(applicationRouter)
     )
   )
   .pipe(
     Atom.map(AsyncResult.getOrThrow),
-    Atom.withLabel("applicationRouterAtom")
+    Atom.withLabel("applicationRouterServiceAtom")
   );
+
+export const applicationRouterAtom = applicationRouterServiceAtom.pipe(
+  Atom.map(({ router }) => router),
+  Atom.withLabel("applicationRouterAtom")
+);
+
+export const applicationScrollResetAtom = applicationRouterServiceAtom.pipe(
+  Atom.map(({ scrollReset }) => scrollReset),
+  Atom.withLabel("applicationScrollResetAtom")
+);
 
 export const applicationRouterLocationAtom = applicationBaseRuntime
   .atom(

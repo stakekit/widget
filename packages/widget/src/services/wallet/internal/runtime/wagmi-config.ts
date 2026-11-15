@@ -43,7 +43,7 @@ import type { WalletConnectProtocolPlatform } from "../platform/wallet-connect-p
 import { buildsEcosystemConnectors } from "./connector-mode";
 import type { RunWalletEffect } from "./effect-runner";
 import { getVariantNetworkUrl } from "./network-icon";
-import type { SolanaWalletDescriptor } from "./solana-runtime";
+import type { SolanaWalletDescriptor, SolanaWallets } from "./solana-runtime";
 import type { makeWagmiActions } from "./wagmi-actions";
 
 type MipdProviders = ReturnType<MipdStore["getProviders"]>;
@@ -122,8 +122,8 @@ export type BuildWagmiConfigOptions = {
   chainIconMapping: WidgetConfig["chainIconMapping"];
   institutionalWallets: boolean;
   walletCatalogue: HostProfile["walletCatalogue"];
-  solanaWallets: ReadonlyArray<SolanaWalletDescriptor>;
-  solanaConnection: Connection;
+  /** Absent when the Wallet Topology offers no Solana wallets. */
+  solana: SolanaWallets | null;
   walletPolicy?: WalletPolicy | undefined;
   persistPublicKey: WidgetPersistence["Service"]["upsertStoredPublicKey"];
   queryParams: InitParams;
@@ -198,8 +198,7 @@ export const buildWagmiConfig = (
               stellarWalletsKitPlatform,
               runWalletEffect,
               walletConnectProtocol,
-              solanaWallets: opts.solanaWallets,
-              solanaConnection: opts.solanaConnection,
+              solana: opts.solana,
               walletCatalogue: opts.walletCatalogue,
               tonConnectManifestUrl: opts.tonConnectManifestUrl,
               walletModal,
@@ -505,13 +504,14 @@ export const buildWagmiConfig = (
 
     const actions = buildActions({ config: wagmiConfig });
     const createSolanaConnector = Effect.fn("createSolanaConnector")(function* (
-      wallet: SolanaWalletDescriptor
+      wallet: SolanaWalletDescriptor,
+      connection: Connection
     ) {
       const { getSolanaConnectors } = yield* Effect.promise(
         () => import("../adapters/solana/solana-connector")
       );
       const solanaGroup = getSolanaConnectors({
-        connection: opts.solanaConnection,
+        connection,
         walletCatalogue: opts.walletCatalogue,
         wallets: [wallet],
       });

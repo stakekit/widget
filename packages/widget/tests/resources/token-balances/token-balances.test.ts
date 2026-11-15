@@ -1,6 +1,6 @@
+import { describe, expect, it, vi } from "@effect/vitest";
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
-import { describe, expect, it, vi } from "vitest";
 
 import type { TokenBalanceScanCommand } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
@@ -16,6 +16,7 @@ import {
   ApiRequestError,
   LegacyResourceSource,
 } from "../../../src/services/api/resource-sources";
+import { readCountsAcrossHiddenPage } from "../../utils/services/page-visibility";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -31,13 +32,17 @@ const makeScope = () =>
     network: "ethereum",
   });
 
-const makeRegistry = (source: LegacyResourceSource["Service"]) =>
+const makeRegistry = (
+  source: LegacyResourceSource["Service"],
+  initialValues: ReadonlyArray<readonly [Atom.Atom<unknown>, unknown]> = []
+) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
         Layer.succeed(LegacyResourceSource, source)
       ),
+      ...initialValues,
     ],
   });
 
@@ -120,4 +125,29 @@ describe("Token Balances resource", () => {
     expect(AsyncResult.getOrThrow(registry.get(resource))).toEqual([]);
     expect(scanTokenBalances).toHaveBeenCalledTimes(attemptsBeforeRetry + 1);
   });
+
+  it.effect(
+    "skips scheduled scans while the page is hidden and scans once when it is shown",
+    () => {
+      const scanTokenBalances = vi.fn((_command: TokenBalanceScanCommand) =>
+        Effect.succeed([])
+      );
+      return readCountsAcrossHiddenPage({
+        mount: (pageVisibility) => {
+          const registry = makeRegistry(
+            LegacyResourceSource.of({ scanTokenBalances } as never),
+            [pageVisibility]
+          );
+          registry.mount(tokenBalancesResourceAtom(makeScope()));
+          return registry;
+        },
+        periodSeconds: 60,
+        readCount: () => scanTokenBalances.mock.calls.length,
+      }).pipe(
+        Effect.map((readCounts) => {
+          expect(readCounts).toEqual([1, 2, 2, 3, 3, 4]);
+        })
+      );
+    }
+  );
 });

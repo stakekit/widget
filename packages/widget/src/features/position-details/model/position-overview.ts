@@ -6,12 +6,13 @@ import type {
   ConfidentialHandle,
   YieldBalanceType,
 } from "../../../domain/earn/balance";
+import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
 import { isCancellingBalance } from "../../../domain/earn/confidential-balance";
 import {
   getPositionShares,
   type TokenAmount,
 } from "../../../domain/earn/denomination";
-import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
+import type { PositionRate } from "../../../domain/earn/position-rate";
 import {
   getExtendedYieldType,
   isDepositYieldType,
@@ -98,13 +99,6 @@ type ProviderDetail = {
   name?: string | undefined;
 };
 
-/** The validators the position is staked with, by their reward rates. */
-type PositionValidators = ReadonlyArray<{
-  readonly rewardRate?: BigNumber | null | undefined;
-  /** The rate's type, such as "apy". */
-  readonly rewardType?: string | undefined;
-}>;
-
 /**
  * A position's page below its header: the summary card's figures, and what
  * its Details disclosure lists of the position itself. The yield's facts
@@ -116,11 +110,10 @@ export const getPositionOverviewModel = ({
   integrationData,
   locale,
   presentationTime = null,
-  personalizedRewardRate,
   positionBalancesByType,
+  rate,
   rewardsSummary,
   t,
-  validators,
 }: {
   /** Handles of pending balances whose cancel is in flight. */
   cancellingHandles?: ReadonlySet<ConfidentialHandle>;
@@ -128,8 +121,9 @@ export const getPositionOverviewModel = ({
   locale: string;
   /** Presentation time; pending balance timing is omitted without it. */
   presentationTime?: PresentationTime | null;
-  personalizedRewardRate?: YieldRewardRate | null | undefined;
   positionBalancesByType: PositionBalancesByType;
+  /** The rate the summary leads with and projects. */
+  rate: PositionRate;
   /**
    * The wallet's tracked earnings as the page can present them; none when
    * untracked.
@@ -138,12 +132,6 @@ export const getPositionOverviewModel = ({
     | Presentable<Option.Option<YieldRewardsSummary>, unknown>
     | undefined;
   t: TFunction;
-  /**
-   * The validators of a position staked with them, whose average rate it
-   * earns, as the positions list's row reads it; null for a position held
-   * with the yield's provider.
-   */
-  validators: PositionValidators | null;
 }): PositionOverviewModel => {
   const balances = getBalancesByPriority(positionBalancesByType);
   const earningBalances = getEarningPositionBalances(balances);
@@ -167,11 +155,9 @@ export const getPositionOverviewModel = ({
     balances,
     earned,
     earningBalances,
-    integrationData,
     locale,
-    personalizedRewardRate,
+    rate,
     t,
-    validators,
   });
 
   return {
@@ -205,21 +191,17 @@ const getPositionSummary = ({
   balances,
   earned,
   earningBalances,
-  integrationData,
   locale,
-  personalizedRewardRate,
+  rate,
   t,
-  validators,
 }: {
   balances: PricedBalances;
   earned: PositionEarned | null;
   /** The balances that earn the rate, which alone project rewards. */
   earningBalances: PricedBalances;
-  integrationData: EarnYieldWithProvider;
   locale: string;
-  personalizedRewardRate?: YieldRewardRate | null | undefined;
+  rate: PositionRate;
   t: TFunction;
-  validators: PositionValidators | null;
 }): PositionOverviewSummary => {
   // The same total Manage shows, in the primary Value Token when priced.
   const sums = getPositionValueTotal(balances).filter((sum) =>
@@ -243,35 +225,19 @@ const getPositionSummary = ({
     return { value: tokenLine || formatUsd(totalUsd, locale) };
   };
 
-  const personalizedRate =
-    personalizedRewardRate?.total === undefined ? null : personalizedRewardRate;
-  // The Effective Reward Rate: the mean of the validators with rates, in the
-  // first one's rate type as a mean of validator rates reads, else the Yield
-  // Reward Rate in its own.
-  const ratedValidators = (validators ?? []).flatMap(
-    ({ rewardRate, rewardType }) =>
-      rewardRate ? [{ rate: rewardRate, rateType: rewardType }] : []
-  );
-  const [firstRated] = ratedValidators;
-  const effectiveRate = firstRated
-    ? {
-        rateType: firstRated.rateType ?? integrationData.rewardRate.rateType,
-        total: ratedValidators
-          .reduce((total, { rate }) => total.plus(rate), exactDecimal(0))
-          .dividedBy(ratedValidators.length),
-      }
-    : integrationData.rewardRate;
-  const rate = exactDecimal((personalizedRate ?? effectiveRate).total);
+  const { headline } = rate;
   // The rate is only earned on earning balances; without any it is not shown.
   const hasRate =
-    earningBalances.length > 0 && rate.isFinite() && !rate.isZero();
+    earningBalances.length > 0 &&
+    headline.rate.isFinite() &&
+    !headline.rate.isZero();
   const yearly = getEstimatedRewardsUsd({
     amountUsd: getTokenSumsUsd(getPositionValueTotal(earningBalances)),
-    estimatedRewards: { rewardRateAverage: rate },
+    estimatedRewards: { rewardRateAverage: headline.rate },
   })?.yearly;
-  const rateLabel = personalizedRate
+  const rateLabel = rate.personalized
     ? t("position_details.personalized_apy")
-    : formatRateTypeLabel(effectiveRate.rateType, t);
+    : formatRateTypeLabel(headline.rateType ?? "", t);
   const earnedRow = (
     id: "earned-week" | "earned-total",
     label: string,
@@ -324,7 +290,7 @@ const getPositionSummary = ({
       ? {
           rate: t("position_details.rate_badge", {
             label: rateLabel,
-            rate: formatRoundedPercent(rate, locale),
+            rate: formatRoundedPercent(headline.rate, locale),
           }),
         }
       : {}),
@@ -397,7 +363,9 @@ const getBreakdownRows = ({
       (row.type === "claimable" || row.type === "withdrawable");
     return {
       id: `${row.type}-${row.token.symbol}-${index}`,
-      label: formatBalanceTypeLabel(row.type, deposit, t),
+      label: isCampaignRewardsBalance(row)
+        ? t("position_details.balance_type.campaign_rewards")
+        : formatBalanceTypeLabel(row.type, deposit, t),
       ...(subValue ? { subValue } : {}),
       tone: collectable ? "success" : "default",
       value: row.isEncrypted

@@ -48,9 +48,7 @@ Virtual and SVG icon markup.
   `EmptyState`, `Entrance`, `ErrorState`, `FlowSteps`, `ListSkeleton`,
   `PageHeader`, `PageTransition`, `PositionSummary`, `ReviewSummary`,
   `SelectSheet`, `SplitView`, `StandIn`, `TokenTrigger`, `WidgetFrame`.
-- **Artwork**: `MorphoMark`, `Spot` (a flat illustration: one icon of the
-  set on a tone's soft disc, used by `EmptyState`, `ErrorState` and dialogs
-  instead of raster artwork).
+- **Artwork**: `MorphoMark`.
 - **Prop types**: `Tone`, `FixedIconName`, `HostHook`, `TabOption`,
   `ToggleOption`, `AmountPanelNote`, `SelectSheetAction`.
 
@@ -70,8 +68,9 @@ One look per concept:
   it. Every row of a choice keeps the check's slot, chosen or not, so values
   line up. Condensed rows are always flat. On the second line the subtitle
   keeps its room: a status truncates first, and below `sm` shows its icon
-  alone. A value that did not happen (a failed transfer) is muted and struck
-  through (`valueStruck`). A row may end with a control of its own
+  alone. A value that did not happen (a failed transfer) or no longer holds
+  (a cap a later step replaced) is muted and struck through (`valueStruck`,
+  on `ListRow` and `DetailRow` alike). A row may end with a control of its own
   (`trailing`), such as a collateral `Switch`, which keeps its own press on
   a static row, and carry a `note` under its main line, inside its surface,
   such as why that switch cannot change (`danger`) or a risk (`warning`).
@@ -81,6 +80,11 @@ One look per concept:
   were. Every search field has a placeholder that says what it searches
   ("Search tokens"; unset, its label). With a coarse pointer the field does
   not take focus on open, so no on-screen keyboard covers the options.
+  Searchable sheets highlight literal, case-insensitive matches in option
+  titles and subtitles without changing the text or its spacing. Matches in
+  hidden fields do not need a visible highlight. Search matches use an accent
+  tint and accent text, with no padding or weight change; unlike `Text.Mark`'s
+  emphasis of a phrase in copy, marking a substring never shifts its line.
 - **Overlays.** A bottom sheet (below the 520px viewport) shows a grab
   handle: dragging it or the header down past a third of the sheet, or
   flicking it, closes the sheet; a shorter drag settles back, at once under
@@ -155,8 +159,13 @@ One look per concept:
   `Disclosure`, "Details", open by default, never repeating a figure
   the summary shows; each validator there is a filled `Card` of its own,
   8px apart, with no dividers: its logo and "Staked via …" lead, and its
-  facts open in a `Disclosure` inside the card. The yield's facts follow
-  the Details. In the Dashboard the
+  facts open in a `Disclosure` inside the card. A position in a yield's
+  Campaign has a "Campaign rewards" `Disclosure`, open, just before the
+  Details: what the wallet earned over the whole campaign, paid out and
+  pending as framed `Metric`s, a `Notice` for why it does or doesn't earn,
+  and its payouts; the unpaid rewards also stay in the breakdown, labelled
+  as pending campaign rewards, since they are part of the balance. The
+  yield's facts follow the Details. In the Dashboard the
   Manage tab is the positions list alone, full width under its summary, and
   a position opens its own page laid out as the Earn tab is: a `SplitView`
   with the trail back to the positions list, the header and the actions on

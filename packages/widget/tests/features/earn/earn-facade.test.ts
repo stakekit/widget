@@ -29,7 +29,11 @@ import {
 } from "../../../src/features/earn/state/yield-selection";
 import { appRuntime } from "../../../src/runtime/app-runtime";
 import { LegacyResourceSource } from "../../../src/services/api/resource-sources";
-import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
+import {
+  yieldApiProviderFixture,
+  yieldApiValidatorFixture,
+  yieldApiYieldFixture,
+} from "../../fixtures";
 import { makeTestTracking } from "../../utils/services/tracking-service";
 import { decodeValidator } from "../../utils/validators";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
@@ -143,8 +147,55 @@ describe("Earn facade", () => {
     }
   });
 
+  it("finds token contracts without matching addressless tokens", () => {
+    const baseYield = yieldApiYieldFixture();
+    const nativeOption = {
+      amount: null,
+      availableYields: [baseYield.id],
+      funded: false,
+      source: "default",
+      token: baseYield.token,
+    } satisfies EarnTokenOption;
+    const contractOption = {
+      ...nativeOption,
+      token: {
+        ...baseYield.token,
+        address: Schema.decodeSync(TokenAddress)("0xaBc123"),
+      },
+    };
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        ...tokenSelectionInitialValues([nativeOption, contractOption]),
+      ],
+    });
+
+    try {
+      for (const search of ["  0xABC123  ", "Bc12", "ETH 0xabc"]) {
+        registry.set(setEarnTokenSearchAtom, search);
+        expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([
+          expect.objectContaining(contractOption),
+        ]);
+      }
+
+      registry.set(setEarnTokenSearchAtom, "0xdef456");
+      expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([]);
+
+      registry.set(setEarnTokenSearchAtom, " \t ");
+      expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([
+        expect.objectContaining(nativeOption),
+        expect.objectContaining(contractOption),
+      ]);
+    } finally {
+      registry.dispose();
+    }
+  });
+
   it("projects client-side token and yield search from semantic options", () => {
-    const selectedYield = yieldApiYieldFixture();
+    const selectedYield = {
+      ...yieldApiYieldFixture(),
+      provider: yieldApiProviderFixture({ name: "Unique Provider" }),
+    };
     const tokenOption = {
       amount: new BigNumber("10"),
       availableYields: [selectedYield.id],
@@ -174,6 +225,43 @@ describe("Earn facade", () => {
       expect(registry.get(earnTokenSelectionViewAtom)).toMatchObject({
         filtered: [tokenOption],
       });
+      expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
+        selectedYield,
+      ]);
+
+      for (const search of [
+        "unique provider",
+        "PrOvIdEr",
+        "  Provider  ",
+        "Provider\tEthereum",
+        " \n ",
+      ]) {
+        registry.set(setEarnYieldSearchAtom, search);
+        expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
+          selectedYield,
+        ]);
+      }
+
+      registry.set(setEarnTokenSearchAtom, " \t eTh \n ");
+      expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([
+        expect.objectContaining(tokenOption),
+      ]);
+
+      registry.set(setEarnTokenSearchAtom, "Ethereum ETH");
+      expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([
+        expect.objectContaining(tokenOption),
+      ]);
+
+      registry.set(setEarnTokenSearchAtom, "Ethereum missing");
+      expect(registry.get(earnTokenSelectionViewAtom).filtered).toEqual([]);
+
+      registry.set(setEarnYieldSearchAtom, "Ethereum missing");
+      expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([]);
+
+      registry.set(setEarnYieldSearchAtom, "unmatched provider");
+      expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([]);
+
+      registry.set(setEarnYieldSearchAtom, "");
       expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
         selectedYield,
       ]);

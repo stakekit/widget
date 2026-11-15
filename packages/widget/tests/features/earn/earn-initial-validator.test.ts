@@ -24,6 +24,7 @@ import {
   YieldResourceSource,
 } from "../../../src/services/api/resource-sources";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../../fixtures";
+import { emptyProviderList } from "../../utils/services/resource-sources";
 import { applicationRuntimeInitInitialValue } from "../../utils/widget-config";
 
 const baseYield = yieldApiYieldFixture();
@@ -122,7 +123,7 @@ const makeRegistry = ({
             YieldResourceSource,
             YieldResourceSource.of({
               getPositions: () => Effect.succeed({ errors: [], items: [] }),
-              getProvider: () => Effect.succeedNone,
+              listProviders: emptyProviderList,
               listValidators,
               listYields: () =>
                 Effect.succeed({

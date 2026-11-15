@@ -22,7 +22,7 @@ const schedule = (
     cutoffTime: "15:00",
     kind: "standard",
     status: "open",
-  };
+  } as const;
   return {
     redemption: { paths: [path] },
     subscription: { paths: [path] },

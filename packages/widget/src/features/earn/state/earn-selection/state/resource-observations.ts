@@ -8,7 +8,6 @@ import { tokenString } from "../../../../../domain/token/token";
 import { EarnTokenCatalogKey } from "../../../../../resources/earn-token-catalog/earn-token-catalog";
 import { widgetConfigAtom } from "../../../../../runtime/widget-config";
 import {
-  availableYieldCategoriesAtom,
   earnTokenCatalogAtom,
   earnYieldCatalogAtom,
   mergedTokenOptionsAtom,
@@ -16,7 +15,6 @@ import {
   yieldValidatorsAtom,
 } from "../catalog/catalog";
 import {
-  AvailableYieldCategoriesKey,
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
@@ -75,14 +73,6 @@ const readCategory = (
             earnTokenCatalogAtom(new EarnTokenCatalogKey({ category, network }))
           ),
         })),
-        result: context.get(
-          availableYieldCategoriesAtom(
-            new AvailableYieldCategoriesKey({
-              categoryOrder: entry.categoryOrder,
-              network,
-            })
-          )
-        ),
       }
     : { _tag: "disabled" };
 

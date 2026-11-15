@@ -17,7 +17,7 @@ import {
   ExactDecimal,
   TolerantOptionalUtcDateTimeFromString,
 } from "../finance/scalars";
-import { YieldId } from "../identity/identifiers";
+import { CampaignId, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
 import { PendingAction } from "./action-models";
 import { EarnValidator } from "./validator";
@@ -107,6 +107,8 @@ const EarnBalanceWire = Schema.Struct({
   amount: ExactDecimal,
   amountRaw: ExactBaseUnitAmount,
   amountUsd: Schema.optionalKey(Schema.NullOr(ExactDecimal)),
+  /** The Campaign whose unpaid rewards a `locked` balance holds. */
+  campaignId: Schema.optionalKey(CampaignId),
   isEarning: Schema.optionalKey(
     TolerantNullOr(Schema.Boolean, {
       operation: "yield-balance",

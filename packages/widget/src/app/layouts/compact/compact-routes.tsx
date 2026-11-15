@@ -20,6 +20,7 @@ import { createYieldFlowRoutes } from "../../../features/yield-transaction-flow/
 import { getYieldFlowRouteGroup } from "../../../features/yield-transaction-flow/index";
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import { PageTransition } from "../../../ui/index";
+import { PageScrollReset } from "../../routes/ui/page-scroll-reset";
 
 const CompactDetails = () => {
   const pendingActionsCount = usePortfolioPendingActionsCount();
@@ -126,6 +127,7 @@ export const CompactRoutes = () => {
     <>
       <CompactFrame pageKey={location.pathname}>
         <PageTransition pageKey={key} variant="rise" waitForExit fill>
+          <PageScrollReset locationKey={location.key} />
           <Routes location={location}>{createCompactRoutes()}</Routes>
         </PageTransition>
       </CompactFrame>

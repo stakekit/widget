@@ -1,7 +1,11 @@
 import { Schema, Struct } from "effect";
 
 import * as YieldApi from "../../generated/api/yield-schema";
-import { TolerantArray, TolerantNullOr } from "../decoding/response-schema";
+import {
+  OpenLiterals,
+  TolerantArray,
+  TolerantNullOr,
+} from "../decoding/response-schema";
 import { ExactDecimal, NonNegativeExactDecimal } from "../finance/scalars";
 import { ContractAddress, ProviderId, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
@@ -103,17 +107,16 @@ const EarnScheduleWindow = Schema.Struct({
   opensAt: Schema.String,
 });
 
-// Cadence and status stay open so new API values only disable batch timing.
 const EarnSchedulePath = Schema.Struct({
   ...Struct.pick(YieldApi.SchedulePathDto.fields, [
     "businessDaysOnly",
     "cutoffTime",
   ]),
-  cadence: Schema.String,
+  cadence: OpenLiterals(YieldApi.SchedulePathDto.fields.cadence),
   currentWindow: Schema.optionalKey(Schema.NullOr(EarnScheduleWindow)),
   nextWindow: Schema.optionalKey(Schema.NullOr(EarnScheduleWindow)),
-  kind: Schema.String,
-  status: Schema.String,
+  kind: OpenLiterals(YieldApi.SchedulePathDto.fields.kind),
+  status: OpenLiterals(YieldApi.SchedulePathDto.fields.status),
 });
 
 const EarnScheduleSide = Schema.Struct({

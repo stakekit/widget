@@ -458,6 +458,132 @@
       "other": "Other"
     }
   },
+  "campaign": {
+    "label": "Campaign",
+    "label_upcoming": "Upcoming",
+    "details_link": "Details",
+    "view_details": "View campaign details",
+    "time": {
+      "upcoming": "Starts {{date}}",
+      "paused": "Paused · ends {{date}}",
+      "active": "Ends {{date}}"
+    },
+    "strip": {
+      "upcoming_note": "The campaign starts on {{date}}. Rewards build up from that day.",
+      "paused_note": "Rewards are paused. Rewards you've earned are kept."
+    },
+    "rate": {
+      "up_to": "Up to {{rate}}",
+      "up_to_from": "Up to {{rate}} from {{date}}",
+      "from": "From {{date}}",
+      "paused": "Paused",
+      "incentive": "+{{rate}}",
+      "incentive_from": "+{{rate}} from {{date}}"
+    },
+    "tip": {
+      "label": "About the campaign rate",
+      "total": "Total",
+      "total_today": "Total today",
+      "incentive": "Campaign rate"
+    },
+    "metric": {
+      "active": "Incl. +{{rate}} campaign",
+      "upcoming": "+{{rate}} from {{date}}",
+      "paused": "Campaign paused"
+    },
+    "footer": {
+      "active": "Extra campaign rewards, {{payment}} until {{date}}.",
+      "upcoming": "Extra campaign rewards from {{start}} until {{end}}, {{payment}}.",
+      "paused": "Campaign rewards are paused. Rewards you've earned so far are kept.",
+      "active_sponsor": "{{sponsor}} adds extra rewards, {{payment}} until {{date}}.",
+      "upcoming_sponsor": "{{sponsor}} adds extra rewards from {{start}} until {{end}}, {{payment}}.",
+      "paused_sponsor": "{{sponsor}} campaign rewards are paused. Rewards you've earned so far are kept."
+    },
+    "payment": {
+      "compound": "paid {{cadence}} into your position",
+      "normal": "paid {{cadence}} in {{symbol}}",
+      "compound_no_cadence": "paid into your position",
+      "normal_no_cadence": "paid in {{symbol}}"
+    },
+    "cadence": {
+      "daily": "daily",
+      "weekly": "weekly",
+      "six_hourly": "every 6 hours",
+      "end_of_campaign": "at the end of the campaign",
+      "monthly": "monthly"
+    },
+    "frequency": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "six_hourly": "Every 6 hours",
+      "end_of_campaign": "At campaign end",
+      "monthly": "Monthly"
+    },
+    "offer": {
+      "text": "Earn up to {{rate}} {{rateType}} with boosted rewards on {{name}}.",
+      "text_provider": "Earn up to {{rate}} {{rateType}} with boosted rewards on {{provider}}'s {{name}}.",
+      "switch": "Switch"
+    },
+    "section": {
+      "title": "Campaign",
+      "payouts_compound": "{{frequency}}, added to your position",
+      "payouts_normal": "{{frequency}}, in {{symbol}}",
+      "payouts_compound_unscheduled": "Added to your position",
+      "payouts_normal_unscheduled": "In {{symbol}}",
+      "notice_upcoming": "Starts {{date}}. Until then you earn this yield's own rate.",
+      "notice_paused": "Paused. No new rewards build up for now. Rewards you've already earned are kept."
+    },
+    "details": {
+      "progress": "Campaign progress",
+      "payouts": "Payouts",
+      "next_payout": "Next payout planned {{date}}",
+      "first_payout": "First payout after the start",
+      "payouts_resume": "Payouts resume when the campaign resumes",
+      "reward_token": "Reward token",
+      "funded_by": "Funded by {{sponsor}}",
+      "terms": "Read the campaign terms"
+    },
+    "rewards": {
+      "title": "Campaign rewards",
+      "earned_line": "Campaign rewards earned",
+      "total_earned": "Total earned",
+      "paid_out": "Paid out",
+      "pending": "Pending",
+      "final_payout": "Final payout",
+      "paused_caption": "Paused. Earned rewards are kept",
+      "notice": {
+        "paused": "The campaign is paused, so no new rewards build up. What you've earned stays yours.",
+        "final_payout": "This campaign has ended. Your final payout is on its way, and your position keeps earning this yield's own rate.",
+        "paid_out": "This campaign has ended and all its rewards are paid out. Your position keeps earning this yield's own rate.",
+        "over_cap": "Only the first {{cap}} earns campaign rewards. The other {{rest}} still earns this yield's own rate.",
+        "below_minimum_title": "Not earning campaign rewards yet",
+        "below_minimum": "Deposit {{shortfall}} more to start earning. Campaign rewards need at least {{minimum}} in this position.",
+        "below_minimum_unknown": "This position holds less than the campaign's minimum, so it isn't earning campaign rewards yet.",
+        "not_eligible_title": "Not earning campaign rewards",
+        "not_eligible": "This wallet isn't earning campaign rewards. If you think this is a mistake, contact support.",
+        "unavailable": "Campaign rewards can't be loaded right now. Your rewards are safe and keep building up.",
+        "retry": "Try again"
+      },
+      "compound_payouts": "Payouts are added to your position as {{symbol}}. {{amount}} of your balance came from campaign rewards.",
+      "payouts": {
+        "recent": "Recent payouts",
+        "all": "All payouts ({{count}})",
+        "show_all": "Show all {{count}}",
+        "show_less": "Show less",
+        "show_more": "Show more",
+        "pending": "Pending",
+        "unavailable": "Payouts can't be loaded right now.",
+        "retry": "Load payouts again"
+      },
+      "row_not_earning": "Not earning",
+      "row_below_minimum": "Below the minimum"
+    },
+    "selector": {
+      "paused": "Rewards paused",
+      "upcoming": "Starts {{date}}",
+      "incentive": "+{{rate}} campaign"
+    }
+  },
   "details": {
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
@@ -565,12 +691,7 @@
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
     "selected_validators_summary_other": "{{providerName}} and others",
-    "campaign_susd_description": "After staking sUSD, the position is locked until April 20, 2026.",
-    "campaign_susd_extra": "Earned rewards are distributed periodically as SNX and unlock linearly over 3 months after the program ends.",
-    "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>.",
-    "campaign_susd": "Learn more about the sUSD staking program <link0>here</link0>.",
-    "confidential_campaign": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>.",
-    "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>.",
+    "confidential_incentives": "See incentives and delegation options for this vault on Zama. <link0>Learn more</link0>.",
     "lockup_period_one": "Minimum lock-up time is {{count}} day.",
     "lockup_period_other": "Minimum lock-up time is {{count}} days.",
     "native_staking": {
@@ -685,8 +806,13 @@
     "apy_composition": {
       "title": "APY composition",
       "native": "Native APY",
+      "native_apr": "Native APR",
       "protocol_incentive": "Protocol incentive APY",
+      "protocol_incentive_apr": "Protocol incentive APR",
       "campaign": "Campaign APY",
+      "campaign_apr": "Campaign APR",
+      "total": "Total APY",
+      "total_apr": "Total APR",
       "up_to": "Up to {{value}}"
     }
   },
@@ -742,6 +868,10 @@
       "read_docs": "Read the integration docs",
       "chart_history": "{{chart}} history",
       "chart_period": "{{chart}} period",
+      "period_1m": "1M",
+      "period_3m": "3M",
+      "period_1y": "1Y",
+      "period_all": "ALL",
       "no_chart_data": "No chart data",
       "chart_data_to": "Data to {{date}}",
       "tvl_in_token": "≈ {{amount}}",
@@ -1034,6 +1164,8 @@
         "debt": "Debt",
         "total_rewards": "Total rewards",
         "average_apy": "Average APY",
+        "average_apy_apr": "Average APR",
+        "average_apy_mixed": "Average rate",
         "claimable_rewards": "Claimable rewards",
         "partial": "Partial",
         "net_worth": "Net worth",
@@ -1475,6 +1607,10 @@
     "action_title_deposit": "Pending deposit <bold>{{amount}} {{symbol}}</bold>",
     "action_title_withdrawal": "Pending withdrawal <bold>{{amount}} {{symbol}}</bold>",
     "action_title_instant_withdrawal": "Instant withdrawal in progress <bold>{{amount}} {{symbol}}</bold>",
+    "action_title_no_amount": "{{pendingAction}}",
+    "action_title_no_amount_deposit": "Pending deposit",
+    "action_title_no_amount_withdrawal": "Pending withdrawal",
+    "action_title_no_amount_instant_withdrawal": "Instant withdrawal in progress",
     "cancel_returns": "Cancelling returns everything you have in this batch as {{symbol}}, right away",
     "cancelling": "Cancelling…",
     "claim": "Claim",
@@ -1547,7 +1683,8 @@
       "preparing": "Preparing",
       "rewards": "Rewards",
       "locked": "Locked",
-      "unlocking": "Unlocking"
+      "unlocking": "Unlocking",
+      "campaign_rewards": "Pending campaign rewards"
     },
     "duration": {
       "less_than_minute": "less than a minute",

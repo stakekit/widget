@@ -9,12 +9,14 @@ import { exactDecimal } from "../../../../src/domain/finance/exact";
 import { Token } from "../../../../src/domain/token/token";
 import {
   encodeYieldRewardRateFixture,
+  yieldApiCampaignDtoFixture,
   yieldApiYieldDtoFixture,
   yieldBalanceFixture,
   yieldRewardRateFixture,
 } from "../../../fixtures";
 import type { TokenDto as LegacyTokenDto } from "../../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../../mocks/api-routes";
+import { projectCampaignsHandler } from "../../../mocks/campaigns";
 import { mockDelay } from "../../../mocks/delay";
 import { mockWalletListFactory } from "../../../utils/mock-connector";
 import type { TestWorker } from "../../../utils/test-extend";
@@ -53,10 +55,16 @@ const setUrl = ({
 export const setup = async (
   worker: TestWorker,
   {
+    cappedCampaign = false,
     editableAmounts = false,
     personalizedRewardRate: providedPersonalizedRewardRate,
     useRewardRateWithoutCampaign,
   }: {
+    /**
+     * Runs a campaign with a per-wallet cap on the yield, so the balance's
+     * campaign part is the wallet's own.
+     */
+    cappedCampaign?: boolean;
     /** Gives enter and exit an `amount` argument, so the user types it. */
     editableAmounts?: boolean;
     personalizedRewardRate?: YieldRewardRate;
@@ -314,6 +322,22 @@ export const setup = async (
       });
     })
   );
+  if (cappedCampaign) {
+    worker.use(
+      projectCampaignsHandler([
+        yieldApiCampaignDtoFixture({
+          yieldId,
+          startTime: "2026-01-01T00:00:00.000Z",
+          endTime: "2030-01-01T00:00:00.000Z",
+          qualificationConfig: {
+            type: "min_token_amount",
+            threshold: "10",
+            maxIncentivizedTvlToken: "50000",
+          },
+        }),
+      ])
+    );
+  }
 
   const requestFn = vitest.fn(async ({ method }: { method: string }) => {
     await waitForMs(100);

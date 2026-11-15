@@ -51,8 +51,8 @@ const makeChainWallet = (cw: ChainWalletBase): CosmosChainWallet => ({
 });
 
 /**
- * The page globals cosmos-kit's extension clients read: Keplr's `window.keplr`,
- * Leap's `window.leap`, and MetaMask's provider for the Leap Cosmos Snap.
+ * The page globals cosmos-kit's extension clients read: Keplr's `window.keplr`
+ * and Leap's `window.leap`.
  */
 const isProviderOn = (schema: Schema.Decoder<unknown>) => {
   const decode = Schema.decodeUnknownOption(schema);
@@ -62,11 +62,6 @@ const isProviderOn = (schema: Schema.Decoder<unknown>) => {
 const injectedProviders = {
   keplr: isProviderOn(Schema.Struct({ keplr: Schema.ObjectKeyword })),
   leap: isProviderOn(Schema.Struct({ leap: Schema.ObjectKeyword })),
-  metaMask: isProviderOn(
-    Schema.Struct({
-      ethereum: Schema.Struct({ isMetaMask: Schema.Literal(true) }),
-    })
-  ),
 };
 
 export type CosmosInjectedProvider = keyof typeof injectedProviders;
@@ -74,7 +69,7 @@ export type CosmosInjectedProvider = keyof typeof injectedProviders;
 const isInjected = (provider: CosmosInjectedProvider) =>
   typeof window !== "undefined" && injectedProviders[provider](window);
 
-/** A cosmos-kit extension wallet (Keplr, Leap, Leap MetaMask Snap). */
+/** A cosmos-kit extension wallet (Keplr, Leap). */
 export const makeExtensionWallet = (
   wallet: MainWalletBase,
   provider: CosmosInjectedProvider

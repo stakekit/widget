@@ -138,6 +138,13 @@ const evmTx = JSON.stringify({
   value: "0",
 });
 
+/** An internal transfer of 123 nanotons to the zero address, commented "Deposit". */
+const tonInternalMessage =
+  "te6cckEBAQEAPgAAeGIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL2AAAAAAAAAAAAAAAAAAAAAAARGVwb3NpdD094WI=";
+/** An inbound external message to the zero address. */
+const tonExternalMessage =
+  "te6cckEBAQEAJQAARYgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEuN2rAw==";
+
 describe("prepareLedgerLiveTransaction", () => {
   it.effect("leaves the EVM nonce for Ledger Live to select", () =>
     Effect.gen(function* () {
@@ -311,6 +318,39 @@ describe("prepareLedgerLiveTransaction", () => {
 
       expect(tx.amount).toBe("1000");
       expect(tx.rewardDestination).toBe("Stash");
+    })
+  );
+
+  it.effect("hands Ledger Live a TON message as its transfer", () =>
+    Effect.gen(function* () {
+      expect(
+        yield* prepare({
+          network: "ton",
+          tx: JSON.stringify({ seqno: 0, message: tonInternalMessage }),
+          txMeta: createTxMeta({}),
+        })
+      ).toEqual({
+        family: "ton",
+        amount: "123",
+        recipient: "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
+        fees: "0",
+        comment: {
+          text: "te6cckEBAQEADQAAFgAAAABEZXBvc2l0CC6i0Q==",
+          isEncrypted: false,
+        },
+      });
+    })
+  );
+
+  it.effect("rejects a TON message that is not an internal transfer", () =>
+    Effect.gen(function* () {
+      expect(
+        yield* prepareFailure({
+          network: "ton",
+          tx: JSON.stringify({ seqno: 0, message: tonExternalMessage }),
+          txMeta: createTxMeta({}),
+        })
+      ).toMatchObject({ _tag: "LedgerTransactionPreparationError" });
     })
   );
 });

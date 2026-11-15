@@ -64,17 +64,6 @@ const toSigningError =
       ? new WalletRequestCancelledError({ operation })
       : new WalletSigningError({ cause, operation });
 
-const tryResult = <A>(
-  evaluate: () => A,
-  message: string
-): Result.Result<A, string> => {
-  try {
-    return Result.succeed(evaluate());
-  } catch {
-    return Result.fail(message);
-  }
-};
-
 const notEvmAccount = new WalletDecodeError({
   cause: "Connected account is not an EVM address",
 });
@@ -98,6 +87,25 @@ const decodeExternalProviderTransaction = ({
     );
   }
 
+  if (network === "ton") {
+    return Effect.fromResult(
+      decodeWalletPayload(
+        Schema.fromJsonString(unsignedTonTransactionCodec),
+        tx
+      )
+    ).pipe(
+      Effect.flatMap((decodedTx) =>
+        normalizeTonTransactionToRaw(decodedTx).pipe(
+          Effect.mapError(() => "Failed to normalize TON tx")
+        )
+      ),
+      Effect.mapBoth({
+        onSuccess: (decodedTx): SKTx => ({ type: "ton", tx: decodedTx }),
+        onFailure: (cause) => new WalletDecodeError({ cause }),
+      })
+    );
+  }
+
   const result: Result.Result<SKTx, string> = (() => {
     if (network === "solana") {
       return decodeWalletPayload(unsignedSolanaTransactionCodec, tx).pipe(
@@ -105,21 +113,6 @@ const decodeExternalProviderTransaction = ({
           type: "solana",
           tx: normalizeSolanaTransactionToHex(decodedTx),
         }))
-      );
-    }
-
-    if (network === "ton") {
-      return decodeWalletPayload(
-        Schema.fromJsonString(unsignedTonTransactionCodec),
-        tx
-      ).pipe(
-        Result.flatMap((decodedTx) =>
-          tryResult(
-            () => normalizeTonTransactionToRaw(decodedTx),
-            "Failed to normalize TON tx"
-          )
-        ),
-        Result.map((decodedTx) => ({ type: "ton", tx: decodedTx }))
       );
     }
 

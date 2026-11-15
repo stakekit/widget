@@ -27,7 +27,8 @@ export const PositionDetailsDisclosure = () => {
   const { locale } = useWidgetPresentation();
   const positionDetails = usePositionDetails();
   const overview = usePositionOverview();
-  const { integrationData, personalizedRewardRate } = positionDetails;
+  const { integrationData, positionRate } = positionDetails;
+  const personalized = positionRate?.personalized ?? false;
 
   if (
     positionDetails.page._tag === "Loading" ||
@@ -43,8 +44,7 @@ export const PositionDetailsDisclosure = () => {
   );
   // Validators show their own rates only when they set what the position
   // earns: not over a Personalized Reward Rate, nor with nothing earning.
-  const showValidatorRates =
-    overview.hasEarningBalances && !personalizedRewardRate;
+  const showValidatorRates = overview.hasEarningBalances && !personalized;
 
   return (
     <Disclosure
@@ -102,11 +102,11 @@ export const PositionDetailsDisclosure = () => {
 
         {overview.hasEarningBalances ? (
           <RewardRateBreakdown
-            rewardRate={positionDetails.apyCompositionRewardRate}
-            showUpToCampaign={positionDetails.apyCompositionShowsUpToCampaign}
+            composition={positionRate?.composition}
+            campaignUpTo={!personalized}
             title={t("details.apy_composition.title")}
             testId={
-              personalizedRewardRate
+              personalized
                 ? "personalized-reward-rate-breakdown"
                 : "reward-rate-breakdown"
             }

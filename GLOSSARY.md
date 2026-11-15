@@ -232,8 +232,44 @@ validator choice.
 unweighted mean of selected validators with rates, otherwise the Yield Reward
 Rate.
 
+**Rate Composition**: A reward rate split into the yield's own rate, protocol
+incentives and the Campaign Incentive Rate, each as the rate lists it and in
+its own rate type, with the total as given; nothing is converted between APR
+and APY. A rate listing no own part has as its own what the incentives leave
+of the total.
+
+**Position Reward Rate**: The one rate a position's page shows: its balance's
+rate when that rate's campaign part is the wallet's own (personalized), else
+its Effective Reward Rate. A campaign part is the wallet's own only under a
+shown Campaign's per-wallet cap: not while Campaigns load, nor after it ends.
+
 **Reward Rate History**: A yield-scoped time series of Yield Reward Rate
 snapshots, not validator or Effective Reward Rates.
+
+**Campaign**: A project-scoped, sponsor-funded incentive on one yield, with a
+budget, schedule, minimum-balance rule, per-wallet cap, and payout cadence.
+Only the newest live Campaign of a yield adds to its Yield Reward Rate.
+_Avoid_: boost, promotion
+
+**Campaign Incentive Rate**: The `campaign_incentive` part of a Yield Reward
+Rate, an APR the API already reduces for the campaign's ceiling. The widget
+shows it as given and never recomputes it for a ceiling. A yield whose cached
+rate lists none yet for its earning Campaign takes the Campaign's own rate.
+
+**Campaign Lifecycle**: Upcoming, active, ending soon (under 14 days left),
+paused, or ended, derived from the API status, the start and end times, and the
+presentation clock. An ended Campaign is never shown on Earn.
+
+**Campaign Offer**: The banner at the top of Earn offering, while the selected
+yield has no earning Campaign, the first earning Campaign the API lists whose
+yield the user can select on the same network; switching selects its token and
+yield.
+
+**Campaign Rate Ceiling**: The highest rate a Campaign lets a yield reach:
+the campaign rate alone (`incentive` mode) or the yield's own rate plus it
+(`combined`). Milestones step it, so reaching one replaces it. Not the
+per-wallet cap, which limits the balance that earns.
+_Avoid_: APY cap (in code)
 
 ### Confidential vaults
 

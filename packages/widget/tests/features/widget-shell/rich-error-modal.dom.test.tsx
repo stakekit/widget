@@ -95,6 +95,19 @@ describe("RichErrorModal", () => {
     );
   });
 
+  it("announces the Error Copy details as the dialog's description", async () => {
+    richErrorState.error = { message: "MinimumAmountNotReachedError" };
+    await renderModal();
+
+    const dialog = document.querySelector("[role='dialog']");
+    const description = document.getElementById(
+      dialog?.getAttribute("aria-describedby") ?? ""
+    );
+    expect(description?.textContent).toBe(
+      "The amount is below the minimum required for this operation"
+    );
+  });
+
   it("interpolates values explicitly referenced by host Error Copy", async () => {
     const i18n = createWidgetI18nInstance();
     i18n.addResourceBundle(
