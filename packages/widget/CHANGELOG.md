@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.297](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.296...@stakekit/widget@0.0.297) (2026-11-15)
+
+
+### Features
+
+* **widget:** campaigns on Earn, in yield details and on positions ([#624](https://github.com/stakekit/widget/issues/624)) ([6c7c30a](https://github.com/stakekit/widget/commit/6c7c30acf11a198ff4a4fba5ba061c5922c0483b))
+
 ## [0.0.296](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.295...@stakekit/widget@0.0.296) (2026-11-10)
 
 
