@@ -77,15 +77,21 @@ const PositionDetailsEnterTokenSection = ({
     stakeAmountGreaterThanMax ||
     stakeAmountLessThanMin;
   const available = stake.selectedTokenAvailableAmount;
-  const min =
-    stake.stakeMinAmount === null
-      ? null
-      : `${t("shared.min")} ${formatTokenAmount(stake.stakeMinAmount, locale, "up")} ${stake.symbol}`;
   const max =
     stake.stakeMaxAmount === null
       ? null
       : `${t("shared.max")} ${formatTokenAmount(stake.stakeMaxAmount, locale, "down")} ${stake.symbol}`;
-  const minMaxLabel = min && max ? `${min} / ${max}` : (min ?? max);
+  // A minimum the balance can fund fills itself in from a tap.
+  const fillMinimum = stake.canUseMin
+    ? { label: t("shared.fill_minimum"), onClick: stake.onMinClick }
+    : undefined;
+  const minimum =
+    stake.stakeMinAmount === null
+      ? undefined
+      : {
+          text: `${t("shared.min")} ${formatNumber(stake.stakeMinAmount, locale)} ${stake.symbol}`,
+          fill: fillMinimum,
+        };
 
   const availableBalance = available
     ? {
@@ -123,7 +129,7 @@ const PositionDetailsEnterTokenSection = ({
     }
     if (stakeAmountLessThanMin && stake.stakeMinAmount !== null) {
       return t("details.amount_error.below_minimum", {
-        amount: formatTokenAmount(stake.stakeMinAmount, locale, "up"),
+        amount: formatNumber(stake.stakeMinAmount, locale),
         symbol: stake.symbol,
       });
     }
@@ -131,7 +137,8 @@ const PositionDetailsEnterTokenSection = ({
   };
   const error = getError();
   const limitProps = {
-    ...(minMaxLabel ? { limits: minMaxLabel } : {}),
+    minimum,
+    ...(max ? { limits: max } : {}),
     ...(error === null ? {} : { error }),
   };
 
@@ -160,7 +167,10 @@ const PositionDetailsEnterTokenSection = ({
         locale,
         status: stake.priceUsdStatus,
       })}
-      testIds={{ root: "position-details-enter-amount" }}
+      testIds={{
+        root: "position-details-enter-amount",
+        minimum: "position-details-enter-min-button",
+      }}
       {...(balance ? { balance } : {})}
       {...limitProps}
       {...(stake.canUseMax

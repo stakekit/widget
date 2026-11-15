@@ -339,6 +339,8 @@ export const positionDetailsEnterAtoms = Atom.family(
         canUseMax: !input.hiddenTokenBalance && entry.maxAmount !== null,
         /** Max has nothing to fill, such as a balance the gas would use up. */
         maxFillsNothing: entry.maxAmount?.isZero() ?? false,
+        /** Min fills in a minimum the balance can fund. */
+        canUseMin: entry.canFillMin,
         cta,
         estimatedRewards: entry.estimatedRewards,
         footerIsLoading: input.isFetching,
@@ -383,13 +385,9 @@ export const positionDetailsEnterAtoms = Atom.family(
           !entry.constraints.forceMax
             ? entry.constraints.allowedMaximum
             : null,
-        stakeMinAmount:
-          selectedYield &&
-          entry.constraints.minimum &&
-          !entry.constraints.forceMax &&
-          entry.constraints.allowedMinimum.isGreaterThan(0)
-            ? entry.constraints.allowedMinimum
-            : null,
+        // The minimum as the token can hold it: what Min fills in and the
+        // limit the amount is told to reach.
+        stakeMinAmount: selectedYield ? entry.minAmount : null,
         symbol,
         /** The yield's first load: still loading, failed (retry), or loaded. */
         status: input.status,
@@ -433,6 +431,20 @@ export const positionDetailsEnterAtoms = Atom.family(
         })
       );
     });
+    const setMinAmountAtom = appRuntime.fn((_input: undefined, context) => {
+      const view = context(viewAtom);
+      const { canFillMin, minAmount } = context(yieldEntry.viewAtom);
+      if (!canFillMin || minAmount === null) return Effect.void;
+      context.set(intentAtom, {
+        type: "stakeAmount/change",
+        amount: minAmount.toString(10),
+      });
+      return TrackingService.use((tracking) =>
+        tracking.trackEvent("positionDetailsPageMinClicked", {
+          yieldId: view.selectedStake?.id,
+        })
+      );
+    });
     const retryAtom = Atom.fnSync(
       (_input: undefined, context) =>
         retryPositionDetailsLoad(context, {
@@ -449,6 +461,7 @@ export const positionDetailsEnterAtoms = Atom.family(
       selectTokenAtom,
       setAmountAtom,
       setMaxAmountAtom,
+      setMinAmountAtom,
       setTronResourceAtom,
       submitAtom: yieldEntry.submitAtom,
       viewAtom,

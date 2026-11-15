@@ -9,13 +9,16 @@ import { visuallyHiddenBox } from "../tokens/size.stylex";
  */
 export const VisuallyHidden = ({
   as = "span",
+  id,
   role,
   children,
 }: {
   readonly as?: "span" | "div";
+  /** Lets a control point at it, such as with `aria-describedby`. */
+  readonly id?: string;
   readonly role?: "status";
   readonly children?: ReactNode;
-}) => createElement(as, { role, ...stylex.props(styles.root) }, children);
+}) => createElement(as, { id, role, ...stylex.props(styles.root) }, children);
 
 const styles = stylex.create({
   root: {

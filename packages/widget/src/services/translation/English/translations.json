@@ -25,6 +25,7 @@
     "stake_kit": "Yield.xyz",
     "max": "Max",
     "min": "Min",
+    "fill_minimum": "Fill in the minimum",
     "available": "available",
     "balance": "Balance",
     "yearly": "Yearly",

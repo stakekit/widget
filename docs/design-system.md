@@ -599,13 +599,21 @@ amount stays bare in its card.
 the line under it, where `Field` shows its `error` (danger) or, before any
 amount is typed, its `warning` (warning tone, not invalid), such as "You need
 at least 1 MATIC to stake" for a balance under the minimum. The limits ("Min
-1 MATIC") stay the muted helper at the end of that line and never change
-tone; a missed limit is said by the error ("Enter at least 1 MATIC"). While
-the amount is invalid the panel's edge takes `danger`; focus still edges it
-in the accent. A Feature disables Max when there is nothing to fill, and a
-Max that fills less than the minimum leaves the error saying so. The Max chip
-is a small control's height, and it and the tappable balance grow their hit
-area to `hitArea.coarse` under a coarse pointer. What using the amount costs,
+1 MATIC / Max 10 MATIC") stay the helper at the end of that line, the
+minimum leading; a missed limit is said by the error ("Enter at least 1
+MATIC"). The minimum is the yield's, rounded up to what the token can hold,
+so the amount sent still meets it, and the limit, the error and the warning
+state it at full precision, as Min fills it. Where the balance can fund it,
+the minimum is a button that fills it in, in the accent and underlined, so no
+Min chip crowds the foot; what a tap does is its description, kept out of
+the limits' text so it never describes the amount. Otherwise it is muted
+text, as the other limits are. While the amount is invalid the panel's edge
+takes `danger`; focus still
+edges it in the accent. A Feature disables Max when there is nothing to
+fill, and a Max that fills less than the minimum leaves the error saying so.
+The Max chip is a small control's height, and it, the minimum and the
+tappable balance grow their hit area to `hitArea.coarse` under a coarse
+pointer. What using the amount costs,
 such as "Network fee ≈ 0.0003 ETH ($0.52)" or the gas Max keeps aside, goes in
 the panel's `notes`: muted caption lines under the panel, outside its card.
 Notes never come and go as the amount changes: a Feature holds a note's line

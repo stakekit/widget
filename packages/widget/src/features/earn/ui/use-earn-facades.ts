@@ -20,6 +20,7 @@ import {
   selectEarnTronResourceAtom,
   setEarnAmountAtom,
   setEarnMaxAmountAtom,
+  setEarnMinAmountAtom,
 } from "../state/entry";
 import {
   earnFlowProviderOptionAtom,
@@ -93,6 +94,7 @@ export const useEarnEntry = () => ({
   selectTronResource: useAtomSet(selectEarnTronResourceAtom),
   setAmount: useAtomSet(setEarnAmountAtom),
   setMaxAmount: useAtomSet(setEarnMaxAmountAtom),
+  setMinAmount: useAtomSet(setEarnMinAmountAtom),
   view: useAtomValue(earnEntryViewAtom),
 });
 
