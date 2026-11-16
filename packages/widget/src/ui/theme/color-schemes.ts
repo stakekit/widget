@@ -51,7 +51,7 @@ const darkColors = stylex.createTheme(color, darkColorRoles);
 
 // In dark, a shadow does not show on the canvas: the shell is outlined in
 // the border role instead, a raised surface (a selected tab or segment, the
-// token trigger, an elevated card) adds a `borderStrong` outline to its
+// picker trigger, an elevated card) adds a `borderStrong` outline to its
 // shadow, so it reads against the surface it sits on, and an overlay, such as
 // a dialog over the scrim, is edged in `border` over its shadow.
 const darkElevation = stylex.createTheme(elevation, {

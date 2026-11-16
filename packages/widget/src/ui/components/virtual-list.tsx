@@ -18,7 +18,7 @@ import { Text } from "../primitives/text";
 import { color } from "../tokens/color.stylex";
 import { layer } from "../tokens/layer.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { iconSize, scrollAreaMaxHeight } from "../tokens/size.stylex";
+import { scrollAreaMaxHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import { focusRingStyles } from "./focus-ring";
 import { scrollFadeVars } from "./scroll-area.stylex";
@@ -101,12 +101,6 @@ type VirtualListProps<T> = ItemsOrGroups<T> & {
   readonly loadingMore?: boolean;
   /** Names the spinner while more items load. */
   readonly loadingMoreLabel?: string | undefined;
-  /**
-   * What the rows keep past the end of their figures: `checkSlot` for a
-   * picker's flat rows, which reserve their check's slot, so a group's
-   * caption ends that much further in, over the figures.
-   */
-  readonly headerInsetEnd?: keyof typeof headerInsetEndStyles;
 };
 
 /** How far, in pixels, the rows run past the top and bottom edges. */
@@ -237,7 +231,6 @@ export const VirtualList = <T,>({
   hasMore = false,
   loadingMore = false,
   loadingMoreLabel,
-  headerInsetEnd,
   ...itemsOrGroups
 }: VirtualListProps<T>) => {
   // TanStack Virtual is not compiler-safe.
@@ -367,10 +360,7 @@ export const VirtualList = <T,>({
           isSticky
             ? styles.stickyRow
             : [styles.row, dynamicStyles.offset(virtualRow.start)],
-          row.kind === "header" && styles.header,
-          row.kind === "header" &&
-            headerInsetEnd !== undefined &&
-            headerInsetEndStyles[headerInsetEnd]
+          row.kind === "header" && styles.header
         )}
       >
         {row.kind === "header" ? (
@@ -490,14 +480,6 @@ const styles = stylex.create({
     paddingBlock: space[16],
     display: "flex",
     justifyContent: "center",
-  },
-});
-
-// The header's own padding plus the space a flat `ListRow` reserves for its
-// check after its values: the row's gap and the check's width.
-const headerInsetEndStyles = stylex.create({
-  checkSlot: {
-    paddingInlineEnd: `calc(${space[12]} + ${space[12]} + ${iconSize.md})`,
   },
 });
 

@@ -132,7 +132,7 @@ type SelectSheetProps = OptionsOrGroups &
     /** Names the close button. */
     readonly closeLabel: string;
     /**
-     * The element that opens the sheet, such as a `TokenTrigger`. It must
+     * The element that opens the sheet, such as a `PickerTrigger`. It must
      * forward its ref and props; focus returns to it on close.
      */
     readonly trigger?: ReactElement | undefined;
@@ -381,8 +381,8 @@ export const SelectSheet = ({
               selected,
               check,
               // The focus ring follows the keys: on open, the current choice
-              // is active but reads by its tint and check alone, so the
-              // search field's ring is the only one.
+              // is active but reads by its selection ring alone, so the
+              // search field's is the only focus ring.
               active: index === active && movedIndex !== undefined,
               onSelect: () => choose(option),
               disabled: option.disabled === true,
@@ -452,9 +452,6 @@ export const SelectSheet = ({
         <VirtualList
           {...listProps}
           stickyHeaders
-          // A single choice's rows keep a check's slot after their values;
-          // a group's caption ends where the values do.
-          {...(multiple === undefined ? { headerInsetEnd: "checkSlot" } : {})}
           groups={optionsOrGroups.groups.map((group) => ({
             key: group.key,
             label: group.label,

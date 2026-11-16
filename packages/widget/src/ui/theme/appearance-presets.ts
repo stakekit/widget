@@ -3,9 +3,9 @@ import * as stylex from "@stylexjs/stylex";
 
 import { type ColorRoles, color } from "../tokens/color.stylex";
 import { elevation } from "../tokens/elevation.stylex";
+import { pickerTrigger } from "../tokens/picker-trigger.stylex";
 import { controlRadius, radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
-import { tokenTrigger } from "../tokens/token-trigger.stylex";
 import {
   figureWeight,
   font,
@@ -139,19 +139,19 @@ const utilaElevation = stylex.createTheme(elevation, {
   shell: `0 0 0 1px ${color.border}, 0 4px 16px rgb(9 9 11 / 0.05)`,
 });
 
-// The token trigger's look, set on the theme root with the preset's other
+// The picker trigger's look, set on the theme root with the preset's other
 // themes: a variable referencing another resolves where it is declared, so
 // the raised look picks up the scheme's and preset's fill and elevation only
 // when declared beside them. Utila's trigger sits flat in its outlined cards,
 // whose edge is the only one: it takes its card's fill, tints on hover, and
 // rounds more than Utila's other controls.
-const raisedTokenTrigger = stylex.createTheme(tokenTrigger, {
+const raisedPickerTrigger = stylex.createTheme(pickerTrigger, {
   fill: color.surfaceRaised,
   shadow: elevation.raised,
   radius: radius.pillControl,
 });
 
-const utilaTokenTrigger = stylex.createTheme(tokenTrigger, {
+const utilaPickerTrigger = stylex.createTheme(pickerTrigger, {
   fill: "transparent",
   shadow: "none",
   radius: "12px",
@@ -185,7 +185,7 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
   {
     default: {
       palettes: { light: basePalette, dark: basePalette },
-      theme: [raisedTokenTrigger, sizedControlRadius, mediumHeading],
+      theme: [raisedPickerTrigger, sizedControlRadius, mediumHeading],
     },
     finery: {
       palettes: presetPalettes.finery,
@@ -194,7 +194,7 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
         fineryFontWeight,
         fineryFigureWeight,
         fineryFont,
-        raisedTokenTrigger,
+        raisedPickerTrigger,
         sizedControlRadius,
         mediumHeading,
       ],
@@ -208,7 +208,7 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
         portoFigureWeight,
         portoFont,
         portoElevation,
-        raisedTokenTrigger,
+        raisedPickerTrigger,
         sizedControlRadius,
         mediumHeading,
       ],
@@ -220,7 +220,7 @@ const presetDefinitions: Readonly<Record<AppearancePreset, PresetDefinition>> =
         utilaRadius,
         utilaControlHeight,
         utilaElevation,
-        utilaTokenTrigger,
+        utilaPickerTrigger,
         utilaFigureWeight,
         sizedControlRadius,
         semiboldHeading,

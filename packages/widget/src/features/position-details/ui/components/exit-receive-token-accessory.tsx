@@ -8,7 +8,7 @@ import {
   useTokenLogo,
   useTokenLogoResolver,
 } from "../../../../shared/react/token-logo";
-import { SelectSheet, TokenTrigger } from "../../../../ui/index";
+import { SelectSheet, PickerTrigger } from "../../../../ui/index";
 import { useTrackEvent } from "../../../tracking/index";
 import {
   buildExitReceiveTokensByAddress,
@@ -48,7 +48,14 @@ export const ExitReceiveTokenAccessory = ({
   };
 
   if (!selection || accessory._tag === "Static") {
-    return <TokenTrigger token={token} readOnly testId={triggerTestId} />;
+    return (
+      <PickerTrigger
+        label={token.name}
+        logo={token}
+        readOnly
+        testId={triggerTestId}
+      />
+    );
   }
 
   const options = selection.options.map((option) =>
@@ -76,7 +83,9 @@ export const ExitReceiveTokenAccessory = ({
       title={t("position_details.receive_token.select_title")}
       closeLabel={t("shared.close")}
       listLabel={t("position_details.receive_token.select_title")}
-      trigger={<TokenTrigger token={token} testId={triggerTestId} />}
+      trigger={
+        <PickerTrigger label={token.name} logo={token} testId={triggerTestId} />
+      }
       onOpenChange={(open) => {
         if (open) trackEvent("exitReceiveTokenModalOpened");
         else setSearch("");

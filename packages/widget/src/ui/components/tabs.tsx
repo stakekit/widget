@@ -21,7 +21,7 @@ import { opacity } from "../tokens/opacity.stylex";
 import { pointer } from "../tokens/pointer.stylex";
 import { gutter, presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { hitArea, tokenTriggerHeight } from "../tokens/size.stylex";
+import { hitArea, pickerTriggerHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import {
   font,
@@ -353,7 +353,7 @@ const styles = stylex.create({
     position: "relative",
     scrollbarWidth: "none",
     minHeight: {
-      default: tokenTriggerHeight.tabs,
+      default: pickerTriggerHeight.tabs,
       [pointer.coarse]: hitArea.coarse,
     },
     minWidth: 0,

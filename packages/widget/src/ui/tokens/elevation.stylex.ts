@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 /**
- * Shadows for raised surfaces (menus, popovers, the token trigger), overlays
+ * Shadows for raised surfaces (menus, popovers, the picker trigger), overlays
  * and the Widget shell, cast in a deep shade of the accent's blue rather than
  * grey, so they sit with the blue-leaning neutrals. Selection is a ring plus
  * a tint, never a shadow. The dark scheme in `theme/color-schemes.ts`

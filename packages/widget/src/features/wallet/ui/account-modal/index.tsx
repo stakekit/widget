@@ -19,7 +19,7 @@ import {
   Stack,
   Text,
   TokenAvatar,
-  TokenTrigger,
+  PickerTrigger,
   VisuallyHidden,
 } from "../../../../ui/index";
 import { useLeaveConfirmation } from "../../../leave-confirmation/index";
@@ -115,10 +115,10 @@ export const AccountModal = ({
 
   return (
     <>
-      <TokenTrigger
+      <PickerTrigger
         hostHook="account-modal-container"
         size={triggerSize}
-        token={{ name: displayAddress }}
+        label={displayAddress}
         account={wallet.address}
         onClick={() => {
           trackEvent("accountModalOpened");

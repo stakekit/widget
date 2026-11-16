@@ -4,7 +4,7 @@ import { createElement } from "react";
 import {
   containerWidth,
   controlHeight,
-  tokenTriggerHeight,
+  pickerTriggerHeight,
 } from "../tokens/size.stylex";
 import {
   flexItemStyles,
@@ -99,7 +99,7 @@ const minHeightStyles = stylex.create({
   controlSm: { minHeight: controlHeight.sm },
   controlMd: { minHeight: controlHeight.md },
   controlLg: { minHeight: controlHeight.lg },
-  tabs: { minHeight: tokenTriggerHeight.tabs },
+  tabs: { minHeight: pickerTriggerHeight.tabs },
 });
 
 const positionStyles = stylex.create({

@@ -13,7 +13,7 @@ import {
   useTokenLogoResolver,
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
+import { SelectSheet, PickerTrigger } from "../../../../../ui/index";
 import {
   getCampaignBadge,
   getCampaignSelectorNote,
@@ -84,7 +84,13 @@ const SelectYieldSheet = ({
       title={t("details.opportunity_search_title")}
       closeLabel={t("shared.close")}
       listLabel={t("details.opportunity_search_title")}
-      trigger={<TokenTrigger token={triggerLogo} testId="select-opportunity" />}
+      trigger={
+        <PickerTrigger
+          label={triggerLogo.name}
+          logo={triggerLogo}
+          testId="select-opportunity"
+        />
+      }
       onOpenChange={(open) => {
         if (open) trackEvent("selectYieldModalOpened");
         else setSearch("");

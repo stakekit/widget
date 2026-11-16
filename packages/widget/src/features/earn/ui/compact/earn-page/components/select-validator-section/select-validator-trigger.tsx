@@ -10,10 +10,10 @@ import {
 import { useWidgetPresentation } from "../../../../../../../shared/react/widget-presentation";
 import {
   Badge,
-  Button,
   Card,
   Divider,
   IconButton,
+  PickerTrigger,
   Stack,
   Text,
   TokenAvatar,
@@ -152,16 +152,7 @@ export const SelectValidatorTrigger = ({
 const ChangeButton = ({ onClick }: { readonly onClick: () => void }) => {
   const { t } = useTranslation();
 
-  return (
-    <Button
-      variant="secondary"
-      size="sm"
-      iconEnd="CaretDownIcon"
-      onClick={onClick}
-    >
-      {t("shared.change")}
-    </Button>
-  );
+  return <PickerTrigger label={t("shared.change")} onClick={onClick} />;
 };
 
 /**

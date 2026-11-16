@@ -11,24 +11,32 @@ import { borderWidth } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
 import { opacity } from "../tokens/opacity.stylex";
+import { pickerTrigger } from "../tokens/picker-trigger.stylex";
 import { presentationMarker } from "../tokens/presentation.stylex";
 import { radius } from "../tokens/radius.stylex";
-import { tokenTriggerHeight } from "../tokens/size.stylex";
+import { pickerTriggerHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
-import { tokenTrigger } from "../tokens/token-trigger.stylex";
 import { font } from "../tokens/typography.stylex";
 import type { TokenLogo } from "./token";
 
-type TokenTriggerProps = Omit<
+type PickerTriggerProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "className" | "style" | "children" | "type"
 > & {
   readonly ref?: Ref<HTMLButtonElement>;
-  /** The chosen token; its name shows as the trigger's text. */
-  readonly token: TokenLogo;
   /**
-   * Shows the token without a caret or a button, when there is no other
-   * token to choose. The button props then do not apply.
+   * The trigger's text and name: the chosen item's, such as a token's
+   * symbol, or the action it opens, such as "Change".
+   */
+  readonly label: string;
+  /**
+   * The chosen item's logo, before the label; its fallback shows the label's
+   * initials. Unset, the label stands alone.
+   */
+  readonly logo?: Omit<TokenLogo, "name">;
+  /**
+   * Shows the choice without a caret or a button, when there is nothing
+   * else to choose. The button props then do not apply.
    */
   readonly readOnly?: boolean;
   /** Renders as the trigger's `data-testid`. */
@@ -36,9 +44,8 @@ type TokenTriggerProps = Omit<
   /** Renders as the trigger's `data-rk`, for hosts that locate it. */
   readonly hostHook?: HostHook;
   /**
-   * An account address: draws the account's generated avatar in place of the
-   * token's logo, as in a wallet's account trigger. `token.name` stays the
-   * text.
+   * An account address: draws the account's generated avatar in place of a
+   * logo, as in a wallet's account trigger. `label` stays the text.
    */
   readonly account?: string;
   /**
@@ -51,37 +58,44 @@ type TokenTriggerProps = Omit<
 };
 
 /**
- * The chosen token beside an amount: its logo with the network badge and its
- * symbol on a raised pill, or the chosen network or account in a wallet
- * header. As a button it shows a caret and forwards its ref and props, so it
- * can be a `Modal` or `SelectSheet` trigger.
+ * What opens a picker, such as a `SelectSheet` or a wallet's `Modal`: the
+ * chosen token beside an amount, with its logo and network badge, on a
+ * raised pill; the chosen network or account in a wallet header; or, with
+ * no logo, the action that changes a choice shown beside it ("Change"). As a
+ * button it shows a caret and forwards its ref and props, so it can be a
+ * `Modal` or `SelectSheet` trigger.
  */
-export const TokenTrigger = ({
-  token,
+export const PickerTrigger = ({
+  label,
+  logo,
   readOnly = false,
   testId,
   hostHook,
   account,
   size = "md",
   ...rest
-}: TokenTriggerProps) => {
+}: PickerTriggerProps) => {
   const avatarSize = size === "md" ? "control" : "sm";
   // The smaller sizes are filled flat rather than raised.
   const flat = size !== "md";
+  const labelOnly = account === undefined && logo === undefined;
+  const avatar = (() => {
+    if (account !== undefined) {
+      return <TokenAvatar account={account} size={avatarSize} />;
+    }
+    if (logo === undefined) return null;
+    return <TokenAvatar {...logo} name={label} size={avatarSize} decorative />;
+  })();
   const content = (
     <>
-      {account === undefined ? (
-        <TokenAvatar {...token} size={avatarSize} decorative />
-      ) : (
-        <TokenAvatar account={account} size={avatarSize} />
-      )}
+      {avatar}
       {size === "md" ? (
         <Text variant="heading" as="span" weight="semibold" truncate>
-          {token.name}
+          {label}
         </Text>
       ) : (
         <Text as="span" weight="semibold" truncate>
-          {token.name}
+          {label}
         </Text>
       )}
     </>
@@ -95,6 +109,7 @@ export const TokenTrigger = ({
         {...stylex.props(
           styles.root,
           sizeStyles[size],
+          labelOnly && styles.labelOnly,
           styles.readOnly,
           flat && styles.flat
         )}
@@ -113,6 +128,7 @@ export const TokenTrigger = ({
       {...stylex.props(
         styles.root,
         sizeStyles[size],
+        labelOnly && styles.labelOnly,
         styles.button,
         flat && styles.flat,
         // A header pill is shorter than a finger; the amount's pill is not.
@@ -126,7 +142,7 @@ export const TokenTrigger = ({
   );
 };
 
-// Raised off the card it sits in (`tokenTrigger`, which a preset can set
+// Raised off the card it sits in (`pickerTrigger`, which a preset can set
 // flat in its card), except under the `elevated` surface style: there the
 // card itself is raised, so the trigger fills with `surface` and edges in
 // `border` instead (a dark raised card can share its fill), keeping
@@ -141,21 +157,21 @@ const styles = stylex.create({
         presentationMarker
       )]: color.border,
     },
-    borderRadius: tokenTrigger.radius,
+    borderRadius: pickerTrigger.radius,
     borderStyle: "solid",
     borderWidth: borderWidth.thin,
     gap: space[6],
     paddingBlock: 0,
     alignItems: "center",
     backgroundColor: {
-      default: tokenTrigger.fill,
+      default: pickerTrigger.fill,
       [stylex.when.ancestor(
         '[data-sk-surface-style="elevated"]',
         presentationMarker
       )]: color.surface,
     },
     boxShadow: {
-      default: tokenTrigger.shadow,
+      default: pickerTrigger.shadow,
       [stylex.when.ancestor(
         '[data-sk-surface-style="elevated"]',
         presentationMarker
@@ -171,12 +187,14 @@ const styles = stylex.create({
     maxWidth: "100%",
     minWidth: 0,
   },
+  // With no avatar the label sits as far in as a button's.
+  labelOnly: { paddingInlineStart: space[12] },
   readOnly: { cursor: "default" },
   button: {
     appearance: "none",
     // The hover rule's `:not(:disabled)` outranks the ancestor condition.
     backgroundColor: {
-      default: tokenTrigger.fill,
+      default: pickerTrigger.fill,
       ":hover:not(:disabled)": color.surfaceHover,
       [stylex.when.ancestor(
         '[data-sk-surface-style="elevated"]',
@@ -224,11 +242,11 @@ const styles = stylex.create({
 });
 
 const sizeStyles = stylex.create({
-  sm: { height: tokenTriggerHeight.sm },
-  tabs: { height: tokenTriggerHeight.tabs },
+  sm: { height: pickerTriggerHeight.sm },
+  tabs: { height: pickerTriggerHeight.tabs },
   md: {
     gap: space[8],
     paddingInlineStart: space[6],
-    height: tokenTriggerHeight.md,
+    height: pickerTriggerHeight.md,
   },
 });

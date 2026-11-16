@@ -47,7 +47,7 @@ type AmountPanelProps = {
   /** The Widget language's separators. */
   readonly separators: AmountSeparators;
   /**
-   * The token beside the amount: a `TokenTrigger`, or a `SelectSheet` whose
+   * The token beside the amount: a `PickerTrigger`, or a `SelectSheet` whose
    * trigger is one.
    */
   readonly token: ReactNode;

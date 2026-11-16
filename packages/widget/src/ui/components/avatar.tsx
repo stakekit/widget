@@ -161,7 +161,7 @@ type TokenAvatarProps = { readonly size?: AvatarSize } & (
       readonly success?: boolean;
       /**
        * Hides the avatar from assistive technology, beside text that already
-       * names the token, such as a token trigger's symbol.
+       * names the token, such as a picker trigger's symbol.
        */
       readonly decorative?: boolean;
       /** `square` for a wallet's or a validator's logo. */
