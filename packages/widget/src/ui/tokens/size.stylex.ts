@@ -64,7 +64,7 @@ export const chartHeight = stylex.defineConsts({
  * action's details, `hero` a completed action's summary and `xl` a
  * position's or a finished transaction's page.
  * `control` and `card` are not steps of the scale but roles: the avatar that
- * leads a control, a token trigger or a condensed picker row, sized to that
+ * leads a control, a picker trigger or a condensed picker row, sized to that
  * control's height, and the avatar that leads a card's heading, such as an
  * account's, as tall as a heading over a caption.
  */
@@ -95,12 +95,12 @@ export const avatarBadgeSize = stylex.defineConsts({
 });
 
 /**
- * A token trigger's height: `md` a touch-sized pill around a `control`
+ * A picker trigger's height: `md` a touch-sized pill around a `control`
  * avatar; `sm` a wallet header's pill around an `sm` avatar, as tall as a
  * small control. `tabs` is a role, not a step: as tall as a `Tabs` list, on
  * the 4px grid, so the tabs and the pills beside them share one row height.
  */
-export const tokenTriggerHeight = stylex.defineConsts({
+export const pickerTriggerHeight = stylex.defineConsts({
   sm: "32px",
   tabs: "40px",
   md: "44px",

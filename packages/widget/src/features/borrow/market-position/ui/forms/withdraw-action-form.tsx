@@ -20,7 +20,7 @@ import {
   Notice,
   SelectSheet,
   Stack,
-  TokenTrigger,
+  PickerTrigger,
 } from "../../../../../ui/index";
 import { PageCtaButton } from "../../../../widget-shell/views";
 import type {
@@ -68,9 +68,10 @@ const WithdrawTokenSelect = ({
       closeLabel={t("shared.close")}
       listLabel={t("dashboard.borrow.form.collateral_assets")}
       trigger={
-        <TokenTrigger
+        <PickerTrigger
           testId="borrow-withdraw-token-select"
-          token={selectedLogo}
+          label={selectedLogo.name}
+          logo={selectedLogo}
         />
       }
       selectedId={selectedToken.action.args.tokenAddress}

@@ -7,9 +7,9 @@ import {
 } from "../../../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../../../shared/react/widget-presentation";
 import {
-  Button,
   Card,
   ExternalLink,
+  PickerTrigger,
   Skeleton,
   Stack,
   Text,
@@ -105,14 +105,7 @@ export const SelectProvider = () => {
             />
 
             {canSelect && (
-              <Button
-                variant="secondary"
-                size="sm"
-                iconEnd="CaretDownIcon"
-                onClick={open}
-              >
-                {t("shared.change")}
-              </Button>
+              <PickerTrigger label={t("shared.change")} onClick={open} />
             )}
           </Stack>
         </Card>

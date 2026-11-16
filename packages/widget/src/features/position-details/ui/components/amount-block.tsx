@@ -22,7 +22,7 @@ import {
   Button,
   Stack,
   Text,
-  TokenTrigger,
+  PickerTrigger,
 } from "../../../../ui/index";
 import { useWidgetConfig } from "../../../widget-configuration/index";
 import { useYieldMetaInfo } from "../../../yield-summary/views";
@@ -68,7 +68,7 @@ type AmountBlockProps = {
 const ExitTokenTrigger = ({ token }: { readonly token: Token }) => {
   const logo = useTokenLogo(token);
 
-  return <TokenTrigger token={{ ...logo, name: token.symbol }} readOnly />;
+  return <PickerTrigger label={token.symbol} logo={logo} readOnly />;
 };
 
 /** An amount to exit a position with, or to run a pending action on. */

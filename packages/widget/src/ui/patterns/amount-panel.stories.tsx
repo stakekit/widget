@@ -4,7 +4,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 import { networkLogo, tokenLogo } from "../storybook/images";
 import { AmountPanel } from "./amount-panel";
-import { TokenTrigger } from "./token-trigger";
+import { PickerTrigger } from "./picker-trigger";
 
 type PanelProps = ComponentProps<typeof AmountPanel>;
 
@@ -52,8 +52,9 @@ const minimalArgs = {
   onValueChange: fn(),
   separators: { decimal: ".", group: "," },
   token: (
-    <TokenTrigger
-      token={{ name: "ETH", src: tokenLogo, networkSrc: networkLogo }}
+    <PickerTrigger
+      label="ETH"
+      logo={{ src: tokenLogo, networkSrc: networkLogo }}
     />
   ),
   fiatValue: "$0.00",

@@ -46,8 +46,8 @@ Virtual and SVG icon markup.
   `VirtualList`.
 - **Patterns**: `ActionCard`, `AmountPanel`, `AssetHeader`, `CompleteSummary`,
   `EmptyState`, `Entrance`, `ErrorState`, `FlowSteps`, `ListSkeleton`,
-  `PageHeader`, `PageTransition`, `PositionSummary`, `ReviewSummary`,
-  `SelectSheet`, `SplitView`, `StandIn`, `TokenTrigger`, `WidgetFrame`.
+  `PageHeader`, `PageTransition`, `PickerTrigger`, `PositionSummary`,
+  `ReviewSummary`, `SelectSheet`, `SplitView`, `StandIn`, `WidgetFrame`.
 - **Artwork**: `MorphoMark`.
 - **Prop types**: `Tone`, `FixedIconName`, `HostHook`, `TabOption`,
   `ToggleOption`, `AmountPanelNote`, `SelectSheetAction`.
@@ -59,14 +59,17 @@ One look per concept:
 
 - **List rows.** `ListRow` has one look per context. Lists of what the user
   owns or did (positions, activity) use `card` rows: a filled surface each,
-  8px apart, a selection ring when a button row is selected, read as
-  pressed. Pickers (every `SelectSheet`,
+  8px apart. Pickers (every `SelectSheet`,
   the network, account and wallet lists) use `flat` rows: no surface until
-  hovered, then the accent tint with a trailing check for the choice, so hover
-  and selection never look alike; their content lines up with the sheet's
+  hovered, then a tint; their content lines up with the sheet's
   title, or a condensed `ListGroup`'s heading, while the tint reaches past
-  it. Every row of a choice keeps the check's slot, chosen or not, so values
-  line up. Condensed rows are always flat. On the second line the subtitle
+  it. A selected row reads the same in both: the selection ring inside its
+  edge over the accent tint, read as pressed, never a trailing check, so
+  hover and selection never look alike and no row keeps room for a mark it
+  may not show. A choice of several shows a check box per row instead. A
+  `Select`'s compact dropdown menu is not a row list and keeps its item
+  check.
+  Condensed rows are always flat. On the second line the subtitle
   keeps its room: a status truncates first, and below `sm` shows its icon
   alone. A value that did not happen (a failed transfer) or no longer holds
   (a cap a later step replaced) is muted and struck through (`valueStruck`,
@@ -74,7 +77,11 @@ One look per concept:
   (`trailing`), such as a collateral `Switch`, which keeps its own press on
   a static row, and carry a `note` under its main line, inside its surface,
   such as why that switch cannot change (`danger`) or a risk (`warning`).
-- **Pickers.** A `SelectSheet` with a search field holds its height (the
+- **Pickers.** A picker of one choice opens from a `PickerTrigger`: the
+  chosen token, yield or network with its logo, or, where a card already
+  shows the choice (a chosen validator or provider), a label-only "Change"
+  pill, the same raised pill and caret, never a borderless text button. A
+  `SelectSheet` with a search field holds its height (the
   dialog's cap), so the field and the sheet's top never move as matches
   change, and an empty or failed search shows its state where the options
   were. Every search field has a placeholder that says what it searches
@@ -248,7 +255,7 @@ properties on the Widget root and the portal container.
 | `background`              | Widget canvas                                                                                                                                                                        |
 | `surface`                 | Filled cards, rows, inputs                                                                                                                                                           |
 | `surfaceHover`            | Hover on interactive surfaces, at least 1.12:1 off the fill it replaces                                                                                                              |
-| `surfaceRaised`           | Menus, popovers, token trigger                                                                                                                                                       |
+| `surfaceRaised`           | Menus, popovers, picker trigger                                                                                                                                                      |
 | `border`                  | Dividers                                                                                                                                                                             |
 | `borderStrong`            | Outlined cards and inputs                                                                                                                                                            |
 | `text`                    | Primary text                                                                                                                                                                         |
@@ -349,7 +356,7 @@ and sets figures too.
 - **Spacing**: a 4px grid of 0, 2, 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 64, plus
   the named insets `gutter` and `section`.
 - **Control heights**: `sm` 32, `md` 40, `lg` 48. A `Tabs` list and the
-  wallet header's pills beside it are 40 tall (`tokenTriggerHeight.tabs`).
+  wallet header's pills beside it are 40 tall (`pickerTriggerHeight.tabs`).
   A condensed `ListRow` is at least 40 tall (`listRowHeight.condensed`).
 - **Geometry read by script**: a value Base UI or a virtualizer takes as a
   number is still a token, read in pixels with `Number.parseFloat`, so styles
@@ -484,12 +491,12 @@ no gap, to the host's flex or grid layout.
   `stylex.when.ancestor('[data-sk-tabs-indicator="pill"]', presentationMarker)`
   in its own style map. Components never take them as props.
 - Under `elevated`, filled cards and rows lift off the canvas as
-  `surfaceRaised` with the `raised` elevation, so parts inside them (the token
+  `surfaceRaised` with the `raised` elevation, so parts inside them (the picker
   trigger) stay flat on `surface` and soft badges fill from `surfaceRaised`:
   one level of elevation. Under `outlined`, filled cards and rows (pressable
   ones too) keep their fill and edge
-  in `border`. Beside an amount, the token trigger takes its fill, lift and
-  corners from the `tokenTrigger` variables, which a preset can theme: Utila
+  in `border`. On a card, the picker trigger takes its fill, lift and
+  corners from the `pickerTrigger` variables, which a preset can theme: Utila
   sets it flat in its card, on the card's fill with a hover tint, and rounds
   it more than its other controls. A `SegmentedControl` marks its choice as
   the tabs do: a raised segment under `pill`, an accent underline under

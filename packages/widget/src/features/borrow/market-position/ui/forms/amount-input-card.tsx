@@ -2,7 +2,7 @@ import type BigNumber from "bignumber.js";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { TokenTrigger } from "../../../../../ui/index";
+import { PickerTrigger } from "../../../../../ui/index";
 import { BorrowAmountField } from "../../../amount-input/views";
 
 /**
@@ -40,7 +40,9 @@ export const AmountInputCard = ({
   return (
     <BorrowAmountField
       accessory={
-        tokenSelector ?? <TokenTrigger readOnly token={{ name: tokenSymbol }} />
+        tokenSelector ?? (
+          <PickerTrigger readOnly label={tokenSymbol} logo={{}} />
+        )
       }
       amount={amount}
       balance={{ short: balanceLabel }}

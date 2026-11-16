@@ -57,7 +57,7 @@ export { ReviewSummary } from "./patterns/review-summary";
 export { SelectSheet, type SelectSheetAction } from "./patterns/select-sheet";
 export { SplitView } from "./patterns/split-view";
 export { StandIn } from "./patterns/stand-in";
-export { TokenTrigger } from "./patterns/token-trigger";
+export { PickerTrigger } from "./patterns/picker-trigger";
 export { WidgetFrame } from "./patterns/widget-frame";
 export { Box } from "./primitives/box";
 export { Grid } from "./primitives/grid";

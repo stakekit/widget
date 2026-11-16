@@ -12,6 +12,7 @@ import {
   Card,
   ExternalLink,
   IconButton,
+  PickerTrigger,
   Stack,
   Text,
 } from "../../../../../../ui/index";
@@ -154,11 +155,7 @@ const ProviderOptionSummary = ({
 const ProviderChangeTrigger = ({ onClick }: { onClick: () => void }) => {
   const { t } = useTranslation();
 
-  return (
-    <Button variant="ghost" size="sm" iconEnd="CaretDownIcon" onClick={onClick}>
-      {t("shared.change")}
-    </Button>
-  );
+  return <PickerTrigger label={t("shared.change")} onClick={onClick} />;
 };
 
 const ProviderCardsTrigger = ({

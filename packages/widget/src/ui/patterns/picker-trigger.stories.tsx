@@ -4,16 +4,17 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import { Tabs } from "../components/tabs";
 import { Stack } from "../primitives/stack";
 import { brokenImage, networkLogo, tokenLogo } from "../storybook/images";
-import { TokenTrigger } from "./token-trigger";
+import { PickerTrigger } from "./picker-trigger";
 
 const meta = {
-  title: "Patterns/TokenTrigger",
-  component: TokenTrigger,
+  title: "Patterns/PickerTrigger",
+  component: PickerTrigger,
   args: {
-    token: { name: "ETH", src: tokenLogo, networkSrc: networkLogo },
+    label: "ETH",
+    logo: { src: tokenLogo, networkSrc: networkLogo },
     onClick: fn(),
   },
-} satisfies Meta<typeof TokenTrigger>;
+} satisfies Meta<typeof PickerTrigger>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;
@@ -88,7 +89,7 @@ export const HeaderSizes: Story = {
   globals: { tabsIndicator: "pill" },
   render: (args) => (
     <Stack gap={16} align="start">
-      <TokenTrigger {...args} size="sm" testId="sm" />
+      <PickerTrigger {...args} size="sm" testId="sm" />
       <Stack direction="row" align="center" gap={8}>
         <Tabs
           label="Sections"
@@ -99,7 +100,7 @@ export const HeaderSizes: Story = {
           value="earn"
           onValueChange={fn()}
         />
-        <TokenTrigger {...args} size="tabs" testId="tabs" />
+        <PickerTrigger {...args} size="tabs" testId="tabs" />
       </Stack>
     </Stack>
   ),
@@ -192,15 +193,49 @@ export const Disabled: Story = {
 export const FallbackAndTruncation: Story = {
   render: (args) => (
     <Stack gap={8} align="start">
-      <TokenTrigger {...args} token={{ name: "USDC", src: brokenImage }} />
+      <PickerTrigger {...args} label="USDC" logo={{ src: brokenImage }} />
       <div style={{ width: 120 }}>
-        <TokenTrigger
+        <PickerTrigger
           {...args}
-          token={{ name: "LONGSYMBOLTOKEN", src: tokenLogo }}
+          label="LONGSYMBOLTOKEN"
+          logo={{ src: tokenLogo }}
         />
       </div>
     </Stack>
   ),
+};
+
+/**
+ * With no logo it names an action, such as "Change" beside a chosen
+ * validator: the same raised pill and caret as beside an amount, the label
+ * inset from the start edge.
+ */
+export const LabelOnly: Story = {
+  render: (args) => {
+    const { logo: _logo, ...labelOnly } = args;
+    return (
+      <Stack gap={8} align="start">
+        <PickerTrigger {...labelOnly} label="Change" />
+        <PickerTrigger {...args} />
+      </Stack>
+    );
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", { name: "Change" });
+    const box = trigger.getBoundingClientRect();
+    const label = canvas.getByText("Change").getBoundingClientRect();
+    // The label and the caret, no avatar.
+    await expect(trigger.childElementCount).toBe(2);
+    await expect(label.left - box.left).toBeGreaterThanOrEqual(12);
+    const token = canvas.getByRole("button", { name: "ETH" });
+    await expect(box.height).toBe(token.getBoundingClientRect().height);
+    await expect(getComputedStyle(trigger).boxShadow).toBe(
+      getComputedStyle(token).boxShadow
+    );
+    await userEvent.click(trigger);
+    await expect(args.onClick).toHaveBeenCalledOnce();
+  },
 };
 
 /**
@@ -209,7 +244,7 @@ export const FallbackAndTruncation: Story = {
  */
 export const Account: Story = {
   args: {
-    token: { name: "0x12…cdef" },
+    label: "0x12…cdef",
     account: "0x1234567890abcdef1234567890abcdef12345678",
     hostHook: "account-modal-container",
   },

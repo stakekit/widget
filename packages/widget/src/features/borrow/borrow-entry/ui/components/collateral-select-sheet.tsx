@@ -17,7 +17,7 @@ import {
   useTokenLogoResolver,
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { SelectSheet, TokenTrigger, type Tone } from "../../../../../ui/index";
+import { SelectSheet, PickerTrigger, type Tone } from "../../../../../ui/index";
 import {
   type BorrowCollateralOption,
   filterBorrowCollateralOptions,
@@ -90,7 +90,12 @@ const CollateralSelect = ({
 
   if (collateralOptions.length <= 1) {
     return (
-      <TokenTrigger readOnly testId="borrow-collateral-select" token={logo} />
+      <PickerTrigger
+        readOnly
+        testId="borrow-collateral-select"
+        label={logo.name}
+        logo={logo}
+      />
     );
   }
 
@@ -109,7 +114,13 @@ const CollateralSelect = ({
       title={t("dashboard.borrow.form.select_collateral")}
       closeLabel={t("shared.close")}
       listLabel={t("dashboard.borrow.form.collateral_assets")}
-      trigger={<TokenTrigger testId="borrow-collateral-select" token={logo} />}
+      trigger={
+        <PickerTrigger
+          testId="borrow-collateral-select"
+          label={logo.name}
+          logo={logo}
+        />
+      }
       onOpenChange={(open) => {
         if (!open) setSearch("");
       }}
