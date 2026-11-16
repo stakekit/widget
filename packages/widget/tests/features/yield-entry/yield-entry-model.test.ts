@@ -572,4 +572,22 @@ describe("Min", () => {
       }).balanceWarning
     ).toEqual({ _tag: "BelowMinimum", minimum: new BigNumber("0.000001") });
   });
+
+  it("stands for the minimum Min fills before an amount is typed, where the entry defaults to it", () => {
+    const projected = projectYieldEntry({
+      input: {
+        ...entryInput({
+          availableAmount: new BigNumber(100),
+          token: usdc,
+          yieldDto: yieldWithEnterLimits({ minimum: "0.0000002" }),
+        }),
+        amountInitialization: "DefaultToMinimum",
+        validateAmount: true,
+      },
+      submitted: false,
+    });
+
+    expect(projected.amount.toFixed()).toBe("0.000001");
+    expect(projected.validation.errors.stakeAmountLessThanMin).toBe(false);
+  });
 });

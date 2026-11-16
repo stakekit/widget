@@ -466,16 +466,33 @@ const getYieldEntryBalanceWarning = ({
   return null;
 };
 
-/** The amount the entry stands for: typed, or its minimum until one is. */
+/**
+ * The amount the entry stands for: typed, or until one is, its minimum as
+ * Min fills it, so the amount sent still meets it.
+ */
 const resolveYieldEntryAmount = (
   input: YieldEntryProjectionInput,
-  minimum: BigNumber
-) =>
-  input.amountInitialization === "DefaultToMinimum" &&
-  input.entry.amount.isZero() &&
-  minimum.isGreaterThan(0)
-    ? minimum
-    : input.entry.amount;
+  constraints: {
+    readonly allowedMinimum: BigNumber;
+    readonly forceMax: boolean;
+  }
+) => {
+  const minimum = constraints.allowedMinimum;
+  if (
+    input.amountInitialization !== "DefaultToMinimum" ||
+    !input.entry.amount.isZero() ||
+    !minimum.isGreaterThan(0)
+  ) {
+    return input.entry.amount;
+  }
+  return (
+    getMinEntryAmount({
+      forceMax: constraints.forceMax,
+      minimum,
+      token: input.entry.token,
+    }) ?? minimum
+  );
+};
 
 /**
  * The enters to simulate, built as submission would build them: `fee`, the
@@ -504,7 +521,7 @@ export const getYieldEntrySimulations = (input: YieldEntryProjectionInput) => {
     yield: selectedYield,
   });
   const amount = truncateToTokenDecimals(
-    resolveYieldEntryAmount(input, constraints.allowedMinimum),
+    resolveYieldEntryAmount(input, constraints),
     token.decimals
   );
   const commandFor = (simulated: BigNumber, useMaxAmount: boolean) =>
@@ -580,7 +597,7 @@ export const projectYieldEntry = ({
           gasEstimateTotal: constraints.forceMax ? exactZero() : gasReserve,
           integrationMaxLimit: constraints.maximum,
         });
-  const amount = resolveYieldEntryAmount(input, constraints.allowedMinimum);
+  const amount = resolveYieldEntryAmount(input, constraints);
   const entry = { ...input.entry, amount };
   const executableAmount = input.entry.token
     ? truncateToTokenDecimals(amount, input.entry.token.decimals)
