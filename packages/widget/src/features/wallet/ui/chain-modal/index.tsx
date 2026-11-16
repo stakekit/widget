@@ -8,7 +8,7 @@ import {
   Notice,
   SelectSheet,
   type SelectSheetAction,
-  TokenTrigger,
+  PickerTrigger,
 } from "../../../../ui/index";
 import { useLeaveConfirmation } from "../../../leave-confirmation/index";
 import { LeaveConfirmationDialog } from "../../../leave-confirmation/views";
@@ -224,13 +224,11 @@ export const ChainModal = ({
 
   return (
     <>
-      <TokenTrigger
+      <PickerTrigger
         hostHook="chain-modal-container"
         size={triggerSize}
-        token={{
-          name: wallet.chain.name,
-          src: currentChainIconUrl,
-        }}
+        label={wallet.chain.name}
+        logo={{ src: currentChainIconUrl }}
         onClick={() => {
           trackEvent("chainModalOpened");
           setChainOpen(true);

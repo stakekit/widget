@@ -40,12 +40,10 @@ type ListRowDensity = "comfortable" | "condensed";
 
 /**
  * One row look per context. `card` is for lists of what the user owns or
- * did, such as positions or activity: each row a filled surface, a selection
- * ring for `selected`. `flat` is for pickers, every `SelectSheet` among them:
- * no surface of its own, a tint on hover, and the accent tint with a
- * trailing check for `selected`. A flat row given `selected` or `option`
- * keeps the check's slot while unchosen too, so the values of a choice's
- * rows line up.
+ * did, such as positions or activity: each row a filled surface. `flat` is
+ * for pickers, every `SelectSheet` among them: no surface of its own, a tint
+ * on hover. Either marks `selected` the same way: the selection ring inside
+ * its edge over the accent tint.
  */
 type ListRowVariant = "card" | "flat";
 
@@ -288,25 +286,13 @@ export const ListRow = ({
   const { copied, copy } = useCopy();
   const checked = option === undefined ? selected === true : option.selected;
   const showsCheckBox = option?.check ?? check;
-  // A flat row marks its choice with a tint and a check; a card row draws
-  // the selection ring.
-  const ringsSelection = checked && !showsCheckBox && !flat;
+  const ringsSelection = checked && !showsCheckBox;
   const checkBox = showsCheckBox && (
     <span
       aria-hidden="true"
       {...stylex.props(styles.check, checked && styles.checked)}
     >
       {checked && <Icon name="CheckIcon" size="sm" />}
-    </span>
-  );
-  // A flat row that takes part in a choice keeps the check's slot whether
-  // it is chosen or not, so the values of a picker's rows line up.
-  const reservesCheck =
-    flat && !showsCheckBox && (option !== undefined || selected !== undefined);
-  const checksSelection = checked && reservesCheck;
-  const checkMark = reservesCheck && (
-    <span aria-hidden="true" {...stylex.props(styles.checkSlot)}>
-      {checksSelection && <Icon name="CheckIcon" tone="accent" />}
     </span>
   );
   const valueText = value !== undefined && (
@@ -402,7 +388,6 @@ export const ListRow = ({
         {secondLine}
       </span>
       {trailingColumn}
-      {checkMark}
       {busy && <Spinner size="sm" tone="muted" />}
     </>
   );
@@ -474,7 +459,6 @@ export const ListRow = ({
     interactiveStyles.root,
     styles.interactive,
     flat && styles.flatInteractive,
-    checksSelection && styles.flatSelected,
     interactiveStyles.inset,
     ringsSelection && interactiveStyles.insetSelected,
     !flat && !ringsSelection && styles.interactiveEdge,
@@ -515,8 +499,9 @@ export const ListRow = ({
           {...stylex.props(
             pressable,
             option.active && styles.active,
-            // The tint stays on the choice the keys reach.
-            option.active && checksSelection && styles.flatSelected,
+            // The focus ring takes the selection ring's place on the choice
+            // the keys reach, as focus does; the tint stays.
+            option.active && ringsSelection && styles.selectedTint,
             option.disabled === true && styles.optionDisabled,
             option.disabled === true && flat && styles.flatDisabled
           )}
@@ -737,13 +722,7 @@ const styles = stylex.create({
     },
   },
   flatDisabled: { backgroundColor: "transparent" },
-  // Moves toward the hover surface, as an unselected row moves to it.
-  flatSelected: {
-    backgroundColor: {
-      default: color.accentSoft,
-      ":hover:not(:disabled)": `color-mix(in srgb, ${color.accentSoft}, ${color.surfaceHover})`,
-    },
-  },
+  selectedTint: { backgroundColor: color.accentSoft },
   leading: { display: "flex", flexShrink: 0 },
   // The title and badges over the second line. Below `sm` the badges trail
   // the second line, so the title has the whole first line; from `sm` they
@@ -837,13 +816,6 @@ const styles = stylex.create({
   },
   figure: { display: "flex", flexShrink: 0 },
   figureFromSm: { display: { default: "none", [container.sm]: "flex" } },
-  // As wide as the check, whether it shows or not.
-  checkSlot: {
-    display: "flex",
-    flexShrink: 0,
-    justifyContent: "center",
-    width: iconSize.md,
-  },
   struck: { textDecorationLine: "line-through" },
   check: {
     borderColor: color.textMuted,

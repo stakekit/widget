@@ -7,7 +7,7 @@ import {
   useTokenLogoResolver,
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
+import { SelectSheet, PickerTrigger } from "../../../../../ui/index";
 import type { PositionEnterTokenOption } from "../../../model/enter-token";
 
 const triggerTestId = "position-details-stake-token";
@@ -27,9 +27,11 @@ export const PositionDetailsEnterTokenSelect = ({
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const resolveLogo = useTokenLogoResolver();
-  const trigger = { ...useTokenLogo(token), name: token.symbol };
+  const logo = useTokenLogo(token);
 
-  if (!selectable) return <TokenTrigger token={trigger} readOnly />;
+  if (!selectable) {
+    return <PickerTrigger label={token.symbol} logo={logo} readOnly />;
+  }
 
   const selected = options.find((option) => option.selected);
 
@@ -38,7 +40,13 @@ export const PositionDetailsEnterTokenSelect = ({
       title={t("select_token.title")}
       closeLabel={t("shared.close")}
       listLabel={t("select_token.title")}
-      trigger={<TokenTrigger token={trigger} testId={triggerTestId} />}
+      trigger={
+        <PickerTrigger
+          label={token.symbol}
+          logo={logo}
+          testId={triggerTestId}
+        />
+      }
       options={options.map((option) => ({
         id: tokenString(option.token),
         title: option.token.symbol,

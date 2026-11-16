@@ -10,6 +10,7 @@ export const usePositionDetailsEnter = (key: PositionDetailsEnterKey) => {
   const refreshKyc = useAtomSet(atoms.refreshKycAtom);
   const setAmount = useAtomSet(atoms.setAmountAtom);
   const setMaxAmount = useAtomSet(atoms.setMaxAmountAtom);
+  const setMinAmount = useAtomSet(atoms.setMinAmountAtom);
   const setTronResource = useAtomSet(atoms.setTronResourceAtom);
   const submit = useAtomSet(atoms.submitAtom);
   const selectToken = useAtomSet(atoms.selectTokenAtom);
@@ -26,6 +27,7 @@ export const usePositionDetailsEnter = (key: PositionDetailsEnterKey) => {
     onHideTokenBalance: () => hideTokenBalance(undefined),
     onKycStatusRefresh: () => refreshKyc(undefined),
     onMaxClick: () => setMaxAmount(undefined),
+    onMinClick: () => setMinAmount(undefined),
     onPrimaryAction: () => submit(undefined),
     onRetry: () => retry(undefined),
     onRevealTokenBalance: () => revealTokenBalance(undefined),

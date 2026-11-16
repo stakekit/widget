@@ -156,8 +156,12 @@ describe("Renders initial page", () => {
       app.getByRole("tab", { name: label, exact: true });
     const clickTab = (label: string) => tab(label).click();
 
-    // DeFi leads the default order and opens selected.
+    // DeFi leads the default order and opens selected. Each category's tab
+    // shows once its own token catalog answers, so the order is read once
+    // every tab is in.
     await expect.element(tab("DeFi")).toHaveAttribute("aria-selected", "true");
+    await expect.element(tab("Stake")).toBeInTheDocument();
+    await expect.element(tab("RWA")).toBeInTheDocument();
     const tabsText =
       app.container.querySelector("[data-rk='tabs-section']")?.textContent ??
       "";

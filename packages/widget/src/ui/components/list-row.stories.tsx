@@ -626,7 +626,8 @@ const onPickNetwork = fn();
 
 /**
  * Condensed rows for a picker, through their group: shorter rows with no
- * surface of their own, and a trailing check, not a ring, on the choice.
+ * surface of their own, and the selection ring with the accent tint on the
+ * choice, as on every selected row.
  */
 export const Condensed: Story = {
   render: () => (
@@ -653,9 +654,11 @@ export const Condensed: Story = {
     const other = canvas.getByRole("button", { name: /Base/ });
 
     await expect(chosen).toHaveAttribute("aria-pressed", "true");
-    await expect(outlineBox(chosen)).toBeUndefined();
-    await expect(chosen.querySelectorAll("svg")).toHaveLength(1);
-    await expect(other.querySelectorAll("svg")).toHaveLength(0);
+    await expect(outlineWithin(chosen, chosen.getBoundingClientRect())).toBe(
+      true
+    );
+    await expect(outlineBox(other)).toBeUndefined();
+    await expect(chosen.querySelectorAll("svg")).toHaveLength(0);
     await expect(chosen.getBoundingClientRect().height).toBeLessThanOrEqual(56);
 
     await userEvent.click(other);
@@ -670,8 +673,9 @@ export const CondensedDark: Story = {
 
 /**
  * A comfortable row in a picker is `flat`: no surface of its own until
- * hovered, and the accent tint with a trailing check, not a ring, on the
- * choice, so hover and selection read apart.
+ * hovered, and the selection ring with the accent tint on the choice, so
+ * hover and selection read apart. No row keeps room for a check: its values
+ * end at its padding.
  */
 export const Flat: Story = {
   render: () => (
@@ -698,13 +702,21 @@ export const Flat: Story = {
     const chosen = canvas.getByRole("button", { name: /Ethereum/ });
     const other = canvas.getByRole("button", { name: /Base/ });
 
-    await expect(outlineBox(chosen)).toBeUndefined();
-    await expect(chosen.querySelectorAll("svg")).toHaveLength(1);
-    // The unchosen rows keep the check's slot, so every value lines up.
-    const [chosenValue, ...otherValues] = canvas
-      .getAllByText("1.25 ETH")
-      .map((value) => Math.round(value.getBoundingClientRect().right));
-    for (const right of otherValues) await expect(right).toBe(chosenValue);
+    await expect(outlineWithin(chosen, chosen.getBoundingClientRect())).toBe(
+      true
+    );
+    await expect(outlineBox(other)).toBeUndefined();
+    await expect(chosen.querySelectorAll("svg")).toHaveLength(0);
+    for (const value of canvas.getAllByText("1.25 ETH")) {
+      const row = value.closest("button");
+      if (row === null) throw new Error("The value is outside a row.");
+      await expect(
+        Math.round(
+          row.getBoundingClientRect().right -
+            value.getBoundingClientRect().right
+        )
+      ).toBe(Math.round(Number.parseFloat(getComputedStyle(row).paddingRight)));
+    }
     await expect(getComputedStyle(other).backgroundColor).toMatch(
       /^rgba\(\d+, \d+, \d+, 0\)$/
     );

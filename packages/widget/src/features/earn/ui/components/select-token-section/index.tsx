@@ -71,7 +71,7 @@ const getAmountMessage = ({
     }
     return t("details.amount_error.balance_below_minimum", {
       ...context,
-      amount: formatTokenAmount(balanceWarning.minimum, locale, "up"),
+      amount: formatNumber(balanceWarning.minimum, locale),
       symbol,
     });
   })();
@@ -93,7 +93,7 @@ const getAmountMessage = ({
     if (minimum) {
       return {
         error: t("details.amount_error.below_minimum", {
-          amount: formatTokenAmount(minimum, locale, "up"),
+          amount: formatNumber(minimum, locale),
           symbol,
         }),
       };
@@ -121,6 +121,7 @@ export const SelectTokenSection = ({
     revealTokenBalanceStatus,
     setAmount,
     setMaxAmount,
+    setMinAmount,
     view,
   } = useEarnEntry();
   const { view: tokenSelection } = useEarnTokenSelection();
@@ -135,22 +136,30 @@ export const SelectTokenSection = ({
     stakeMinAmount,
     symbol,
     canFillMax,
+    canFillMin,
     maxFillsNothing,
     maxGasReserveNote,
     networkFee,
   } = view;
 
-  const min =
-    stakeMinAmount === null
-      ? null
-      : `${t("shared.min")} ${formatTokenAmount(stakeMinAmount, locale, "up")} ${symbol}`;
   const max =
     stakeMaxAmount === null
       ? null
       : `${t("shared.max")} ${formatTokenAmount(stakeMaxAmount, locale, "down")} ${symbol}`;
-  // The limits stay the helper at the end of the line; what is wrong is said
-  // at its start.
-  const limits = min && max ? `${min} / ${max}` : (min ?? max);
+  // A minimum the balance can fund fills itself in from a tap.
+  const fillMinimum = canFillMin
+    ? {
+        label: t("shared.fill_minimum"),
+        onClick: () => setMinAmount(undefined),
+      }
+    : undefined;
+  const minimum =
+    stakeMinAmount === null
+      ? undefined
+      : {
+          text: `${t("shared.min")} ${formatNumber(stakeMinAmount, locale)} ${symbol}`,
+          fill: fillMinimum,
+        };
   const message = getAmountMessage({
     amountTyped: amountValue !== "",
     balanceWarning,
@@ -215,7 +224,10 @@ export const SelectTokenSection = ({
       token={<SelectToken canSelect={canSelectToken} />}
       fiatValue={getFiatValue()}
       balance={balance}
-      {...(limits ? { limits } : {})}
+      // The limits stay the helper at the end of the line; what is wrong is
+      // said at its start.
+      minimum={minimum}
+      {...(max ? { limits: max } : {})}
       {...message}
       invalid={validation.submitted && validation.errors.stakeAmountIsZero}
       {...(canFillMax
@@ -232,6 +244,7 @@ export const SelectTokenSection = ({
       testIds={{
         root: "stake-token-section",
         input: "number-input",
+        minimum: "stake-token-section-min-button",
         max: "stake-token-section-max-button",
       }}
     />

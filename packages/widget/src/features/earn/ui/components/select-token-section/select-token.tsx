@@ -10,7 +10,7 @@ import {
   useTokenLogoResolver,
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
+import { SelectSheet, PickerTrigger } from "../../../../../ui/index";
 import { useTrackEvent } from "../../../../tracking/index";
 import type { EarnTokenSelectionItem } from "../../../state/token-selection";
 import { useEarnEntry, useEarnTokenSelection } from "../../use-earn-facades";
@@ -39,7 +39,14 @@ const SelectTokenSheet = ({
   const logo = { ...useTokenLogo(token), name: token.symbol };
 
   if (!canSelect) {
-    return <TokenTrigger token={logo} readOnly testId="select-token" />;
+    return (
+      <PickerTrigger
+        label={logo.name}
+        logo={logo}
+        readOnly
+        testId="select-token"
+      />
+    );
   }
 
   const items = new Map<string, EarnTokenSelectionItem>(
@@ -51,7 +58,9 @@ const SelectTokenSheet = ({
       title={t("select_token.title")}
       closeLabel={t("shared.close")}
       listLabel={t("select_token.title")}
-      trigger={<TokenTrigger token={logo} testId="select-token" />}
+      trigger={
+        <PickerTrigger label={logo.name} logo={logo} testId="select-token" />
+      }
       onOpenChange={(open) => {
         if (open) trackEvent("selectTokenModalOpened");
         else setSearch("");

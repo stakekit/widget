@@ -4,13 +4,31 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 import { networkLogo, tokenLogo } from "../storybook/images";
 import { AmountPanel } from "./amount-panel";
-import { TokenTrigger } from "./token-trigger";
+import { PickerTrigger } from "./picker-trigger";
 
 type PanelProps = ComponentProps<typeof AmountPanel>;
 
 /** Holds the amount, as the Feature's state would. */
 const StatefulPanel = (props: PanelProps) => {
   const [value, setValue] = useState(props.value);
+  // A fill sets its amount, then tells the story it was used.
+  const filling = <Fill extends { readonly onClick: () => void }>(
+    fill: Fill | undefined,
+    amount: string
+  ) =>
+    fill === undefined
+      ? undefined
+      : {
+          ...fill,
+          onClick: () => {
+            setValue(amount);
+            fill.onClick();
+          },
+        };
+  const minimum =
+    props.minimum === undefined
+      ? undefined
+      : { ...props.minimum, fill: filling(props.minimum.fill, "0.01") };
   return (
     <div style={{ width: 360 }}>
       <AmountPanel
@@ -20,17 +38,8 @@ const StatefulPanel = (props: PanelProps) => {
           setValue(next);
           props.onValueChange(next);
         }}
-        max={
-          props.max === undefined
-            ? undefined
-            : {
-                ...props.max,
-                onClick: () => {
-                  setValue("12.5");
-                  props.max?.onClick();
-                },
-              }
-        }
+        minimum={minimum}
+        max={filling(props.max, "12.5")}
       />
     </div>
   );
@@ -43,8 +52,9 @@ const minimalArgs = {
   onValueChange: fn(),
   separators: { decimal: ".", group: "," },
   token: (
-    <TokenTrigger
-      token={{ name: "ETH", src: tokenLogo, networkSrc: networkLogo }}
+    <PickerTrigger
+      label="ETH"
+      logo={{ src: tokenLogo, networkSrc: networkLogo }}
     />
   ),
   fiatValue: "$0.00",
@@ -59,7 +69,7 @@ const meta = {
       short: "12.5 ETH available",
       full: "12.534217890123 ETH available",
     },
-    limits: "Min 0.01 ETH",
+    minimum: { text: "Min 0.01 ETH" },
     max: { label: "Max", onClick: fn() },
   },
   render: (args) => <StatefulPanel {...args} />,
@@ -132,6 +142,49 @@ export const MaxChip: Story = {
       "12.5"
     );
   },
+};
+
+/**
+ * A minimum the user can fund fills itself in from a tap on the limit, so no
+ * chip crowds the balance; the other limits follow it as text.
+ */
+export const FillMinimum: Story = {
+  args: {
+    minimum: {
+      text: "Min 0.01 ETH",
+      fill: { label: "Fill in the minimum", onClick: fn() },
+    },
+    limits: "Max 10 ETH",
+    testIds: { minimum: "minimum" },
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const minimum = canvas.getByRole("button", { name: "Min 0.01 ETH" });
+    await expect(minimum).toHaveAccessibleDescription("Fill in the minimum");
+    // The amount is described by the limits alone, not by what a tap does.
+    await expect(
+      canvas.getByRole("textbox", { name: "Stake" })
+    ).toHaveAccessibleDescription("Min 0.01 ETH / Max 10 ETH");
+    await expect(minimum).toHaveAttribute("data-testid", "minimum");
+    await expect(getComputedStyle(minimum).textDecorationLine).toBe(
+      "underline"
+    );
+    await expect(canvas.getByText(/\/ Max 10 ETH/)).toContainElement(minimum);
+    // It sits on the limits' line, above the balance and the Max chip.
+    await expect(minimum.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      canvas.getByRole("button", { name: "Max" }).getBoundingClientRect().top
+    );
+    await userEvent.click(minimum);
+    await expect(args.minimum?.fill?.onClick).toHaveBeenCalledOnce();
+    await expect(canvas.getByRole("textbox", { name: "Stake" })).toHaveValue(
+      "0.01"
+    );
+  },
+};
+
+export const FillMinimumDark: Story = {
+  ...FillMinimum,
+  globals: { colorScheme: "dark" },
 };
 
 /**
@@ -253,7 +306,7 @@ export const BelowMinimum: Story = {
 export const BalanceWarning: Story = {
   args: {
     balance: { short: "0.7689 MATIC available" },
-    limits: "Min 1 MATIC",
+    minimum: { text: "Min 1 MATIC" },
     warning: "You need at least 1 MATIC to stake",
     max: { label: "Max", onClick: fn(), disabled: true },
     testIds: { root: "panel" },
@@ -273,6 +326,10 @@ export const BalanceWarning: Story = {
       getComputedStyle(canvas.getByTestId("panel")).borderTopColor
     ).not.toBe(getComputedStyle(warning).color);
     await expect(canvas.getByRole("button", { name: "Max" })).toBeDisabled();
+    // A minimum the balance cannot fund is only said, not filled.
+    await expect(
+      canvas.queryByRole("button", { name: /Min 1 MATIC/ })
+    ).toBeNull();
   },
 };
 
@@ -305,7 +362,7 @@ export const InvalidDark: Story = {
 export const InvalidWithoutMessage: Story = {
   args: {
     invalid: true,
-    limits: "Min 0.01 ETH",
+    minimum: { text: "Min 0.01 ETH" },
     testIds: { root: "panel", input: "amount", max: "max" },
   },
   play: async ({ canvasElement }) => {
@@ -319,12 +376,22 @@ export const InvalidWithoutMessage: Story = {
   },
 };
 
-/** Disabled, the amount and the chip do not take input. */
+/** Disabled, the amount, the minimum and the chip do not take input. */
 export const Disabled: Story = {
-  args: { value: "1", disabled: true },
+  args: {
+    value: "1",
+    disabled: true,
+    minimum: {
+      text: "Min 0.01 ETH",
+      fill: { label: "Fill in the minimum", onClick: fn() },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("textbox", { name: "Stake" })).toBeDisabled();
+    await expect(
+      canvas.getByRole("button", { name: "Min 0.01 ETH" })
+    ).toBeDisabled();
     await expect(canvas.getByRole("button", { name: "Max" })).toBeDisabled();
   },
 };

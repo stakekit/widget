@@ -107,6 +107,37 @@ const entryInput = ({
     },
   }) as const;
 
+/** A yield whose enter amount takes these limits; `-1` both forces Max. */
+const yieldWithEnterLimits = ({
+  maximum,
+  minimum,
+}: {
+  readonly maximum?: string;
+  readonly minimum: string;
+}) => {
+  const base = yieldApiYieldDtoFixture();
+  return yieldApiYieldFixture({
+    mechanics: {
+      ...base.mechanics,
+      arguments: {
+        ...base.mechanics.arguments,
+        enter: {
+          fields: [
+            {
+              label: "Amount",
+              ...(maximum === undefined ? {} : { maximum }),
+              minimum,
+              name: "amount",
+              required: true,
+              type: "string",
+            },
+          ],
+        },
+      },
+    },
+  });
+};
+
 describe("network fee estimate", () => {
   const settled = {
     connected: true,
@@ -364,27 +395,7 @@ describe("Yield Entry simulations", () => {
   });
 
   it("simulates nothing the yield's limits refuse, and Max's reserve within them", () => {
-    const base = yieldApiYieldDtoFixture();
-    const limited = yieldApiYieldFixture({
-      mechanics: {
-        ...base.mechanics,
-        arguments: {
-          ...base.mechanics.arguments,
-          enter: {
-            fields: [
-              {
-                label: "Amount",
-                maximum: "1.5",
-                minimum: "1",
-                name: "amount",
-                required: true,
-                type: "string",
-              },
-            ],
-          },
-        },
-      },
-    });
+    const limited = yieldWithEnterLimits({ maximum: "1.5", minimum: "1" });
     const simulate = (amount: string, availableAmount = new BigNumber(2)) =>
       getYieldEntrySimulations(
         entryInput({ amount, availableAmount, yieldDto: limited })
@@ -459,26 +470,7 @@ describe("Yield entry balance warning", () => {
     readonly availableAmount: BigNumber;
     readonly minimum?: string;
   }) => {
-    const base = yieldApiYieldDtoFixture();
-    const yieldDto = yieldApiYieldFixture({
-      mechanics: {
-        ...base.mechanics,
-        arguments: {
-          ...base.mechanics.arguments,
-          enter: {
-            fields: [
-              {
-                label: "Amount",
-                minimum,
-                name: "amount",
-                required: true,
-                type: "string",
-              },
-            ],
-          },
-        },
-      },
-    });
+    const yieldDto = yieldWithEnterLimits({ minimum });
     return projectYieldEntry({
       input: entryInput({ availableAmount, token: yieldDto.token, yieldDto }),
       submitted: false,
@@ -507,5 +499,95 @@ describe("Yield entry balance warning", () => {
       blocker: "InsufficientBalance",
       disabled: true,
     });
+  });
+});
+
+describe("Min", () => {
+  const project = ({
+    amount = "0",
+    availableAmount = new BigNumber(100),
+    maximum,
+    minimum,
+  }: {
+    readonly amount?: string;
+    readonly availableAmount?: BigNumber | null;
+    readonly maximum?: string;
+    readonly minimum: string;
+  }) =>
+    projectYieldEntry({
+      input: entryInput({
+        amount,
+        availableAmount,
+        token: usdc,
+        yieldDto: yieldWithEnterLimits({
+          ...(maximum === undefined ? {} : { maximum }),
+          minimum,
+        }),
+      }),
+      submitted: false,
+    });
+
+  it("fills the yield's minimum, rounded up to what the token can hold", () => {
+    expect(project({ minimum: "0.0000002" }).minAmount?.toFixed()).toBe(
+      "0.000001"
+    );
+    expect(project({ minimum: "1.5" }).minAmount?.toFixed()).toBe("1.5");
+  });
+
+  it("fills an amount the minimum accepts, where one below it is refused", () => {
+    const minAmount = project({ minimum: "0.0000002" }).minAmount;
+    const filled = project({
+      amount: minAmount?.toFixed() ?? "",
+      minimum: "0.0000002",
+    });
+    const below = project({ amount: "0.0000001", minimum: "0.0000002" });
+
+    expect(filled.validation.errors.stakeAmountLessThanMin).toBe(false);
+    expect(below.validation.errors.stakeAmountLessThanMin).toBe(true);
+  });
+
+  it("has nothing to fill without a minimum, or when the yield takes the whole balance", () => {
+    expect(project({ minimum: "0" }).minAmount).toBeNull();
+    expect(project({ maximum: "-1", minimum: "-1" }).minAmount).toBeNull();
+    expect(project({ minimum: "0" }).canFillMin).toBe(false);
+  });
+
+  it("fills only a minimum the balance can fund, or one it cannot know", () => {
+    expect(project({ minimum: "100000" }).canFillMin).toBe(false);
+    expect(
+      project({ availableAmount: new BigNumber(0), minimum: "1" }).canFillMin
+    ).toBe(false);
+    expect(project({ minimum: "1" }).canFillMin).toBe(true);
+    // A hidden confidential balance may fund it.
+    expect(
+      project({ availableAmount: null, minimum: "100000" }).canFillMin
+    ).toBe(true);
+  });
+
+  it("warns of the minimum it fills, not one finer than the token holds", () => {
+    expect(
+      project({
+        availableAmount: new BigNumber("0.0000001"),
+        minimum: "0.0000002",
+      }).balanceWarning
+    ).toEqual({ _tag: "BelowMinimum", minimum: new BigNumber("0.000001") });
+  });
+
+  it("stands for the minimum Min fills before an amount is typed, where the entry defaults to it", () => {
+    const projected = projectYieldEntry({
+      input: {
+        ...entryInput({
+          availableAmount: new BigNumber(100),
+          token: usdc,
+          yieldDto: yieldWithEnterLimits({ minimum: "0.0000002" }),
+        }),
+        amountInitialization: "DefaultToMinimum",
+        validateAmount: true,
+      },
+      submitted: false,
+    });
+
+    expect(projected.amount.toFixed()).toBe("0.000001");
+    expect(projected.validation.errors.stakeAmountLessThanMin).toBe(false);
   });
 });

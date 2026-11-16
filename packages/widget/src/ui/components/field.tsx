@@ -18,8 +18,11 @@ type FieldProps = {
    * name.
    */
   readonly label?: string;
-  /** Help under the control; it describes the control. */
-  readonly description?: string | undefined;
+  /**
+   * Help under the control; it describes the control. It may hold an inline
+   * control, such as an amount's minimum that fills itself in.
+   */
+  readonly description?: ReactNode;
   /**
    * Sets the description at the end of the line under the control, kept
    * beside any error or warning instead of giving way to it, such as an

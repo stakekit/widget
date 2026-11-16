@@ -20,6 +20,7 @@ import { getYieldActionArg } from "../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import {
   exactZero,
+  roundUpToTokenDecimals,
   truncateToTokenDecimals,
 } from "../../../domain/finance/exact";
 import type {
@@ -465,16 +466,33 @@ const getYieldEntryBalanceWarning = ({
   return null;
 };
 
-/** The amount the entry stands for: typed, or its minimum until one is. */
+/**
+ * The amount the entry stands for: typed, or until one is, its minimum as
+ * Min fills it, so the amount sent still meets it.
+ */
 const resolveYieldEntryAmount = (
   input: YieldEntryProjectionInput,
-  minimum: BigNumber
-) =>
-  input.amountInitialization === "DefaultToMinimum" &&
-  input.entry.amount.isZero() &&
-  minimum.isGreaterThan(0)
-    ? minimum
-    : input.entry.amount;
+  constraints: {
+    readonly allowedMinimum: BigNumber;
+    readonly forceMax: boolean;
+  }
+) => {
+  const minimum = constraints.allowedMinimum;
+  if (
+    input.amountInitialization !== "DefaultToMinimum" ||
+    !input.entry.amount.isZero() ||
+    !minimum.isGreaterThan(0)
+  ) {
+    return input.entry.amount;
+  }
+  return (
+    getMinEntryAmount({
+      forceMax: constraints.forceMax,
+      minimum,
+      token: input.entry.token,
+    }) ?? minimum
+  );
+};
 
 /**
  * The enters to simulate, built as submission would build them: `fee`, the
@@ -503,7 +521,7 @@ export const getYieldEntrySimulations = (input: YieldEntryProjectionInput) => {
     yield: selectedYield,
   });
   const amount = truncateToTokenDecimals(
-    resolveYieldEntryAmount(input, constraints.allowedMinimum),
+    resolveYieldEntryAmount(input, constraints),
     token.decimals
   );
   const commandFor = (simulated: BigNumber, useMaxAmount: boolean) =>
@@ -529,6 +547,25 @@ export const getYieldEntrySimulations = (input: YieldEntryProjectionInput) => {
     fee: usable(amount) ? commandFor(amount, input.entry.useMaxAmount) : null,
     reserve: paysGas && usable(maxDraw) ? commandFor(maxDraw, false) : null,
   } as const;
+};
+
+/**
+ * The least amount the entry takes, and what Min fills in: the yield's
+ * minimum, rounded up to what the token can hold so the amount sent, cut to
+ * the token's decimals, still meets it. A yield without a minimum, or one
+ * that takes the whole balance, has none.
+ */
+const getMinEntryAmount = ({
+  forceMax,
+  minimum,
+  token,
+}: {
+  readonly forceMax: boolean;
+  readonly minimum: BigNumber;
+  readonly token: Token | null;
+}) => {
+  if (forceMax || !minimum.isGreaterThan(0)) return null;
+  return token ? roundUpToTokenDecimals(minimum, token.decimals) : minimum;
 };
 
 export const projectYieldEntry = ({
@@ -560,7 +597,7 @@ export const projectYieldEntry = ({
           gasEstimateTotal: constraints.forceMax ? exactZero() : gasReserve,
           integrationMaxLimit: constraints.maximum,
         });
-  const amount = resolveYieldEntryAmount(input, constraints.allowedMinimum);
+  const amount = resolveYieldEntryAmount(input, constraints);
   const entry = { ...input.entry, amount };
   const executableAmount = input.entry.token
     ? truncateToTokenDecimals(amount, input.entry.token.decimals)
@@ -583,11 +620,17 @@ export const projectYieldEntry = ({
     entry: { ...entry, amount: executableAmount },
     wallet: input.wallet,
   });
+  const minAmount = getMinEntryAmount({
+    forceMax: constraints.forceMax,
+    minimum: constraints.allowedMinimum,
+    token: input.entry.token,
+  });
+  // Says the minimum Min fills, so the warning and the limit read alike.
   const balanceWarning = getYieldEntryBalanceWarning({
     availableAmount: input.availableAmount,
     connected: input.connected,
     forceMax: constraints.forceMax,
-    minimum: constraints.allowedMinimum,
+    minimum: minAmount ?? constraints.allowedMinimum,
   });
   const selection = input.entry.yield
     ? resolveYieldEntrySelection(input.entry.yield, input.entry)
@@ -629,6 +672,19 @@ export const projectYieldEntry = ({
     }),
     /** What Max fills in; null while the gas it must leave is unknown. */
     maxAmount,
+    /**
+     * The least amount the entry takes, as the token can hold it; null
+     * without a minimum. What Min fills in.
+     */
+    minAmount,
+    /**
+     * Min fills in an amount the balance can fund; a balance unknown, such
+     * as a hidden confidential one, may.
+     */
+    canFillMin:
+      minAmount !== null &&
+      (input.availableAmount === null ||
+        input.availableAmount.isGreaterThanOrEqualTo(minAmount)),
     preparation,
     amount,
     validation,

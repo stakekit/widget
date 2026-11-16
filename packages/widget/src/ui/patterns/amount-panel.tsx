@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 
 import { AmountInput } from "../components/amount-input";
 import type { AmountSeparators } from "../components/amount-input-text";
@@ -11,6 +11,7 @@ import { hitAreaStyles } from "../components/hit-area";
 import { Skeleton } from "../components/skeleton";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import { VisuallyHidden } from "../primitives/visually-hidden";
 import { focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { radius } from "../tokens/radius.stylex";
@@ -47,7 +48,7 @@ type AmountPanelProps = {
   /** The Widget language's separators. */
   readonly separators: AmountSeparators;
   /**
-   * The token beside the amount: a `TokenTrigger`, or a `SelectSheet` whose
+   * The token beside the amount: a `PickerTrigger`, or a `SelectSheet` whose
    * trigger is one.
    */
   readonly token: ReactNode;
@@ -62,7 +63,7 @@ type AmountPanelProps = {
    * placeholder holds its place while the rest of the panel shows.
    */
   readonly fiatValueLoading?: boolean;
-  /** The balance the amount draws on, at the foot beside the "Max" chip. */
+  /** The balance the amount draws on, at the foot beside the chips. */
   readonly balance?:
     | {
         /** The formatted balance, such as "12.5 ETH available". */
@@ -94,9 +95,22 @@ type AmountPanelProps = {
       }
     | undefined;
   /**
-   * The formatted limits, such as "Min 0.01 ETH", at the end of the line
-   * under the amount: the helper, which stays in view and in its own tone
-   * beside any error. A missed limit is said by `error`.
+   * The amount's minimum, such as "Min 0.01 ETH", leading the limits at the
+   * end of the line under the amount. With `fill`, the minimum is a button
+   * that fills it in, `fill.label` saying what a tap does.
+   */
+  readonly minimum?:
+    | {
+        readonly text: string;
+        readonly fill?:
+          | { readonly label: string; readonly onClick: () => void }
+          | undefined;
+      }
+    | undefined;
+  /**
+   * The other formatted limits, such as "Max 10 ETH", after the minimum at
+   * the end of the line under the amount: the helper, which stays in view
+   * and in its own tone beside any error. A missed limit is said by `error`.
    */
   readonly limits?: string;
   /**
@@ -133,10 +147,14 @@ type AmountPanelProps = {
   readonly onBlur?: () => void;
   /** Steps the amount's type down as it fills the input. On by default. */
   readonly shrink?: boolean;
-  /** Render as the `data-testid` of the panel, the amount and the "Max" chip. */
+  /**
+   * Render as the `data-testid` of the panel, the amount, the minimum and the
+   * "Max" chip.
+   */
   readonly testIds?: {
     readonly root?: string | undefined;
     readonly input?: string | undefined;
+    readonly minimum?: string | undefined;
     readonly max?: string | undefined;
   };
   /** Each new value above zero focuses the amount; zero never does. */
@@ -147,10 +165,10 @@ type AmountPanelProps = {
  * Where a user enters an amount of a token: the labelled amount beside the
  * token; under it, one line with what is wrong at its start (an error, or a
  * warning before any amount is typed) and the limits as its helper at its
- * end; and at the foot its fiat value, the balance and a "Max" chip. Under
- * the panel, muted notes say what using the amount costs. While the amount
- * is invalid the panel edges in the danger tone; focus still edges it in the
- * accent.
+ * end, the minimum able to fill itself in; and at the foot its fiat value,
+ * the balance and a "Max" chip. Under the panel, muted notes say what using
+ * the amount costs. While the amount is invalid the panel edges in the
+ * danger tone; focus still edges it in the accent.
  */
 export const AmountPanel = ({
   label,
@@ -163,6 +181,7 @@ export const AmountPanel = ({
   fiatValue,
   fiatValueLoading = false,
   balance,
+  minimum,
   limits,
   error,
   warning,
@@ -176,6 +195,24 @@ export const AmountPanel = ({
   focusRequest = 0,
 }: AmountPanelProps) => {
   const amountInvalid = invalid || error !== undefined;
+  // What a tap on the minimum does describes the minimum, outside the
+  // limits' text, so it never describes the amount too.
+  const fillHintId = useId();
+  const otherLimits = limits === undefined ? null : ` / ${limits}`;
+  const limitsLine =
+    minimum === undefined ? (
+      limits
+    ) : (
+      <>
+        <MinimumLimit
+          minimum={minimum}
+          disabled={disabled}
+          hintId={fillHintId}
+          testId={testIds?.minimum}
+        />
+        {otherLimits}
+      </>
+    );
   const panel = (
     <Card
       variant="field"
@@ -188,8 +225,8 @@ export const AmountPanel = ({
         <Field
           {...(labelPlacement === "inside" ? { label } : {})}
           disabled={disabled}
-          description={limits}
-          descriptionAtEnd={limits !== undefined}
+          description={limitsLine}
+          descriptionAtEnd={limitsLine !== undefined}
           error={error}
           warning={warning}
         >
@@ -210,6 +247,9 @@ export const AmountPanel = ({
             {token}
           </Stack>
         </Field>
+        {minimum?.fill !== undefined && (
+          <VisuallyHidden id={fillHintId}>{minimum.fill.label}</VisuallyHidden>
+        )}
         <Stack direction="row" align="center" justify="between" gap={8} wrap>
           <span
             aria-busy={fiatValueLoading || undefined}
@@ -294,6 +334,34 @@ export const AmountPanel = ({
   );
 };
 
+/** The minimum leading the limits: a button that fills it in, or as is. */
+const MinimumLimit = ({
+  minimum,
+  disabled,
+  hintId,
+  testId,
+}: {
+  readonly minimum: NonNullable<AmountPanelProps["minimum"]>;
+  readonly disabled: boolean;
+  /** The hidden text saying what a tap does. */
+  readonly hintId: string;
+  readonly testId: string | undefined;
+}) => {
+  if (minimum.fill === undefined) return minimum.text;
+  return (
+    <button
+      type="button"
+      aria-describedby={hintId}
+      onClick={minimum.fill.onClick}
+      disabled={disabled}
+      data-testid={testId}
+      {...stylex.props(styles.fill, styles.link, hitAreaStyles.coarse)}
+    >
+      {minimum.text}
+    </button>
+  );
+};
+
 /** The balance's figure: filling it in, toggling its precision, or as is. */
 const BalanceAmount = ({
   balance,
@@ -351,5 +419,15 @@ const styles = stylex.create({
     outlineStyle: { default: "none", ":focus-visible": "solid" },
     outlineWidth: focusRing.width,
     textAlign: "inherit",
+  },
+  // The minimum that fills itself in: in the accent and underlined, as
+  // `ExternalLink` is, so it reads as tappable without relying on color.
+  link: {
+    textDecoration: {
+      default: "underline",
+      ":disabled": "none",
+      ":hover": "none",
+    },
+    color: { default: color.accentText, ":disabled": color.textMuted },
   },
 });

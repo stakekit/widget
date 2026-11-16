@@ -15,6 +15,12 @@ export const truncateToTokenDecimals = (
   decimals: number
 ): BigNumber => amount.decimalPlaces(decimals, BigNumber.ROUND_DOWN);
 
+/** The least amount the token can hold that is not below `amount`. */
+export const roundUpToTokenDecimals = (
+  amount: BigNumber,
+  decimals: number
+): BigNumber => amount.decimalPlaces(decimals, BigNumber.ROUND_UP);
+
 export const toSafeIntegerCount = (value: BigNumber): number | null => {
   if (!value.isFinite() || !value.isInteger()) return null;
 

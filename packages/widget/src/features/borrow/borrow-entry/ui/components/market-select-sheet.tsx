@@ -24,7 +24,7 @@ import {
   useTokenLogoResolver,
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { SelectSheet, TokenTrigger } from "../../../../../ui/index";
+import { SelectSheet, PickerTrigger } from "../../../../../ui/index";
 import { filterBorrowMarketGroups } from "../../model/market-groups";
 import { selectBorrowMarketAtom } from "../../state/borrow-entry";
 
@@ -84,7 +84,14 @@ const MarketSelect = ({
   };
 
   if (markets.length <= 1) {
-    return <TokenTrigger readOnly testId="borrow-market-select" token={logo} />;
+    return (
+      <PickerTrigger
+        readOnly
+        testId="borrow-market-select"
+        label={logo.name}
+        logo={logo}
+      />
+    );
   }
 
   const integrationsById = new Map(
@@ -106,7 +113,13 @@ const MarketSelect = ({
       title={t("dashboard.borrow.form.select_market")}
       closeLabel={t("shared.close")}
       listLabel={t("dashboard.borrow.form.borrowable_assets")}
-      trigger={<TokenTrigger testId="borrow-market-select" token={logo} />}
+      trigger={
+        <PickerTrigger
+          testId="borrow-market-select"
+          label={logo.name}
+          logo={logo}
+        />
+      }
       onOpenChange={(open) => {
         if (!open) setSearch("");
       }}

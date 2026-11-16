@@ -130,13 +130,9 @@ export const earnEntryViewAtom = Atom.make((get) => {
     selectedYield && entry.constraints.maximum && !entry.constraints.forceMax
       ? entry.constraints.allowedMaximum
       : null;
-  const stakeMinAmount =
-    selectedYield &&
-    entry.constraints.minimum &&
-    !entry.constraints.forceMax &&
-    entry.constraints.allowedMinimum.isGreaterThan(0)
-      ? entry.constraints.allowedMinimum
-      : null;
+  // The minimum as the token can hold it: what Min fills in and the limit
+  // the amount is told to reach.
+  const stakeMinAmount = selectedYield ? entry.minAmount : null;
 
   return {
     /** The user entered an amount, or the yield forces the balance. */
@@ -156,6 +152,8 @@ export const earnEntryViewAtom = Atom.make((get) => {
     canFillMax: !input.hiddenTokenBalance && entry.maxAmount !== null,
     /** Max has nothing to fill, such as a balance the gas would use up. */
     maxFillsNothing: entry.maxAmount?.isZero() ?? false,
+    /** Min fills in a minimum the balance can fund. */
+    canFillMin: entry.canFillMin,
     connected: entry.connected,
     cta: entry.cta,
     estimatedRewards: entry.estimatedRewards,
@@ -253,6 +251,17 @@ export const setEarnMaxAmountAtom = appRuntime
     );
   })
   .pipe(Atom.withLabel("setEarnMaxAmountAtom"));
+
+export const setEarnMinAmountAtom = appRuntime
+  .fn((_input: undefined, context) => {
+    const { canFillMin, minAmount } = context(earnYieldEntry.viewAtom);
+    if (!canFillMin || minAmount === null) return Effect.void;
+    context.set(setEarnSelectionAmountAtom, minAmount.toString(10));
+    return TrackingService.use((tracking) =>
+      tracking.trackEvent("earnPageMinClicked")
+    );
+  })
+  .pipe(Atom.withLabel("setEarnMinAmountAtom"));
 
 export const refreshEarnKycAtom = earnYieldEntry.refreshKycAtom;
 export const runEarnPrimaryActionAtom = earnYieldEntry.submitAtom;

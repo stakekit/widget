@@ -11,8 +11,8 @@ import {
   viewportBox,
 } from "../storybook/geometry";
 import { networkLogo, tokenLogo } from "../storybook/images";
+import { PickerTrigger } from "./picker-trigger";
 import { SelectSheet } from "./select-sheet";
-import { TokenTrigger } from "./token-trigger";
 
 const symbols = [
   "ETH",
@@ -69,8 +69,9 @@ const TokenSheet = ({
     <SelectSheet
       {...rest}
       trigger={
-        <TokenTrigger
-          token={selected?.logo ?? { name: selectedId }}
+        <PickerTrigger
+          label={selected?.logo.name ?? selectedId}
+          logo={selected?.logo ?? {}}
           aria-label={`Change token, ${selectedId}`}
         />
       }
@@ -366,7 +367,7 @@ const YieldSheet = ({
       title="Select a yield"
       closeLabel="Close"
       listLabel="Yields"
-      trigger={<TokenTrigger token={{ name: "Yields" }} />}
+      trigger={<PickerTrigger label="Yields" />}
       options={options}
       onSelect={onSelect}
       empty={{ title: "No yields found" }}
@@ -540,7 +541,7 @@ export const Groups: Story = {
       closeLabel="Close"
       listLabel="Validators"
       onSelect={args.onSelect}
-      trigger={<TokenTrigger token={{ name: "Validators" }} />}
+      trigger={<PickerTrigger label="Validators" />}
       search={{
         value: "",
         onValueChange: fn(),
@@ -765,7 +766,7 @@ const ValidatorsSheet = ({
       title="Select validators"
       closeLabel="Close"
       listLabel="Validators"
-      trigger={<TokenTrigger token={{ name: "Validators" }} />}
+      trigger={<PickerTrigger label="Validators" />}
       options={validatorOptions}
       multiple={{ selectedIds }}
       onSelect={(id) => {
@@ -892,7 +893,7 @@ export const FooterActionsAndTestIds: Story = {
       title="Select validators"
       closeLabel="Close"
       listLabel="Validators"
-      trigger={<TokenTrigger token={{ name: "Validators" }} />}
+      trigger={<PickerTrigger label="Validators" />}
       options={validatorOptions.map((option) => ({
         ...option,
         testId: `validator-${option.id}`,
@@ -1091,7 +1092,7 @@ export const LoadingWithOptions: Story = {
 /**
  * The option the keys reached draws its focus ring inside the scrolling
  * list, also the first one, at the list's top edge. On open the current
- * choice has none: the keys haven't moved yet.
+ * choice shows the selection ring alone: the keys haven't moved yet.
  */
 export const ActiveRingInside: Story = {
   play: async ({ canvasElement }) => {
@@ -1101,7 +1102,7 @@ export const ActiveRingInside: Story = {
     const first = await within(listbox).findByRole("option", {
       name: /^ETH Ethereum/,
     });
-    await expect(getComputedStyle(first).outlineStyle).toBe("none");
+    await expect(getComputedStyle(first).outlineStyle).toBe("solid");
 
     await userEvent.keyboard("{ArrowDown}");
     const second = within(listbox).getByRole("option", {
@@ -1162,7 +1163,7 @@ export const GroupHeaderWithLogo: Story = {
     await expect(caption.getBoundingClientRect().left).toBeGreaterThan(
       label.getBoundingClientRect().right
     );
-    // The caption ends where the rows' values do, clear of their check slot.
+    // The caption ends where the rows' values do.
     const value = within(sheet).getByText("0.02%");
     await expect(
       Math.abs(
@@ -1226,9 +1227,9 @@ export const RowsAlignWithTitle: Story = {
     await expect(option.getBoundingClientRect().left).toBeLessThan(
       title.getBoundingClientRect().left
     );
-    // On open, the current choice carries no ring: the search field's is the
-    // only one.
-    await expect(getComputedStyle(option).outlineStyle).toBe("none");
+    // On open, the current choice carries the selection ring, not the focus
+    // ring: the search field's is the only focus ring.
+    await expect(getComputedStyle(option).outlineStyle).toBe("solid");
   },
 };
 
@@ -1305,7 +1306,7 @@ const NetworkSheet = ({
 
 /**
  * `condensed` is a compact choice, such as a network: 40px rows with 24px
- * icons in a 400px dialog. The current choice is tinted and checked; with
+ * icons in a 400px dialog. The current choice is tinted and ringed; with
  * `closesOnSelect` off, the sheet stays open after a choice.
  */
 export const Condensed: Story = {
@@ -1351,7 +1352,8 @@ export const Condensed: Story = {
     await expect(getComputedStyle(current).backgroundColor).not.toMatch(
       transparent
     );
-    await expect(current.querySelector("svg")).not.toBeNull();
+    await expect(getComputedStyle(current).outlineStyle).not.toBe("none");
+    await expect(current.querySelector("svg")).toBeNull();
 
     await userEvent.type(search, "arb");
     await waitFor(() =>

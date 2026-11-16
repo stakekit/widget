@@ -51,6 +51,7 @@ export const trackEventMap = {
   termsModalAccepted: "Terms modal accepted",
   termsModalDeclined: "Terms modal declined",
   earnPageMaxClicked: "Earn page max clicked",
+  earnPageMinClicked: "Earn page min clicked",
   borrowPageMaxClicked: "Borrow page max clicked",
   borrowMarketSelected: "Borrow market selected",
   borrowCollateralSelected: "Borrow collateral selected",
@@ -64,6 +65,7 @@ export const trackEventMap = {
   txSubmitted: "Transaction submitted",
   txNotConfirmed: "Transaction not confirmed",
   positionDetailsPageMaxClicked: "Position details page max clicked",
+  positionDetailsPageMinClicked: "Position details page min clicked",
   unstakeClicked: "Unstake clicked",
   pendingActionClicked: "Pending action clicked",
   validatorsSubmitted: "Validators submitted",
@@ -129,6 +131,7 @@ type TrackEventProperties = {
   readonly termsModalAccepted: undefined;
   readonly termsModalDeclined: undefined;
   readonly earnPageMaxClicked: undefined;
+  readonly earnPageMinClicked: undefined;
   readonly borrowPageMaxClicked: BorrowCollateralTrackingProperties & {
     readonly field: "collateral";
   };
@@ -150,6 +153,9 @@ type TrackEventProperties = {
   readonly txSubmitted: TransactionTrackingProperties;
   readonly txNotConfirmed: undefined;
   readonly positionDetailsPageMaxClicked: {
+    readonly yieldId: YieldId | undefined;
+  };
+  readonly positionDetailsPageMinClicked: {
     readonly yieldId: YieldId | undefined;
   };
   readonly unstakeClicked: {

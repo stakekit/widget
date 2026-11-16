@@ -22,7 +22,7 @@ import {
   Button,
   Stack,
   Text,
-  TokenTrigger,
+  PickerTrigger,
 } from "../../../../ui/index";
 import { useWidgetConfig } from "../../../widget-configuration/index";
 import { useYieldMetaInfo } from "../../../yield-summary/views";
@@ -68,7 +68,7 @@ type AmountBlockProps = {
 const ExitTokenTrigger = ({ token }: { readonly token: Token }) => {
   const logo = useTokenLogo(token);
 
-  return <TokenTrigger token={{ ...logo, name: token.symbol }} readOnly />;
+  return <PickerTrigger label={token.symbol} logo={logo} readOnly />;
 };
 
 /** An amount to exit a position with, or to run a pending action on. */
@@ -110,7 +110,8 @@ export const AmountBlock = ({
           locale,
           "down"
         )} ${exitProps.exitToken.symbol}`;
-  const limits = min && max ? `${min} / ${max}` : (min ?? max);
+  // The minimum leads the limits; the exit has no amount for it to fill.
+  const minimum = min === null ? undefined : { text: min };
   // A missed limit says which one under the amount; the limits beside the
   // token stay the muted helper.
   const limitError = (() => {
@@ -169,7 +170,8 @@ export const AmountBlock = ({
     ? t("shared.insufficient_balance")
     : limitError;
   const limitProps = {
-    ...(limits ? { limits } : {}),
+    minimum,
+    ...(max ? { limits: max } : {}),
     ...(error === null ? {} : { error }),
   };
 
