@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.298](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.297...@stakekit/widget@0.0.298) (2026-11-16)
+
+
+### Features
+
+* **widget:** fill the minimum from its limit, ring selected rows, open pickers from PickerTrigger ([#628](https://github.com/stakekit/widget/issues/628)) ([11cc9d0](https://github.com/stakekit/widget/commit/11cc9d09e9577d0de52bdc1ed55ca33205651c8f))
+
 ## [0.0.297](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.296...@stakekit/widget@0.0.297) (2026-11-15)
 
 
