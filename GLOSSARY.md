@@ -238,10 +238,13 @@ its own rate type, with the total as given; nothing is converted between APR
 and APY. A rate listing no own part has as its own what the incentives leave
 of the total.
 
-**Position Reward Rate**: The one rate a position's page shows: its balance's
+**Position Reward Rate**: The one rate a held position shows, in its row of
+the positions list, their average rate and its page alike: its balance's
 rate when that rate's campaign part is the wallet's own (personalized), else
-its Effective Reward Rate. A campaign part is the wallet's own only under a
-shown Campaign's per-wallet cap: not while Campaigns load, nor after it ends.
+the validators' mean for a position staked with validators, else its
+balance's rate, which leaves out a campaign the wallet doesn't earn, else the
+Yield Reward Rate. A campaign part is the wallet's own only under a shown
+Campaign's per-wallet cap: not while Campaigns load, nor after it ends.
 
 **Reward Rate History**: A yield-scoped time series of Yield Reward Rate
 snapshots, not validator or Effective Reward Rates.

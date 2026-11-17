@@ -236,7 +236,7 @@ describe("Campaign rewards on positions", () => {
     await app.unmount();
   });
 
-  it("reads the yield's rate, not a personal one, without a per-wallet cap", async ({
+  it("leads with the balance rate, not as a personal one, without a per-wallet cap", async ({
     worker,
   }) => {
     const { openPositions } = await campaignSetup(worker, {
@@ -250,11 +250,16 @@ describe("Campaign rewards on positions", () => {
       },
     });
     const app = await openPositions();
-    await userEvent.click(app.getByText("Trust USDA Earn").first());
+    // The list leads with the rate the position's page leads with.
+    const row = app.getByRole("link", { name: /Trust USDA Earn/ });
+    await expect
+      .element(row.getByText("4.53% APY", { exact: true }))
+      .toBeVisible();
+    await userEvent.click(row);
 
     const summary = app.getByTestId("position-summary");
     await expect
-      .element(summary.getByText("4.55% APY", { exact: true }))
+      .element(summary.getByText("4.53% APY", { exact: true }))
       .toBeVisible();
     await expect
       .element(summary.getByText(/Personalized APY/))
@@ -262,7 +267,7 @@ describe("Campaign rewards on positions", () => {
     // Details splits the same rate the summary leads with.
     await expect
       .element(
-        app.getByTestId("reward-rate-breakdown__total").getByText("Up to 4.55%")
+        app.getByTestId("reward-rate-breakdown__total").getByText("Up to 4.53%")
       )
       .toBeVisible();
 
@@ -279,7 +284,7 @@ describe("Campaign rewards on positions", () => {
     await app.unmount();
   });
 
-  it("reads the yield's rate, not a personal one, once its campaign ends", async ({
+  it("leads with the balance rate, not as a personal one, once its campaign ends", async ({
     worker,
   }) => {
     // The widget no longer shows an ended campaign, so it can't tell whether
@@ -293,7 +298,7 @@ describe("Campaign rewards on positions", () => {
 
     const summary = app.getByTestId("position-summary");
     await expect
-      .element(summary.getByText("4.55% APY", { exact: true }))
+      .element(summary.getByText("4.53% APY", { exact: true }))
       .toBeVisible();
     await expect
       .element(summary.getByText(/Personalized APY/))

@@ -32,7 +32,7 @@ type RowDetails = {
   readonly integrationData: unknown;
   readonly providersDetails: unknown;
   readonly inactiveValidator: InactiveValidatorStatus | null;
-  readonly rewardRateAverage: {
+  readonly rewardRate: {
     readonly text: string;
     readonly isPositive: boolean;
   } | null;
@@ -61,7 +61,7 @@ const createDetails = (overrides: Partial<RowDetails> = {}): RowDetails => ({
     { address: "0xvalidator-b", name: "Validator B" },
   ],
   inactiveValidator: null,
-  rewardRateAverage: { text: "4.2%", isPositive: true },
+  rewardRate: { text: "4.2%", isPositive: true },
   totalFormatted: `12.5 ${integrationData.token.symbol}`,
   totalAmountUsd: exactDecimal("25"),
   ...overrides,
@@ -378,14 +378,14 @@ describe("Earn position list item", () => {
           "positive",
           createDetails({
             integrationData: { ...integrationData, id: "positive" },
-            rewardRateAverage: { text: "4.2%", isPositive: true },
+            rewardRate: { text: "4.2%", isPositive: true },
           })
         );
         hookState.detailsByYield.set(
           "unavailable",
           createDetails({
             integrationData: { ...integrationData, id: "unavailable" },
-            rewardRateAverage: { text: "—", isPositive: false },
+            rewardRate: { text: "—", isPositive: false },
           })
         );
         // Wide enough for the rate, which a narrow row leaves out.
