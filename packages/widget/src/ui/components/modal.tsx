@@ -446,7 +446,7 @@ const styles = stylex.create({
   },
   header: {
     gap: space[12],
-    paddingInline: space[20],
+    paddingInline: space[16],
     alignItems: "center",
     display: "flex",
     flexShrink: 0,
@@ -492,7 +492,7 @@ const styles = stylex.create({
   body: {
     gap: space[12],
     paddingBlock: space[16],
-    paddingInline: space[20],
+    paddingInline: space[16],
     display: "flex",
     flexDirection: "column",
     flexGrow: 1,
@@ -519,7 +519,7 @@ const styles = stylex.create({
   },
   footer: {
     gap: space[8],
-    paddingInline: space[20],
+    paddingInline: space[16],
     display: "flex",
     flexDirection: "column",
     flexShrink: 0,
