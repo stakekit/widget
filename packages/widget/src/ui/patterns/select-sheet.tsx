@@ -23,7 +23,6 @@ import { Box } from "../primitives/box";
 import { Stack } from "../primitives/stack";
 import { VisuallyHidden } from "../primitives/visually-hidden";
 import { listRowHeight } from "../tokens/size.stylex";
-import { space } from "../tokens/space.stylex";
 import type { Tone } from "../tone";
 import { EmptyState } from "./empty-state";
 import { ErrorState } from "./error-state";
@@ -240,8 +239,8 @@ const nextEnabled = (
  * empty state where the options were. It opens on the current choice,
  * scrolled into view. Choosing an option
  * closes the sheet, unless it takes `multiple` choices or `closesOnSelect` is
- * off. Its rows are `flat`, as every picker's: their content lines up with
- * the title while their tint reaches past it.
+ * off. Its rows are `flat`, as every picker's: their tint stays inside the
+ * sheet's padding, flush with the title and the search field.
  */
 export const SelectSheet = ({
   title,
@@ -464,7 +463,7 @@ export const SelectSheet = ({
           }))}
         />
       );
-    return <div {...stylex.props(styles.list, styles.flatList)}>{list}</div>;
+    return <div {...stylex.props(styles.list)}>{list}</div>;
   };
   const replacing = loading && flat.length > 0 && error === undefined;
   // A touch keyboard would cover the options, so a coarse pointer focuses
@@ -560,9 +559,6 @@ const styles = stylex.create({
     justifyContent: "center",
     minHeight: 0,
   },
-  // Past the body's inline padding by a row's own, so the rows' content lines
-  // up with the title while their tint reaches into the margin.
-  flatList: { marginInline: `calc(-1 * ${space[12]})` },
 });
 
 /** The spacing above and under each option's row. */

@@ -586,9 +586,9 @@ const pressedCopyValue = (
 
 /**
  * Rows read as one list, under an optional overline heading. `density` is
- * its rows'; condensed rows sit closer together, and, being flat, reach past
- * the content edge by their own inline padding, so their content lines up
- * with the heading and a dialog's title while their tint reaches past them.
+ * its rows'; condensed rows sit closer together, and, being flat, keep their
+ * tint inside the content edge, so the heading steps in by their inline
+ * padding to line up with their content.
  */
 export const ListGroup = ({
   label,
@@ -606,28 +606,28 @@ export const ListGroup = ({
     <InListGroup value={{ density }}>
       <Stack gap={8}>
         {label !== undefined && (
-          <Text variant="overline" tone="muted" id={labelId}>
-            {label}
-          </Text>
+          <div {...stylex.props(condensed && styles.flatHeading)}>
+            <Text variant="overline" tone="muted" id={labelId}>
+              {label}
+            </Text>
+          </div>
         )}
-        <div {...stylex.props(condensed && styles.flatGroup)}>
-          <Stack
-            as="ul"
-            gap={condensed ? 2 : 8}
-            aria-labelledby={label === undefined ? undefined : labelId}
-          >
-            {children}
-          </Stack>
-        </div>
+        <Stack
+          as="ul"
+          gap={condensed ? 2 : 8}
+          aria-labelledby={label === undefined ? undefined : labelId}
+        >
+          {children}
+        </Stack>
       </Stack>
     </InListGroup>
   );
 };
 
 const styles = stylex.create({
-  // Past the content edge by a row's inline padding, as a select sheet's
-  // list reaches.
-  flatGroup: { marginInline: `calc(-1 * ${space[12]})` },
+  // In by a flat row's inline padding, so the heading lines up with its rows'
+  // content, as a select sheet's group headers do.
+  flatHeading: { paddingInline: space[12] },
   root: {
     margin: 0,
     borderColor: "transparent",

@@ -276,15 +276,16 @@ it("lists networks in compact rows and marks the connected one without a chip", 
     "rgba(0, 0, 0, 0)"
   );
 
-  // Each icon starts on the title's edge.
+  // Each row starts on the title's edge, inside the dialog's padding.
   const edge = dialog
     .getByRole("heading", { name: "Switch networks", exact: true })
     .element()
     .getBoundingClientRect().left;
   for (const row of [current, other]) {
+    const box = row.element().getBoundingClientRect();
     const icon = row.element().firstElementChild?.getBoundingClientRect();
     expect(icon?.width).toBe(24);
-    expect(Math.abs((icon?.left ?? 0) - edge)).toBeLessThanOrEqual(1);
+    expect(Math.abs(box.left - edge)).toBeLessThanOrEqual(1);
   }
   await close.click();
   await expect.element(dialog).not.toBeInTheDocument();
