@@ -463,7 +463,6 @@
     "label": "Campagne",
     "label_upcoming": "À venir",
     "details_link": "Détails",
-    "view_details": "Voir les détails de la campagne",
     "time": {
       "upcoming": "Commence le {{date}}",
       "paused": "En pause · se termine le {{date}}",
@@ -482,7 +481,6 @@
       "incentive_from": "+{{rate}} dès le {{date}}"
     },
     "tip": {
-      "label": "À propos du taux de campagne",
       "total": "Total",
       "total_today": "Total aujourd'hui",
       "incentive": "Taux de campagne"

@@ -463,7 +463,6 @@
     "label": "Campaign",
     "label_upcoming": "Upcoming",
     "details_link": "Details",
-    "view_details": "View campaign details",
     "time": {
       "upcoming": "Starts {{date}}",
       "paused": "Paused · ends {{date}}",
@@ -482,7 +481,6 @@
       "incentive_from": "+{{rate}} from {{date}}"
     },
     "tip": {
-      "label": "About the campaign rate",
       "total": "Total",
       "total_today": "Total today",
       "incentive": "Campaign rate"

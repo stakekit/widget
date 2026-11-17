@@ -19,7 +19,7 @@ export const campaignDetailsRequestAtom =
 
 /**
  * Asks the yield's Campaign section to open and come into view, from its
- * strip or its rate's tip.
+ * strip.
  */
 export const requestCampaignDetailsAtom = Atom.fnSync(
   (yieldId: YieldId, context) =>

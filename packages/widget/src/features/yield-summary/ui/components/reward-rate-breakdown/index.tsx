@@ -1,4 +1,3 @@
-import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 
 import type {
@@ -12,14 +11,12 @@ import { formatRatePartLabel } from "../../../../yield-presentation/index";
 
 /**
  * The campaign's row, as its owner words it: such as "Paused" or a planned
- * rate before the campaign is part of the yield's rate, with a summary of
- * the campaign beside its label, and the total's label when the campaign
- * isn't in the total yet.
+ * rate before the campaign is part of the yield's rate, and the total's label
+ * when the campaign isn't in the total yet.
  */
 export type RewardRateCampaignRow = {
   readonly value: string;
   readonly rateType: string | null;
-  readonly info?: ComponentProps<typeof DetailRow>["info"];
   readonly totalLabel?: string;
 };
 
@@ -27,7 +24,6 @@ type Row = {
   readonly id: "native" | "protocol-incentive" | "campaign";
   readonly label: string;
   readonly value: string;
-  readonly info?: ComponentProps<typeof DetailRow>["info"];
 };
 
 /**
@@ -96,7 +92,6 @@ export const RewardRateBreakdown = ({
             t
           ),
           value: campaignValue,
-          ...(campaign?.info ? { info: campaign.info } : {}),
         },
   ];
   const rows = candidates.filter((row): row is Row => row !== null);
@@ -113,7 +108,6 @@ export const RewardRateBreakdown = ({
             key={row.id}
             label={row.label}
             value={row.value}
-            {...(row.info ? { info: row.info } : {})}
             {...(testId ? { testId: `${testId}__${row.id}` } : {})}
           />
         ))}
