@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.299](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.298...@stakekit/widget@0.0.299) (2026-11-18)
+
+
+### Bug Fixes
+
+* **widget:** lead held positions with the wallet's own reward rate, tidy dialog padding ([#630](https://github.com/stakekit/widget/issues/630)) ([57a5d22](https://github.com/stakekit/widget/commit/57a5d221582bc6fd3c4dacc1b30ae52ec99f9d3a))
+
 ## [0.0.298](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.297...@stakekit/widget@0.0.298) (2026-11-16)
 
 
