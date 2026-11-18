@@ -139,26 +139,17 @@ describe("the Manage summary's average rate", () => {
         yieldApiCampaignDtoFixture({ yieldId: "campaign-vault", ...overrides })
       );
 
-    it("weighs the wallet's own rate under the shown campaign's per-wallet cap", () => {
-      expect(average(items, [campaignVault], decodeCampaign())).toEqual({
-        rate: "8.8",
-        rateType: "apy",
-      });
-    });
-
-    it("weighs the yield's rate without a cap, or while no campaign shows", () => {
+    it("weighs the balance rate, with or without the shown campaign's per-wallet cap, and while no campaign shows", () => {
       const uncapped = decodeCampaign({
         qualificationConfig: { type: "min_token_amount", threshold: "10" },
       });
+      const balanceRate = { rate: "8.8", rateType: "apy" };
 
-      expect(average(items, [campaignVault], uncapped)).toEqual({
-        rate: "10",
-        rateType: "apy",
-      });
-      expect(average(items, [campaignVault], null)).toEqual({
-        rate: "10",
-        rateType: "apy",
-      });
+      expect(average(items, [campaignVault], decodeCampaign())).toEqual(
+        balanceRate
+      );
+      expect(average(items, [campaignVault], uncapped)).toEqual(balanceRate);
+      expect(average(items, [campaignVault], null)).toEqual(balanceRate);
     });
   });
 

@@ -61,9 +61,9 @@ One look per concept:
   owns or did (positions, activity) use `card` rows: a filled surface each,
   8px apart. Pickers (every `SelectSheet`,
   the network, account and wallet lists) use `flat` rows: no surface until
-  hovered, then a tint; their content lines up with the sheet's
-  title, or a condensed `ListGroup`'s heading, while the tint reaches past
-  it. A selected row reads the same in both: the selection ring inside its
+  hovered, then a tint; the tint stays inside the dialog's padding, flush with
+  its search field, and a group's heading steps in to line up with the rows'
+  content. A selected row reads the same in both: the selection ring inside its
   edge over the accent tint, read as pressed, never a trailing check, so
   hover and selection never look alike and no row keeps room for a mark it
   may not show. A choice of several shows a check box per row instead. A

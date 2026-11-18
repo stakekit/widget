@@ -34,8 +34,8 @@ export type EarnPositionListItemDetails = {
   readonly integrationData: EarnYieldWithProvider | null;
   readonly providersDetails: ReadonlyArray<YieldSummaryProvider> | null;
   readonly inactiveValidator: InactiveValidatorStatus | null;
-  /** The average rate as shown, and whether it is a gain. */
-  readonly rewardRateAverage: {
+  /** The Position Reward Rate as shown, and whether it is a gain. */
+  readonly rewardRate: {
     readonly text: string;
     readonly isPositive: boolean;
   } | null;
@@ -140,7 +140,7 @@ const EarnPositionRow = ({
   const status = usePositionRowStatus(item, details.inactiveValidator);
   const values = useValueProps({ details, showsMissingAmountPlaceholder });
   const provider = details.providersDetails?.[0];
-  const rewardRate = showsRewardRate ? details.rewardRateAverage : null;
+  const rewardRate = showsRewardRate ? details.rewardRate : null;
   // Success is for gains only: zero or an unknown rate reads muted.
   const rewardRateTone = rewardRate?.isPositive ? "success" : "muted";
   const campaignDetails = details.campaign?.line ? [details.campaign.line] : [];

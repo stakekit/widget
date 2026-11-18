@@ -6,8 +6,10 @@ import {
   type RiskBand,
 } from "../../../domain/borrow/risk-band";
 import type { EarnBalance } from "../../../domain/earn/balance";
+import type { YieldCampaign } from "../../../domain/earn/campaign";
 import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
 import type { TokenAmount } from "../../../domain/earn/denomination";
+import { getPositionHeadlineRate } from "../../../domain/earn/position-rate";
 import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldId } from "../../../domain/identity/identifiers";
@@ -98,6 +100,23 @@ export const toPositionItems = (
 
   return toManageOrder(rows, prioritizePendingClaims);
 };
+
+/**
+ * The rate a position leads with, in its row of the positions list, their
+ * average and its page alike: its Position Reward Rate. `getShownCampaign`
+ * is asked only of a balance rate with a campaign part.
+ */
+export const getPositionItemRate = (
+  position: PositionItem,
+  yieldRewardRate: YieldRewardRate,
+  getShownCampaign: () => YieldCampaign | null
+) =>
+  getPositionHeadlineRate({
+    balanceRewardRate: position.rewardRate,
+    getShownCampaign,
+    validators: position.type === "validators" ? position.validators : null,
+    yieldRewardRate,
+  });
 
 /** A position that asks something of the user: an action or a claim. */
 export const positionNeedsAction = (item: PositionItem) =>

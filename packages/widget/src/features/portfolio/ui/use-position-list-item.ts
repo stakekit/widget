@@ -1,7 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
-import { exactZero } from "../../../domain/finance/exact";
 import { toInactiveValidatorStatus } from "../../../domain/portfolio/position-callout";
 import {
   formatRewardRatePercent,
@@ -13,10 +12,15 @@ import { useWidgetPresentation } from "../../../shared/react/widget-presentation
 import {
   getCampaignRowModel,
   positionCampaignRowAtom,
+  yieldCampaignAtom,
 } from "../../campaigns/index";
-import { formatRewardRateLabel } from "../../yield-presentation/index";
+import { formatRateTypeLabel } from "../../yield-presentation/index";
 import { YieldSummaryKey, yieldSummaryAtom } from "../../yield-summary/index";
-import { type PositionItem, toPositionTotalDisplay } from "../model/positions";
+import {
+  getPositionItemRate,
+  type PositionItem,
+  toPositionTotalDisplay,
+} from "../model/positions";
 import { positionYieldAtom } from "../state/read-models/position-list-item";
 
 export const usePositionListItem = (item: PositionItem) => {
@@ -35,30 +39,29 @@ export const usePositionListItem = (item: PositionItem) => {
     )
   ).providers;
 
+  const shownCampaign =
+    useAtomValue(yieldCampaignAtom(item.integrationId))?.campaign ?? null;
+
   // The rate as shown with its type ("4.52% APY"), and whether it is a gain:
   // only a positive rate reads in the success tone, not zero or an unknown
   // rate, the same rule as the yield picker's. A row with nothing earning
-  // shows no rate.
-  const getRewardRateAverage = () => {
-    if (!providersDetails || !integrationData || !item.hasEarningBalances) {
-      return null;
-    }
-    const average = providersDetails
-      .reduce(
-        (acc, val) => acc.plus(val.rewardRate ?? exactZero()),
-        exactZero()
-      )
-      .dividedBy(providersDetails.length);
+  // shows no rate. It is the rate the position's page leads with.
+  const getRewardRate = () => {
+    if (!integrationData || !item.hasEarningBalances) return null;
+    const { rate, rateType } = getPositionItemRate(
+      item,
+      integrationData.rewardRate,
+      () => shownCampaign
+    );
 
     return {
       text: withFigureUnit(
-        formatRewardRatePercent(average, locale),
-        formatRewardRateLabel(integrationData, t)
+        formatRewardRatePercent(rate, locale),
+        formatRateTypeLabel(rateType ?? "", t)
       ),
-      isPositive: average.isGreaterThan(0),
+      isPositive: rate.isGreaterThan(0),
     };
   };
-  const rewardRateAverage = getRewardRateAverage();
 
   const inactiveValidator = toInactiveValidatorStatus(providersDetails);
 
@@ -92,7 +95,7 @@ export const usePositionListItem = (item: PositionItem) => {
     ),
     integrationData,
     providersDetails,
-    rewardRateAverage,
+    rewardRate: getRewardRate(),
     inactiveValidator,
     totalFormatted: getTotalFormatted(),
     // Several tokens show their USD total as the amount itself.

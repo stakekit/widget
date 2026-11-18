@@ -109,7 +109,7 @@ describe("Trust incentive APY", () => {
     await app.unmount();
   });
 
-  it("falls back to yield APY composition when the balance has no campaign component", async ({
+  it("leads with the balance rate, leaving out the yield's campaign part, when the balance has no campaign component", async ({
     worker,
   }) => {
     const { account, customConnectors, yieldId, setUrl } = await setup(worker, {
@@ -126,33 +126,20 @@ describe("Trust incentive APY", () => {
       walletListFactory: customConnectors,
     });
 
+    const summary = app.getByTestId("position-summary");
+    await expect
+      .element(summary.getByText("4.53% APY", { exact: true }))
+      .toBeVisible();
     await expect.poll(() => app.getByText("Personalized APY").length).toBe(0);
+    await expect
+      .poll(() => app.getByTestId("reward-rate-breakdown__campaign").length)
+      .toBe(0);
     await expect
       .poll(
         () =>
           app.getByTestId("personalized-reward-rate-breakdown__campaign").length
       )
       .toBe(0);
-    await expect.element(app.getByText("APY composition")).toBeInTheDocument();
-    await expect
-      .element(
-        app.getByTestId("reward-rate-breakdown__native").getByText("4.27%")
-      )
-      .toBeInTheDocument();
-    await expect
-      .element(
-        app
-          .getByTestId("reward-rate-breakdown__protocol-incentive")
-          .getByText("0.28%")
-      )
-      .toBeInTheDocument();
-    await expect
-      .element(
-        app
-          .getByTestId("reward-rate-breakdown__campaign")
-          .getByText("Up to 0.20%")
-      )
-      .toBeInTheDocument();
 
     await app.unmount();
   });

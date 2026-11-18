@@ -732,31 +732,32 @@ export const FlatDark: Story = {
 };
 
 /**
- * A condensed group's flat rows reach past the content edge by their own
- * padding, so their avatars line up with the group's heading, and a dialog's
- * title above it, while their tint reaches past.
+ * A condensed group's flat rows keep their tint inside the content edge, and
+ * its heading steps in by their padding to line up with their avatars.
  */
 export const CondensedGroupLinesUp: Story = {
   render: () => (
     <ContainerFrame width={400}>
-      <Box paddingInline={20}>
-        <ListGroup density="condensed" label="Networks">
-          {networks.map((network, index) => (
-            <ListRow
-              key={network.name}
-              leading={
-                <TokenAvatar
-                  src={tokenLogo}
-                  name={network.name}
-                  size="control"
-                />
-              }
-              title={network.name}
-              onClick={onPickNetwork}
-              selected={index === 0}
-            />
-          ))}
-        </ListGroup>
+      <Box paddingInline={16}>
+        <Box testId="content">
+          <ListGroup density="condensed" label="Networks">
+            {networks.map((network, index) => (
+              <ListRow
+                key={network.name}
+                leading={
+                  <TokenAvatar
+                    src={tokenLogo}
+                    name={network.name}
+                    size="control"
+                  />
+                }
+                title={network.name}
+                onClick={onPickNetwork}
+                selected={index === 0}
+              />
+            ))}
+          </ListGroup>
+        </Box>
       </Box>
     </ContainerFrame>
   ),
@@ -773,9 +774,12 @@ export const CondensedGroupLinesUp: Story = {
           heading.getBoundingClientRect().left
       )
     ).toBe(0);
-    await expect(row.getBoundingClientRect().left).toBeLessThan(
-      heading.getBoundingClientRect().left
-    );
+    await expect(
+      Math.round(
+        row.getBoundingClientRect().left -
+          canvas.getByTestId("content").getBoundingClientRect().left
+      )
+    ).toBe(0);
   },
 };
 

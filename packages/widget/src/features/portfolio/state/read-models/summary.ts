@@ -3,7 +3,6 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
 import type { YieldCampaign } from "../../../../domain/earn/campaign";
-import { getPositionHeadlineRate } from "../../../../domain/earn/position-rate";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { exactZero } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
@@ -21,7 +20,7 @@ import {
   MultiYieldsKey,
   multiYieldsByIdAtom,
 } from "../../../yield-summary/index";
-import type { PositionItem } from "../../model/positions";
+import { getPositionItemRate, type PositionItem } from "../../model/positions";
 import {
   currentPortfolioBorrowPositionsAtom,
   positionsTableDataAtom,
@@ -112,12 +111,11 @@ export const getPositionsAverageRate = (
         getEarningPositionBalances(position.balancesWithAmount)
       )
     );
-    const { rate, rateType } = getPositionHeadlineRate({
-      balanceRewardRate: position.rewardRate,
-      getShownCampaign: () => shownCampaignOf(position.integrationId),
-      validators: position.type === "validators" ? position.validators : null,
-      yieldRewardRate: yieldDto.rewardRate,
-    });
+    const { rate, rateType } = getPositionItemRate(
+      position,
+      yieldDto.rewardRate,
+      () => shownCampaignOf(position.integrationId)
+    );
 
     return rate.isGreaterThan(0) && value.gt(0)
       ? [{ value, rate, rateType: rateType?.toLowerCase() }]

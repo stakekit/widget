@@ -74,30 +74,43 @@ describe("getPositionRate", () => {
     });
   });
 
-  it("uses the yield's rate, campaign part included, without a per-wallet cap or a shown campaign", () => {
+  it("leads with the balance rate, not as the wallet's own, without a per-wallet cap or a shown campaign", () => {
     const uncapped = Schema.decodeUnknownSync(YieldCampaign)(
       yieldApiCampaignDtoFixture({
         qualificationConfig: { type: "min_token_amount", threshold: "10" },
       })
     );
-    const yieldRate = {
+    const balanceRate = {
+      headline: [0.088, "APY"],
+      personalized: false,
+      composition: { native: 0.058, campaign: 0.03, total: 0.088 },
+    };
+
+    expect(shown({ getShownCampaign: () => uncapped })).toEqual(balanceRate);
+    expect(shown({ getShownCampaign: () => null })).toEqual(balanceRate);
+  });
+
+  it("uses the yield's rate, campaign part included, without a balance rate", () => {
+    expect(shown({ balanceRewardRate: null })).toEqual({
       headline: [0.1, "APY"],
       personalized: false,
       composition: { native: 0.058, campaign: 0.042, total: 0.1 },
-    };
-
-    expect(shown({ getShownCampaign: () => uncapped })).toEqual(yieldRate);
-    expect(shown({ getShownCampaign: () => null })).toEqual(yieldRate);
+    });
   });
 
-  it("leaves the campaign out of Details for a wallet that can't earn it", () => {
+  it("leaves the yield's campaign part out of Details for a wallet that can't earn it, without a balance rate", () => {
     expect(
-      shown({
-        balanceRewardRate: vaultRate(null),
-        canEarnCampaign: () => false,
-      })
+      shown({ balanceRewardRate: null, canEarnCampaign: () => false })
     ).toEqual({
       headline: [0.1, "APY"],
+      personalized: false,
+      composition: null,
+    });
+  });
+
+  it("leads with the balance rate, which leaves out a campaign the wallet doesn't earn, such as below its minimum", () => {
+    expect(shown({ balanceRewardRate: vaultRate(null) })).toEqual({
+      headline: [0.058, "APY"],
       personalized: false,
       composition: null,
     });
@@ -106,7 +119,7 @@ describe("getPositionRate", () => {
   it("leads with the mean of the validators' rates, in the first one's rate type, which Details doesn't split", () => {
     expect(
       shown({
-        balanceRewardRate: null,
+        balanceRewardRate: vaultRate(null),
         validators: [
           {
             rewardRate: yieldRewardRateFixture({

@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -9,14 +9,11 @@ import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { RewardRateBreakdown } from "../../yield-summary/views";
 import { getCampaignCompositionValue } from "../model/campaign-copy";
-import { requestCampaignDetailsAtom } from "../state/campaign-details-request";
 import { yieldCampaignAtom } from "../state/yield-campaign";
-import { CampaignRateRows } from "./campaign-rate-rows";
 
 /**
  * A rate's composition. With a campaign, its row reads as the campaign
- * stands ("Up to 4.2%", "Paused", or the planned rate before it starts) and
- * explains the campaign beside its label, linking to its Campaign section.
+ * stands ("Up to 4.2%", "Paused", or the planned rate before it starts).
  */
 export const CampaignRateBreakdown = ({
   rewardRate,
@@ -35,7 +32,6 @@ export const CampaignRateBreakdown = ({
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const requestDetails = useAtomSet(requestCampaignDetailsAtom);
   const view = useAtomValue(yieldCampaignAtom(yieldDto.id));
 
   if (!view) {
@@ -61,14 +57,6 @@ export const CampaignRateBreakdown = ({
       campaign={{
         value: getCampaignCompositionValue(view, composition, t, locale),
         rateType: view.campaign.rewardRate?.rateType ?? null,
-        info: {
-          label: t("campaign.tip.label"),
-          text: <CampaignRateRows view={view} composition={composition} />,
-          action: {
-            label: t("campaign.view_details"),
-            onClick: () => requestDetails(yieldDto.id),
-          },
-        },
         // Before the start, the total is the yield's own rate today.
         ...(view.lifecycle === "upcoming"
           ? { totalLabel: t("campaign.tip.total_today") }

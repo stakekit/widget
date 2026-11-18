@@ -1196,10 +1196,10 @@ const transparent = /^rgba\(\d+, \d+, \d+, 0\)$/;
 
 /**
  * A comfortable sheet's rows are flat, as every picker's: no surface of
- * their own, and their content lines up with the title and the close button,
- * as the search field does, while their tint reaches past it.
+ * their own, and their tint stays inside the sheet's padding, between the
+ * title's start and the close button's end, as the search field does.
  */
-export const RowsAlignWithTitle: Story = {
+export const RowsStayInsidePadding: Story = {
   play: async ({ canvasElement }) => {
     const sheet = await openSheet(canvasElement);
     const title = within(sheet).getByRole("heading", {
@@ -1209,22 +1209,24 @@ export const RowsAlignWithTitle: Story = {
     const option = await within(sheet).findByRole("option", {
       name: /^ETH Ethereum/,
     });
-    const leading = option.firstElementChild?.getBoundingClientRect();
     await expect(
-      alignsWith(leading?.left ?? 0, title.getBoundingClientRect().left)
+      alignsWith(
+        option.getBoundingClientRect().left,
+        title.getBoundingClientRect().left
+      )
     ).toBe(true);
-    const padding = Number.parseFloat(getComputedStyle(option).paddingRight);
     // The list reserves its scrollbar's width (none for overlay scrollbars),
     // so the rows end that much short of the close button.
     const scroller = scrollContainerOf(option);
     const gutter = scroller ? scroller.offsetWidth - scroller.clientWidth : 0;
     await expect(
       alignsWith(
-        option.getBoundingClientRect().right - padding + gutter,
+        option.getBoundingClientRect().right + gutter,
         close.getBoundingClientRect().right
       )
     ).toBe(true);
-    await expect(option.getBoundingClientRect().left).toBeLessThan(
+    const leading = option.firstElementChild?.getBoundingClientRect();
+    await expect(leading?.left ?? 0).toBeGreaterThan(
       title.getBoundingClientRect().left
     );
     // On open, the current choice carries the selection ring, not the focus
@@ -1331,21 +1333,23 @@ export const Condensed: Story = {
     const edge = within(sheet)
       .getByRole("heading", { name: "Switch networks" })
       .getBoundingClientRect().left;
+    const header = within(sheet).getByText("Networks", {
+      ignore: "script, style, [hidden]",
+    });
     const options = within(sheet).getAllByRole("option");
     for (const option of options) {
       await expect(option.getBoundingClientRect().height).toBeLessThanOrEqual(
         40
       );
+      await expect(alignsWith(option.getBoundingClientRect().left, edge)).toBe(
+        true
+      );
       const leading = option.firstElementChild?.getBoundingClientRect();
       await expect(leading?.width).toBe(24);
-      await expect(alignsWith(leading?.left ?? 0, edge)).toBe(true);
+      await expect(
+        alignsWith(leading?.left ?? 0, header.getBoundingClientRect().left)
+      ).toBe(true);
     }
-    const header = within(sheet).getByText("Networks", {
-      ignore: "script, style, [hidden]",
-    });
-    await expect(alignsWith(header.getBoundingClientRect().left, edge)).toBe(
-      true
-    );
 
     const current = within(sheet).getByRole("option", { name: /^Ethereum/ });
     await expect(current).toHaveAttribute("aria-selected", "true");

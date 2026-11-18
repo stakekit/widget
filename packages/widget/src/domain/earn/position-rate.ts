@@ -28,14 +28,17 @@ export type PositionRateSources = {
  */
 export type PositionRate = {
   readonly headline: RatePart;
-  /** The wallet's own rate, not the yield's; its campaign part is exact. */
+  /**
+   * The campaign part is the wallet's own, exact under a per-wallet cap; not
+   * the "up to" campaign part every wallet shares.
+   */
   readonly personalized: boolean;
   /** Null when there is no campaign part the wallet earns to split out. */
   readonly composition: RateComposition | null;
 };
 
-// The Effective Reward Rate of a position staked with validators: the mean of
-// those with rates, in the first one's rate type.
+// The rate of a position staked with validators: the mean of those with
+// rates, in the first one's rate type.
 const getValidatorsRate = (
   validators: PositionRateSources["validators"]
 ): RatePart | null => {
@@ -56,9 +59,11 @@ const getValidatorsRate = (
 
 /**
  * The balance's rate when its campaign part is the wallet's own: only under
- * the shown Campaign's per-wallet cap, since without one every wallet earns
- * the same. Otherwise the validators' mean, which has no composition, or the
- * yield's rate.
+ * the shown Campaign's per-wallet cap, since without one every wallet that
+ * earns it earns the same. Otherwise the validators' mean, which has no
+ * composition and which the balance rate, built from the yield's, doesn't
+ * know; else the balance's rate, which leaves out a campaign the wallet
+ * doesn't earn; else the yield's rate.
  */
 const resolvePositionRate = ({
   balanceRewardRate,
@@ -92,10 +97,11 @@ const resolvePositionRate = ({
       composition: null,
     };
   }
+  const rate = balance ?? yieldRate;
   return {
-    headline: yieldRate.total,
+    headline: rate.total,
     personalized: false,
-    composition: yieldRate,
+    composition: rate,
   };
 };
 
@@ -105,8 +111,8 @@ export const getPositionHeadlineRate = (sources: PositionRateSources) =>
 
 /**
  * The Position Reward Rate for its page. Details splits the wallet's own
- * rate, or the yield's when the wallet can earn its campaign part ("up to"
- * it); a validators' mean is not split.
+ * rate, or the balance's or else the yield's when the wallet can earn its
+ * campaign part ("up to" it); a validators' mean is not split.
  */
 export const getPositionRate = ({
   canEarnCampaign,
@@ -114,7 +120,7 @@ export const getPositionRate = ({
 }: PositionRateSources & {
   /**
    * False below the campaign's minimum or for an excluded wallet. Asked only
-   * of a yield rate with a campaign part.
+   * of a rate with a campaign part that isn't the wallet's own.
    */
   readonly canEarnCampaign: () => boolean;
 }): PositionRate => {

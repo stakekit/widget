@@ -152,24 +152,17 @@ describe("Campaigns on Earn", () => {
       campaignNote.element().closest("footer")?.firstElementChild?.textContent
     ).toMatch(/^Extra campaign rewards/);
 
-    await campaignRow
-      .getByRole("button", { name: "About the campaign rate" })
-      .click();
-    await expect.element(app.getByText("Campaign rate")).toBeVisible();
-    await expect.element(app.getByText("+4.20%")).toBeVisible();
+    // The rows already split the rate, so nothing beside them repeats it.
     await expect
-      .element(app.getByTestId("campaign-rates__total").getByText("10.00%"))
-      .toBeVisible();
-    // The tip sums the rate up, without the campaign's name.
-    await expect
-      .element(app.getByText("Kamino × Utila USDC Boost"))
+      .element(campaignRow.getByRole("button"))
       .not.toBeInTheDocument();
+
     // The details live in the Campaign section, collapsed under the Earn card
-    // until the tip or the strip asks for them; no dialog opens.
+    // until the strip asks for them; no dialog opens.
     const section = app.getByTestId("campaign-section");
     const toggle = app.getByTestId("campaign-section__toggle");
     await expect.element(section).not.toBeInTheDocument();
-    await app.getByRole("button", { name: "View campaign details" }).click();
+    await strip.getByRole("button", { name: "Details" }).click();
 
     await expect
       .element(section.getByText("Kamino × Utila USDC Boost"))
@@ -187,13 +180,6 @@ describe("Campaigns on Earn", () => {
       .not.toBeInTheDocument();
     await expect.element(toggle).toHaveFocus();
     await expect.element(app.getByRole("dialog")).not.toBeInTheDocument();
-
-    // Closed again, the strip's Details opens it the same way.
-    await toggle.click();
-    await expect.element(section).not.toBeInTheDocument();
-    await strip.getByRole("button", { name: "Details" }).click();
-    await expect.element(section).toBeVisible();
-    await expect.element(toggle).toHaveFocus();
 
     await app.unmount();
   });
