@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 
 import { Card } from "../components/card";
-import { Stack } from "../primitives/stack";
+import { Grid } from "../primitives/grid";
 import { Text } from "../primitives/text";
 import { ContainerFrame } from "../storybook/container-frame";
 import { SplitView } from "./split-view";
@@ -103,20 +103,20 @@ export const SecondaryOnly: Story = {
 
 /**
  * Each pane is a size container: inside one, a layout reads the pane's
- * width, so a row that waits for the `split` size stays a column in a pane
- * narrower than it, though the frame is wider.
+ * width, so a grid that waits for the `split` size for two columns keeps one
+ * in a pane narrower than it, though the frame is wider.
  */
 export const PanesAreSizeContainers: Story = {
   args: {
     secondary: (
-      <Stack direction={{ base: "column", split: "row" }} gap={8}>
+      <Grid columns={{ base: 1, split: 2 }} gap={8}>
         <div data-testid="first-item">
           <Text>Reward rate</Text>
         </div>
         <div data-testid="second-item">
           <Text>Provider</Text>
         </div>
-      </Stack>
+      </Grid>
     ),
   },
   render: (args) => (

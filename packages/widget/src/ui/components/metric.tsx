@@ -1,13 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { createContext, type ReactNode, use } from "react";
 
-import {
-  columnsStyles,
-  gapStyles,
-  layoutStyles,
-  type Responsive,
-  type Space,
-} from "../primitives/layout";
+import { columnsStyles, gapStyles, type Space } from "../primitives/layout";
 import { Text } from "../primitives/text";
 import { space } from "../tokens/space.stylex";
 import { Card } from "./card";
@@ -85,21 +79,15 @@ export const MetricGroup = ({
   framed = false,
   children,
 }: {
-  readonly columns?: Responsive<1 | 2 | 3 | 4 | "metrics">;
-  readonly gap?: Responsive<Space>;
+  readonly columns?: 1 | 2 | 3 | 4 | "metrics";
+  readonly gap?: Space;
   readonly framed?: boolean;
   readonly children: ReactNode;
 }) => {
   const group = (
     <InMetricGroup value>
       <dl
-        {...stylex.props(
-          styles.group,
-          layoutStyles.columns,
-          layoutStyles.gap,
-          columnsStyles(columns),
-          gapStyles(gap)
-        )}
+        {...stylex.props(styles.group, columnsStyles(columns), gapStyles[gap])}
       >
         {children}
       </dl>

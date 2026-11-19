@@ -4,13 +4,11 @@ import { createElement } from "react";
 import {
   type Align,
   alignStyles,
-  type Columns,
   columnsStyles,
   flexItemStyles,
   gapStyles,
   type LayoutElementProps,
-  layoutStyles,
-  type Responsive,
+  type ResponsiveColumns,
   type Space,
 } from "./layout";
 
@@ -23,10 +21,10 @@ type GridProps = LayoutElementProps & {
    * row too narrow for that, the flanks keep their content's width and the
    * centre narrows.
    */
-  readonly columns?: Responsive<Columns>;
-  readonly gap?: Responsive<Space>;
+  readonly columns?: ResponsiveColumns;
+  readonly gap?: Space;
   /** Cross-axis alignment of each cell. */
-  readonly align?: Responsive<Align>;
+  readonly align?: Align;
   /** Takes the remaining space in a parent row or column. */
   readonly grow?: boolean;
 };
@@ -51,12 +49,9 @@ export const Grid = ({
       "data-rk": hostHook,
       ...stylex.props(
         styles.root,
-        layoutStyles.columns,
-        layoutStyles.gap,
-        layoutStyles.align,
         columnsStyles(columns),
-        gapStyles(gap),
-        alignStyles(align),
+        gapStyles[gap],
+        alignStyles[align],
         grow && flexItemStyles.grow
       ),
     },

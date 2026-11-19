@@ -89,9 +89,6 @@ export const Paddings: Story = {
       <Card padding="section">
         <Text>section</Text>
       </Card>
-      <Card padding={{ base: 8, md: 24 }}>
-        <Text>8, 24 from the md container size up</Text>
-      </Card>
     </Stack>
   ),
 };

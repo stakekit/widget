@@ -9,20 +9,18 @@ import {
 import {
   flexItemStyles,
   type LayoutElementProps,
-  layoutStyles,
   paddingBlockStyles,
   paddingInlineStyles,
-  type Responsive,
   type Space,
 } from "./layout";
 import { scrollStyles } from "./scroll";
 
 type BoxProps = LayoutElementProps & {
-  readonly padding?: Responsive<Space>;
+  readonly padding?: Space;
   /** Wins over `padding` on the block axis. */
-  readonly paddingBlock?: Responsive<Space>;
+  readonly paddingBlock?: Space;
   /** Wins over `padding` on the inline axis. */
-  readonly paddingInline?: Responsive<Space>;
+  readonly paddingInline?: Space;
   /** `full` fills the parent; `fit` shrinks to the content. */
   readonly width?: keyof typeof widthStyles;
   /** Caps the width at a container size. */
@@ -64,10 +62,8 @@ export const Box = ({
       "data-rk": hostHook,
       ...stylex.props(
         styles.root,
-        layoutStyles.paddingBlock,
-        layoutStyles.paddingInline,
-        paddingBlockStyles(paddingBlock),
-        paddingInlineStyles(paddingInline),
+        paddingBlockStyles[paddingBlock],
+        paddingInlineStyles[paddingInline],
         width && widthStyles[width],
         maxWidth && maxWidthStyles[maxWidth],
         minHeight && minHeightStyles[minHeight],
