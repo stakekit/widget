@@ -7,13 +7,10 @@ import { useSKWallet } from "../../../../wallet/index";
 import type { PageCta } from "../../../../widget-shell/views";
 import { getYieldFlowAttribution } from "../../../model/attribution";
 import { getYieldTransactionCompletionUrls } from "../../../model/yield-transaction-workflow";
-import {
-  useYieldFlowExecution,
-  useYieldFlowSession,
-} from "../../yield-flow-session";
+import type { YieldFlowExecutionPage } from "../../../state/execution-page";
+import { useYieldFlowSession } from "../../yield-flow-session";
 
-export const useComplete = () => {
-  const execution = useYieldFlowExecution();
+export const useComplete = (execution: YieldFlowExecutionPage) => {
   const session = useYieldFlowSession();
   const finish = useAtomSet(execution.finishAtom);
   const viewPosition = useAtomSet(execution.viewPositionAtom);
@@ -79,6 +76,8 @@ export const useComplete = () => {
   return {
     /** Who ran the action, as Review and Steps named them. */
     attribution: getYieldFlowAttribution(session.intake),
+    /** Back from Complete: the flow is done, so it leaves for its finish. */
+    back: () => finish(undefined),
     urls,
     unstakeMatch: unstake,
     pendingActionMatch: pendingAction,

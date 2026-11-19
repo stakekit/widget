@@ -1,16 +1,30 @@
+import { useAtomValue } from "@effect/atom-react";
+import type * as Atom from "effect/reactivity/Atom";
 import {
+  type Context,
   Fragment,
   type PropsWithChildren,
   type ReactNode,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "react-router";
 
+import {
+  sameWalletScopeOwner,
+  type WalletScopeKey,
+} from "../../../domain/wallet/wallet-scope";
 import type {
   WidgetNavigationTarget,
   WidgetPath,
 } from "../../../services/navigation/widget-routes";
+import { Spinner, Stack } from "../../../ui/index";
 import { WidgetNavigate } from "../../navigation/views";
+import { walletScopeAtom } from "../../wallet/index";
+import { PageContainer } from "../../widget-shell/views";
+import type { TransactionFlowTrail } from "../model/trail";
+import type { TransactionFlowExecutionStatus } from "../state/execution";
+import { TransactionFlowTrailContext } from "./transaction-flow-page-header";
 
 type MountedSession<Session> = Readonly<{
   /** The location that delivered the Session; remounts the Session subtree. */
@@ -46,6 +60,97 @@ export const TransactionFlowSessionMount = <Session extends object>({
     return <WidgetNavigate replace to={fallback} />;
   }
   return <Fragment key={mounted.key}>{children(mounted.session)}</Fragment>;
+};
+
+/**
+ * Provides `session` to its pages while the connected wallet is its
+ * `owner`, else leaves for `fallback`. `trail`, when the composition gives
+ * one, puts a breadcrumb header with a back button on each page.
+ */
+export const TransactionFlowSessionRoute = <Session,>({
+  context,
+  fallback,
+  owner,
+  session,
+  trail,
+}: {
+  readonly context: Context<Session | null>;
+  readonly fallback: WidgetNavigationTarget;
+  readonly owner: WalletScopeKey;
+  readonly session: Session;
+  readonly trail: TransactionFlowTrail | null;
+}) => {
+  const walletScope = useAtomValue(walletScopeAtom);
+  if (!walletScope || !sameWalletScopeOwner(walletScope, owner)) {
+    return <WidgetNavigate replace to={fallback} />;
+  }
+  const SessionProvider = context.Provider;
+  return (
+    <SessionProvider value={session}>
+      <TransactionFlowTrailContext.Provider value={trail}>
+        <Outlet />
+      </TransactionFlowTrailContext.Provider>
+    </SessionProvider>
+  );
+};
+
+/**
+ * Shows Steps and Complete while their Execution runs, providing it to them
+ * through `context`. Leaving both ends its workflow. Without an Execution
+ * handed off by Review (`execution` null), it leaves for `fallback`; one that
+ * fails to start leaves for `failed`, which says so.
+ */
+export const TransactionFlowExecutionRoute = <
+  Execution extends Readonly<{
+    readonly executionStatusAtom: Atom.Atom<TransactionFlowExecutionStatus>;
+  }>,
+>({
+  children,
+  context,
+  execution,
+  failed,
+  fallback,
+}: PropsWithChildren<{
+  readonly context: Context<Execution | null>;
+  readonly execution: Execution | null;
+  readonly failed: WidgetNavigationTarget;
+  readonly fallback: WidgetNavigationTarget;
+}>) => {
+  if (!execution) return <WidgetNavigate replace to={fallback} />;
+  const ExecutionProvider = context.Provider;
+  return (
+    <ExecutionStarted
+      failed={failed}
+      statusAtom={execution.executionStatusAtom}
+    >
+      <ExecutionProvider value={execution}>
+        {children ?? <Outlet />}
+      </ExecutionProvider>
+    </ExecutionStarted>
+  );
+};
+
+const ExecutionStarted = ({
+  children,
+  failed,
+  statusAtom,
+}: PropsWithChildren<{
+  readonly failed: WidgetNavigationTarget;
+  readonly statusAtom: Atom.Atom<TransactionFlowExecutionStatus>;
+}>) => {
+  const { t } = useTranslation();
+  const status = useAtomValue(statusAtom);
+  if (status === "Failed") return <WidgetNavigate replace to={failed} />;
+  if (status === "Starting") {
+    return (
+      <PageContainer>
+        <Stack align="center" justify="center" grow>
+          <Spinner size="lg" label={t("transaction_steps.starting")} />
+        </Stack>
+      </PageContainer>
+    );
+  }
+  return children;
 };
 
 /**

@@ -1,40 +1,28 @@
-import { Data, Effect, Option, Predicate, Ref, Result } from "effect";
+import { Data, Effect, Option, Predicate, Result } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-import {
-  type DirectTransaction,
-  getDirectTransactionFallbackGas,
-} from "../../../domain/action/direct-transaction";
 import { getValidStakeSessionTx } from "../../../domain/action/rules";
 import { isContinuableYieldAction } from "../../../domain/activity/action-capabilities";
 import type { YieldAction } from "../../../domain/earn/action-models";
-import { getConfidentialRedeemOperators } from "../../../domain/earn/confidential";
-import { fromBaseUnits } from "../../../domain/finance/base-units";
 import { exactZero } from "../../../domain/finance/exact";
 import { checkGasAmount } from "../../../domain/finance/gas";
-import type { Token } from "../../../domain/token/token";
 import {
   gasTokenBalancesResourceAtom,
   walletScopeGasTokenBalancesKey,
 } from "../../../resources/gas-token-balances/gas-token-balances";
-import { pricesAtom } from "../../../resources/token-prices/prices";
+import { optionalTokenPricesAtom } from "../../../resources/token-prices/token-prices";
 import { walletRuntime } from "../../../runtime/wallet-runtime";
 import {
   type ActionPreviewRequest,
   YieldOperations,
 } from "../../../services/api/operations";
-import { EvmRpc } from "../../../services/evm-rpc/evm-rpc";
 import {
   WidgetNavigation,
   type WidgetNavigationError,
 } from "../../../services/navigation/widget-navigation";
 import { TrackingService } from "../../../services/tracking/tracking-service";
-import {
-  type ConfidentialPreparation,
-  prepareConfidentialCommand,
-} from "../../../services/zama/confidential-preparation";
-import { ZamaService } from "../../../services/zama/zama-service";
+import type { ZamaService } from "../../../services/zama/zama-service";
 import { toPresentable } from "../../../shared/effect/async-result";
 import { presentationClockAtom } from "../../../shared/effect/presentation-clock";
 import {
@@ -47,10 +35,6 @@ import {
   currentYieldKycGateAtom,
   refreshCurrentYieldKycAtom,
 } from "../../yield-summary/index";
-import {
-  getYieldFlowConfidentialPreparation,
-  getYieldFlowPlannedStepTypes,
-} from "../model/confidential-preparation";
 import {
   getYieldTransactionFlowKycYield,
   type YieldPreviewIntake,
@@ -66,6 +50,7 @@ import {
   type YieldFlowSession,
 } from "../model/session";
 import { getYieldFlowTransactionsToSign } from "../model/yield-transaction-workflow";
+import { getYieldFlowConfidentialReview } from "./confidential-plan";
 import { getYieldFlowReviewPricesKey } from "./review-prices";
 import {
   getYieldFlowWithdrawalFee,
@@ -149,30 +134,6 @@ const previewYieldFlowRequest = Effect.fn("previewYieldFlowRequest")(function* (
 });
 
 /**
- * A confidential vault's action, its amount encrypted or decrypted without
- * asking the wallet anything, so Review shows its gas and Steps runs it. Null
- * when it cannot be created now: Steps then prepares it itself, so Confirm
- * stays possible.
- */
-const prepareYieldFlowConfidentialAction = Effect.fn(
-  "prepareYieldFlowConfidentialAction"
-)(
-  function* (preparation: ConfidentialPreparation) {
-    const zama = yield* ZamaService;
-    const request = yield* prepareConfidentialCommand(zama, preparation);
-    return yield* previewYieldFlowRequest(request);
-  },
-  (effect) =>
-    effect.pipe(
-      Effect.catch((cause) =>
-        Effect.logWarning(
-          "Review could not prepare the confidential action."
-        ).pipe(Effect.annotateLogs({ cause }), Effect.as(null))
-      )
-    )
-);
-
-/**
  * The executable action Review shows: the continued action itself, a fresh
  * preview, or a confidential vault's action prepared ahead of Steps.
  */
@@ -185,9 +146,9 @@ export const previewYieldFlowAction = Effect.fn("previewYieldFlowAction")(
     YieldOperations | ZamaService
   > {
     if (intake._tag === "YieldActionContinuation") return intake.action;
-    const preparation = getYieldFlowConfidentialPreparation(intake);
-    if (preparation) {
-      return yield* prepareYieldFlowConfidentialAction(preparation);
+    const confidential = getYieldFlowConfidentialReview(intake);
+    if (confidential) {
+      return yield* confidential.prepareAction(previewYieldFlowRequest);
     }
     return yield* previewYieldFlowRequest(getYieldFlowPreviewRequest(intake));
   }
@@ -241,10 +202,10 @@ export const handOffYieldFlowSource = Effect.fn("handOffYieldFlowSource")(
   }
 );
 
-type ConfirmDecision =
+type ConfirmDecision<Confidential> =
   | Readonly<{
-      readonly _tag: "Prepare";
-      readonly preparation: ConfidentialPreparation;
+      readonly _tag: "PlanConfidentialHandoff";
+      readonly confidential: Confidential;
       readonly prepared: YieldAction | null;
     }>
   | Readonly<{
@@ -262,26 +223,27 @@ type ConfirmDecision =
  * covers its status: only a waiting action can continue. A confidential
  * vault's action Review could not prepare is prepared on Steps instead.
  */
-const decideConfirm = <E>({
+const decideConfirm = <Confidential, E>({
   activityExpired,
+  confidential,
   kycBlocking,
-  preparation,
   preview,
 }: {
   readonly activityExpired: boolean;
+  /** A confidential vault's Review; null for any other. */
+  readonly confidential: Confidential | null;
   readonly kycBlocking: boolean;
-  readonly preparation: ConfidentialPreparation | null;
   readonly preview: AsyncResult.AsyncResult<YieldAction | null, E>;
-}): ConfirmDecision => {
+}): ConfirmDecision<Confidential> => {
   if (kycBlocking) return { _tag: "RejectedBlocked" };
   if (activityExpired) return { _tag: "RejectedExpired" };
   if (AsyncResult.isInitial(preview) || preview.waiting) {
     return { _tag: "RejectedNotReady" };
   }
-  if (preparation) {
+  if (confidential !== null) {
     return {
-      _tag: "Prepare",
-      preparation,
+      _tag: "PlanConfidentialHandoff",
+      confidential,
       prepared: Option.getOrNull(AsyncResult.value(preview)),
     };
   }
@@ -296,141 +258,6 @@ const decideConfirm = <E>({
     ? { _tag: "HandOff", source: { _tag: "Action", action: preview.value } }
     : { _tag: "RejectedPreview" };
 };
-
-/**
- * The approve and wrap a confidential deposit of the underlying token needs,
- * planned when the user confirms so Steps lists them at once. Once the wrap
- * was sent it spent what the approvals set, so what was sent is resumed
- * without reading the allowance again.
- */
-const planYieldFlowConversion = Effect.fn("planYieldFlowConversion")(function* (
-  session: YieldFlowSession,
-  preparation: ConfidentialPreparation
-) {
-  if (preparation._tag !== "Encrypt" || !preparation.conversion) return [];
-  const sent = [...(yield* Ref.get(session.ledger)).values()].map(
-    ({ transaction }) => transaction
-  );
-  if (sent.some(({ type }) => type === "WRAP")) return sent;
-  const zama = yield* ZamaService;
-  return yield* zama.planConversion({
-    amount: preparation.amount,
-    conversion: preparation.conversion,
-    network: preparation.yieldDto.network,
-    owner: preparation.command.address,
-  });
-});
-
-/**
- * The approve and wrap a confidential deposit of the underlying token still
- * needs: what the Session already sent is left out. Nothing for any other
- * action.
- */
-const planPendingYieldFlowConversion = Effect.fn(
-  "planPendingYieldFlowConversion"
-)(function* (session: YieldFlowSession, preparation: ConfidentialPreparation) {
-  const sent = yield* Ref.get(session.ledger);
-  return (yield* planYieldFlowConversion(session, preparation)).filter(
-    ({ id }) => !sent.has(id)
-  );
-});
-
-/**
- * What the transactions around a confidential action cost, in the gas token:
- * the approve and wrap a deposit of the underlying token still needs. Null
- * when it cannot be estimated, as for an instant exit, whose finishing
- * withdrawal only exists once its unwrap confirms, or when the gas token is
- * not the chain's native one the node prices fees in.
- */
-const estimateYieldFlowConversionGas = Effect.fn(
-  "estimateYieldFlowConversionGas"
-)(
-  function* (
-    preparation: ConfidentialPreparation,
-    pending: ReadonlyArray<DirectTransaction>,
-    gasFeeToken: Token
-  ) {
-    if (preparation._tag === "Encrypt" && preparation.instant) return null;
-    if (preparation._tag !== "Encrypt" || !preparation.conversion) {
-      return exactZero();
-    }
-    if (pending.length === 0) return exactZero();
-    if (gasFeeToken.address !== undefined) return null;
-    const evmRpc = yield* EvmRpc;
-    const fee = yield* evmRpc.estimateFee({
-      chainId: preparation.conversion.chainId,
-      from: preparation.command.address,
-      transactions: pending.map((transaction, position) => ({
-        data: transaction.data,
-        fallbackGas: getDirectTransactionFallbackGas(transaction, position),
-        to: transaction.to,
-      })),
-    });
-    return fromBaseUnits(fee, gasFeeToken.decimals);
-  },
-  (effect) =>
-    effect.pipe(
-      Effect.catch((cause) =>
-        Effect.logWarning("Review could not estimate the conversion gas.").pipe(
-          Effect.annotateLogs({ cause }),
-          Effect.as(null)
-        )
-      )
-    )
-);
-
-/**
- * The Planned Steps Steps lists until the prepared action returns them. A
- * private exit's operator grants are read when the user confirms, as the API
- * reads them when it builds the action.
- */
-const readYieldFlowPlannedSteps = Effect.fn("readYieldFlowPlannedSteps")(
-  function* (
-    intake: YieldTransactionFlowIntake,
-    preparation: ConfidentialPreparation
-  ) {
-    const operators =
-      preparation._tag === "Encrypt" &&
-      preparation.intent === "exit" &&
-      !preparation.instant
-        ? getConfidentialRedeemOperators(preparation.yieldDto)
-        : null;
-    const missingOperatorGrants = operators
-      ? yield* ZamaService.use((zama) =>
-          zama.countMissingOperatorGrants({
-            ...operators,
-            owner: preparation.command.address,
-          })
-        )
-      : 0;
-    return getYieldFlowPlannedStepTypes(intake, {
-      missingOperatorGrants,
-    });
-  }
-);
-
-/**
- * What Steps runs for a confidential vault, planned when the user confirms
- * so Steps lists every step at once, with the action Review prepared.
- */
-const planYieldFlowPreparation = Effect.fn("planYieldFlowPreparation")(
-  function* (
-    session: YieldFlowSession,
-    preparation: ConfidentialPreparation,
-    prepared: YieldAction | null
-  ) {
-    return {
-      _tag: "Prepare",
-      conversion: yield* planYieldFlowConversion(session, preparation),
-      preparation,
-      prepared,
-      plannedStepTypes: yield* readYieldFlowPlannedSteps(
-        session.intake,
-        preparation
-      ),
-    } satisfies YieldFlowExecutionSource;
-  }
-);
 
 /** One arrival at a Session's Review: its history entry's key. */
 export class YieldFlowReviewVisit extends Data.Class<{
@@ -489,27 +316,26 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
     gasWarningInput.gasFeeToken
   );
 
-  const preparation = getYieldFlowConfidentialPreparation(intake);
+  const confidential = getYieldFlowConfidentialReview(intake);
   // A deposit of the underlying token also signs and pays for its approve
   // and wrap; anything else converts nothing.
   const conversionAtom = walletRuntime
     .atom((get) =>
-      !preparation || get(kycBlockingAtom)
+      !confidential || get(kycBlockingAtom)
         ? Effect.succeed([])
-        : planPendingYieldFlowConversion(session, preparation)
+        : confidential.planPendingConversion(session)
     )
     .pipe(Atom.withLabel("yieldFlowReviewConversion"));
   const conversionGasAtom = walletRuntime
     .atom((get) => {
-      if (!preparation) return Effect.succeed(exactZero());
+      if (!confidential) return Effect.succeed(exactZero());
       return get(kycBlockingAtom)
         ? Effect.succeed(null)
         : get
             .result(conversionAtom)
             .pipe(
               Effect.flatMap((pending) =>
-                estimateYieldFlowConversionGas(
-                  preparation,
+                confidential.estimateConversionGas(
                   pending,
                   gasWarningInput.gasFeeToken
                 )
@@ -580,41 +406,34 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
       ),
       kyc,
       prices: AsyncResult.getOrElse(
-        get(pricesAtom.foreground(pricesKey)),
+        get(optionalTokenPricesAtom.foreground(pricesKey)),
         () => null
       ),
     } as const;
   }).pipe(Atom.withLabel("yieldFlowReviewBaseView"));
 
-  const stakeViewAtom =
-    intake._tag === "Enter"
-      ? makeYieldFlowStakeReviewViewAtom(intake, baseViewAtom)
-      : null;
-  const withdrawalFee =
-    intake._tag === "Exit" ? getYieldFlowWithdrawalFee(intake) : null;
-
-  return {
-    activityReviewViewAtom: Atom.make((get) => {
+  const page = {
+    /** Whether Confirm can be pressed, and whether it is still settling. */
+    confirmViewAtom: Atom.make((get) => {
       const view = get(baseViewAtom);
       return {
         confirmDisabled: view.confirmDisabled || get(activityExpiredAtom),
         confirmLoading: view.confirmLoading,
       } as const;
-    }).pipe(Atom.withLabel("yieldFlowActivityReviewView")),
+    }).pipe(Atom.withLabel("yieldFlowReviewConfirmView")),
     confirmAtom: walletRuntime
       .fn(
         (_input: undefined, get) =>
           Effect.gen(function* () {
             const decision = decideConfirm({
               activityExpired: get(activityExpiredAtom),
+              confidential,
               kycBlocking: get(kycBlockingAtom),
-              preparation,
               preview: get(previewAtom),
             });
-            if (decision._tag === "Prepare") {
-              const source = yield* planYieldFlowPreparation(
+            if (decision._tag === "PlanConfidentialHandoff") {
+              const source = yield* decision.confidential.planHandoff(
                 session,
-                decision.preparation,
                 decision.prepared
               );
               return yield* handOffYieldFlowSource(session, source);
@@ -637,10 +456,36 @@ export const makeYieldFlowReviewPage = (session: YieldFlowSession) => {
       },
       { initialValue: undefined }
     ).pipe(Atom.withLabel("refreshYieldFlowReviewKyc")),
-    reviewViewAtom: Atom.make((get) => ({
-      ...get(baseViewAtom),
-      stake: stakeViewAtom ? get(stakeViewAtom) : null,
-      withdrawalFee,
-    })).pipe(Atom.withLabel("yieldFlowReviewView")),
+    /** The preview, gas check, KYC and prices every Review shows. */
+    reviewViewAtom: baseViewAtom,
   } as const;
+
+  switch (intake._tag) {
+    case "Enter":
+      return {
+        ...page,
+        _tag: intake._tag,
+        intake,
+        /** The deposit's amount, rewards and fees. */
+        stakeViewAtom: makeYieldFlowStakeReviewViewAtom(intake, baseViewAtom),
+      } as const;
+    case "Exit":
+      return {
+        ...page,
+        _tag: intake._tag,
+        intake,
+        /** The exit's withdrawal fee; null without one. */
+        withdrawalFee: getYieldFlowWithdrawalFee(intake),
+      } as const;
+    case "Manage":
+      return { ...page, _tag: intake._tag, intake } as const;
+    case "YieldActionContinuation":
+      return { ...page, _tag: intake._tag, intake } as const;
+  }
 };
+
+type YieldFlowReviewPage = ReturnType<typeof makeYieldFlowReviewPage>;
+
+/** Review of one intake variant: what only that variant's Review reads. */
+export type YieldFlowReviewVariant<Tag extends YieldFlowReviewPage["_tag"]> =
+  Extract<YieldFlowReviewPage, { readonly _tag: Tag }>;

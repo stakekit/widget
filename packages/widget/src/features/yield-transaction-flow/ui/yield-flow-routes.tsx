@@ -1,18 +1,13 @@
-import { Match } from "effect";
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Route } from "react-router";
 
 import { widgetYieldFlowRoutes } from "../../../services/navigation/widget-routes";
+import type { TransactionFlowTrail } from "../../transaction-flow/index";
+import type { YieldPreviewIntake } from "../model/intake";
 import type { YieldFlowMountTag } from "../model/session";
-import { EnterCompletePage } from "./complete/pages/enter-complete.page.tsx";
-import { ExitCompletePage } from "./complete/pages/exit-complete.page.tsx";
-import { PendingCompletePage } from "./complete/pages/pending-complete.page.tsx";
-import { EnterReviewPage } from "./review/pages/enter-review.page.tsx";
-import { ExitReviewPage } from "./review/pages/exit-review.page.tsx";
-import { PendingReviewPage } from "./review/pages/pending-review.page.tsx";
-import { EnterStepsPage } from "./steps/pages/enter-steps.page.tsx";
-import { ExitStepsPage } from "./steps/pages/exit-steps.page.tsx";
-import { PendingStepsPage } from "./steps/pages/pending-steps.page.tsx";
+import { YieldFlowCompletePage } from "./complete/pages/yield-flow-complete.page.tsx";
+import { YieldFlowReviewPage } from "./review/pages/yield-flow-review.page.tsx";
+import { StepsPage } from "./steps/pages/common.page.tsx";
 import {
   YieldFlowExecutionPage,
   YieldFlowExecutionRoute,
@@ -26,23 +21,33 @@ type YieldFlowRouteMount = {
    * Review, Steps, and Complete; it renders their `<Outlet />`.
    */
   readonly layout?: ReactNode;
+  /**
+   * Where the flow sits, for the breadcrumb and back button its pages show;
+   * without one, the page around the flow or the shell offers back.
+   */
+  readonly trail?: TransactionFlowTrail | null;
 };
 
-type StandardYieldFlowPages = Readonly<{
-  CompletePage: ComponentType;
-  ReviewPage: ComponentType;
-  StepsPage: ComponentType;
-}>;
+const journeys = {
+  Earn: "Enter",
+  PositionExit: "Exit",
+  PositionManage: "Manage",
+  PositionStake: "Enter",
+} as const satisfies Record<
+  YieldFlowRouteMount["mount"],
+  YieldPreviewIntake["_tag"]
+>;
 
-const createStandardYieldFlowRoutes = (
-  { layout, mount }: YieldFlowRouteMount,
-  journey: "Enter" | "Exit" | "Manage",
-  { CompletePage, ReviewPage, StepsPage }: StandardYieldFlowPages
-) => {
+/** Review, Steps, and Complete of the Yield Transaction Flow `mount` starts. */
+export const createYieldFlowRoutes = ({
+  layout,
+  mount,
+  trail = null,
+}: YieldFlowRouteMount) => {
   const routes = widgetYieldFlowRoutes[mount];
   const pages = (
     <>
-      <Route path={routes.review.pattern} element={<ReviewPage />} />
+      <Route path={routes.review.pattern} element={<YieldFlowReviewPage />} />
       <Route element={<YieldFlowExecutionRoute />}>
         <Route
           path={routes.steps.pattern}
@@ -56,7 +61,7 @@ const createStandardYieldFlowRoutes = (
           path={routes.complete.pattern}
           element={
             <YieldFlowExecutionPage page="Complete">
-              <CompletePage />
+              <YieldFlowCompletePage />
             </YieldFlowExecutionPage>
           }
         />
@@ -65,35 +70,16 @@ const createStandardYieldFlowRoutes = (
   );
 
   return (
-    <Route element={<YieldFlowRoute expected={journey} mount={mount} />}>
+    <Route
+      element={
+        <YieldFlowRoute
+          expected={journeys[mount]}
+          mount={mount}
+          trail={trail}
+        />
+      }
+    >
       {layout ? <Route element={layout}>{pages}</Route> : pages}
     </Route>
   );
 };
-
-/** Review, Steps, and Complete of the Yield Transaction Flow `mount` starts. */
-export const createYieldFlowRoutes = (route: YieldFlowRouteMount) =>
-  Match.value(route.mount).pipe(
-    Match.whenOr("Earn", "PositionStake", () =>
-      createStandardYieldFlowRoutes(route, "Enter", {
-        CompletePage: EnterCompletePage,
-        ReviewPage: EnterReviewPage,
-        StepsPage: EnterStepsPage,
-      })
-    ),
-    Match.when("PositionExit", () =>
-      createStandardYieldFlowRoutes(route, "Exit", {
-        CompletePage: ExitCompletePage,
-        ReviewPage: ExitReviewPage,
-        StepsPage: ExitStepsPage,
-      })
-    ),
-    Match.when("PositionManage", () =>
-      createStandardYieldFlowRoutes(route, "Manage", {
-        CompletePage: PendingCompletePage,
-        ReviewPage: PendingReviewPage,
-        StepsPage: PendingStepsPage,
-      })
-    ),
-    Match.exhaustive
-  );

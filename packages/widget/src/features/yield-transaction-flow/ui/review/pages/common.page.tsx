@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 
 import type { Token } from "../../../../../domain/token/token";
 import { Notice, Stack, Text } from "../../../../../ui/index";
+import { useWidgetNavigate } from "../../../../navigation/index";
+import { TransactionFlowPageHeader } from "../../../../transaction-flow/views";
 import { TransactionTerms } from "../../../../transaction-steps/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import {
@@ -121,6 +123,7 @@ export const ReviewPage = ({
   ...rest
 }: ReviewPageProps) => {
   const { t } = useTranslation();
+  const navigate = useWidgetNavigate();
   const hideGasFee = useWidgetConfig("hideGasFee");
 
   const isLoading = loading || feeConfigLoading;
@@ -182,6 +185,11 @@ export const ReviewPage = ({
     <AnimationPage>
       <PageContainer>
         <Stack gap={24}>
+          <TransactionFlowPageHeader
+            back={() => void navigate.back()}
+            page="Review"
+          />
+
           <ReviewOverview
             title={title}
             amount={amount}

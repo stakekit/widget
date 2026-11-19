@@ -22,6 +22,7 @@ import {
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { CompleteSummary } from "../../../../../ui/index";
+import { TransactionFlowPageHeader } from "../../../../transaction-flow/views";
 import {
   AnimationPage,
   PageContainer,
@@ -29,6 +30,7 @@ import {
 } from "../../../../widget-shell/views";
 import { formatNextBatchTiming } from "../../../../yield-presentation/index";
 import { formatTransactionTypeLabel } from "../../../model/yield-transaction-workflow";
+import type { YieldFlowExecutionPage } from "../../../state/execution-page";
 import { useComplete } from "../hooks/use-complete.hook";
 
 type CompletePageModel = ReturnType<typeof useComplete>;
@@ -71,7 +73,9 @@ type BatchedRequest = Readonly<{
   readonly yieldDto: EarnYieldWithProvider;
 }>;
 
-type CompletePageProps = Omit<Props, "completion">;
+type CompletePageProps = Omit<Props, "completion"> & {
+  readonly execution: YieldFlowExecutionPage;
+};
 
 export const CompletePageComponent = ({
   amount,
@@ -94,6 +98,7 @@ export const CompletePageComponent = ({
 
   const {
     attribution,
+    back,
     cta,
     onViewTransactionClick,
     unstakeMatch,
@@ -207,6 +212,7 @@ export const CompletePageComponent = ({
   return (
     <AnimationPage>
       <PageContainer>
+        <TransactionFlowPageHeader back={back} page="Complete" />
         <CompleteSummary
           as="h1"
           mark={{
@@ -251,6 +257,6 @@ export const CompletePageComponent = ({
   );
 };
 
-export const CompletePage = (props: CompletePageProps) => (
-  <CompletePageComponent {...props} completion={useComplete()} />
+export const CompletePage = ({ execution, ...props }: CompletePageProps) => (
+  <CompletePageComponent {...props} completion={useComplete(execution)} />
 );

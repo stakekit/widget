@@ -1,8 +1,13 @@
 import { useTrackPage } from "../../../../tracking/index";
+import type { YieldFlowReviewVariant } from "../../../state/review-page";
 import { useEnterReview } from "../hooks/use-enter-review.hook";
 import { ReviewPage } from "./common.page.tsx";
 
-export const EnterReviewPage = () => {
+export const EnterReviewPage = ({
+  review,
+}: {
+  readonly review: YieldFlowReviewVariant<"Enter">;
+}) => {
   useTrackPage("stakeReview");
 
   const {
@@ -28,7 +33,7 @@ export const EnterReviewPage = () => {
     kycStatusIsChecking,
     onKycStatusRefresh,
     cta,
-  } = useEnterReview();
+  } = useEnterReview(review);
 
   return (
     <ReviewPage

@@ -1,13 +1,17 @@
 import { I18nextProvider } from "react-i18next";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 import {
   TransactionHash,
   TransactionWorkflowId,
+  YieldId,
 } from "../../../src/domain/identity/identifiers";
+import { TransactionFlowStepsPage } from "../../../src/features/transaction-flow/views";
 import type { PageCta } from "../../../src/features/widget-shell/views";
 import type { YieldStepRow } from "../../../src/features/yield-transaction-flow/model/yield-transaction-workflow";
-import { StepsPage } from "../../../src/features/yield-transaction-flow/ui/steps/pages/common.page";
+import { getYieldStepsRows } from "../../../src/features/yield-transaction-flow/ui/steps/pages/common.page";
+import { widgetRoutes } from "../../../src/services/navigation/widget-routes";
 import {
   makeTransactionSignError,
   type TransactionWorkflowError,
@@ -29,31 +33,29 @@ type StepsMock = {
   wallet?: { name: string; logo?: string } | null;
 };
 
-const steps = vi.hoisted(() => ({
-  current: { numbered: true, txStates: [] } as StepsMock,
-}));
+const i18nForRows = createWidgetI18nInstance();
 
-vi.mock(
-  "../../../src/features/yield-transaction-flow/ui/steps/hooks/use-steps.hook",
-  () => ({
-    useSteps: () => ({
-      cta: steps.current.cta ?? null,
-      error: steps.current.error ?? null,
-      leaveConfirmationDialog: {
-        onLeave: () => {},
-        onStay: () => {},
-        open: false,
-        resumable: false,
-      },
-      numbered: steps.current.numbered,
-      retry: steps.current.retry,
-      summary: steps.current.summary ?? null,
-      txStates: steps.current.txStates,
-      details: steps.current.details ?? [],
-      wallet: steps.current.wallet ?? null,
-      yieldId: "zama-vault",
-    }),
-  })
+/** The Yield workflow's rows in the shared Steps page frame. */
+const YieldSteps = ({ mock }: { readonly mock: StepsMock }) => (
+  <TransactionFlowStepsPage
+    title={null}
+    rows={getYieldStepsRows(i18nForRows.t, {
+      txStates: mock.txStates,
+      yieldId: YieldId.make("zama-vault"),
+    })}
+    numbered={mock.numbered}
+    error={mock.error ?? null}
+    retry={mock.retry ?? null}
+    retryHostHook="footer-button-primary"
+    sent={false}
+    resumable={false}
+    completePath={widgetRoutes.earn.build()}
+    onCancel={() => mock.cta?.onClick()}
+    onLeave={() => {}}
+    {...(mock.summary ? { summary: mock.summary } : {})}
+    details={mock.details ?? []}
+    wallet={mock.wallet ?? null}
+  />
 );
 vi.mock("../../../src/features/widget-shell/ui/use-header", () => ({
   useHeader: () => ({ onLeftIconPress: () => {} }),
@@ -74,11 +76,13 @@ const row = (type: YieldStepRow["type"]): YieldStepRow => ({
 });
 
 const renderSteps = async (mock: StepsMock) => {
-  steps.current = mock;
+  const router = createMemoryRouter([
+    { element: <YieldSteps mock={mock} />, path: "/" },
+  ]);
   const app = await render(
     <I18nextProvider i18n={i18n}>
       <TestWidgetConfigProvider apiKey="test-key" variant="default">
-        <StepsPage />
+        <RouterProvider router={router} />
       </TestWidgetConfigProvider>
     </I18nextProvider>
   );

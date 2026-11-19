@@ -34,8 +34,8 @@ import {
   BorrowTransactionFlowRoute,
 } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-route";
 import {
-  useBorrowTransactionFlowExecution,
-  useBorrowTransactionFlowReview,
+  useProvidedBorrowFlowExecution,
+  useBorrowFlowReview,
 } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-session";
 import { useBorrowExecution } from "../../../src/features/borrow-transaction-flow/ui/use-borrow-execution";
 import { WalletScopeRoute } from "../../../src/features/wallet/ui/wallet-scope-route";
@@ -351,7 +351,7 @@ const NavigationCapture = ({
 };
 
 const StartExecutionProbe = () => {
-  const review = useBorrowTransactionFlowReview();
+  const review = useBorrowFlowReview();
   const confirm = useAtomSet(review.confirmAtom);
 
   return (
@@ -367,7 +367,7 @@ const StartExecutionProbe = () => {
 
 const CompleteProbe = () => {
   const location = useLocation();
-  const execution = useBorrowTransactionFlowExecution();
+  const execution = useProvidedBorrowFlowExecution();
   const result = useAtomValue(execution.viewAtom).completionResult;
 
   return (
@@ -527,7 +527,12 @@ export const makeExecutionApp = (
           >
             <Route path="/borrow" element={<div>Borrow home</div>} />
             <Route
-              element={<BorrowTransactionFlowRoute expected="BorrowEntry" />}
+              element={
+                <BorrowTransactionFlowRoute
+                  expected="BorrowEntry"
+                  trail={null}
+                />
+              }
             >
               <Route
                 path="/borrow/review"

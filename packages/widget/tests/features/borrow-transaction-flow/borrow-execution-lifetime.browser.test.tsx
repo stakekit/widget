@@ -149,9 +149,8 @@ describe("borrow execution flow: execution and lifetime", () => {
           .element(app.getByText("Preparing the next step"))
           .toBeInTheDocument()
       );
-      yield* Effect.promise(() =>
-        expect.element(app.getByText("Step 1 of 2")).toBeInTheDocument()
-      );
+      // The steps' own count is the only progress shown.
+      expect(app.container.textContent).not.toContain("Step 1 of 2");
     })
   );
 
@@ -302,7 +301,7 @@ describe("borrow execution flow: execution and lifetime", () => {
     })
   );
 
-  it.live("titles an execution failure with the action that ran", () =>
+  it.live("shows an execution failure on its step only", () =>
     Effect.gen(function* () {
       const app = yield* renderExecution(
         makeBorrowApi({
@@ -327,9 +326,12 @@ describe("borrow execution flow: execution and lifetime", () => {
       );
 
       yield* Effect.promise(() =>
-        expect.element(app.getByText("Withdrawal failed")).toBeInTheDocument()
+        expect
+          .element(app.getByText(/The transaction failed\. Try again\./))
+          .toBeInTheDocument()
       );
-      expect(app.container.textContent).not.toContain("Borrow failed");
+      // One failure surface: no separate titled notice repeats it.
+      expect(app.container.textContent).not.toContain("Withdrawal failed");
     })
   );
 

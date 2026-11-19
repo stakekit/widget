@@ -10,12 +10,12 @@ import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-sch
 import { getTokenPriceInUSD } from "../../../../../domain/finance/price";
 import type { Prices } from "../../../../../domain/finance/prices";
 import type { Token } from "../../../../../domain/token/token";
-import { getFeesInUSD } from "../../../../../shared/lib/formatters";
 import { formatRoundedPercent } from "../../../../../shared/lib/number-format";
 import {
   formatCooldownDays,
   formatDailyBatch,
 } from "../../../../yield-presentation/index";
+import { formatFeeWithUsd } from "../../../model/fee";
 import {
   formatTransactionTypeLabel,
   type YieldFlowTransactionToSign,
@@ -45,7 +45,8 @@ export const localizeReviewFee = ({
   fee
     ? {
         inPercentage: formatRoundedPercent(fee.ratio, locale),
-        inUSD: getFeesInUSD({ amount: fee.amount, locale, prices, token }),
+        inUSD:
+          formatFeeWithUsd({ amount: fee.amount, locale, prices, token }) ?? "",
         explanation: t(`review.${type}_fee_explanation`),
         label: t(`review.${type}_fee`),
       }

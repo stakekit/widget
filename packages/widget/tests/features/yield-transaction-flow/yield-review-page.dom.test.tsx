@@ -118,7 +118,8 @@ const renderStakeReview = ({
         variant="default"
       >
         <MemoryRouter>
-          <EnterReviewPage />
+          {/* The hook is mocked, so the page model it reads is unused. */}
+          <EnterReviewPage review={{} as never} />
         </MemoryRouter>
       </TestWidgetConfigProvider>
     </I18nextProvider>
@@ -253,7 +254,7 @@ const renderExitReview = (withdrawalFee: FeesBps | null) => {
         variant="default"
       >
         <MemoryRouter>
-          <ExitReviewPage />
+          <ExitReviewPage review={{} as never} />
         </MemoryRouter>
       </TestWidgetConfigProvider>
     </I18nextProvider>

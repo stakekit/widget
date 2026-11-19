@@ -9,9 +9,17 @@ import type {
 } from "../../../domain/earn/action-models";
 import type {
   ConfidentialHandle,
+  EarnBalance,
   YieldBalanceType,
 } from "../../../domain/earn/balance";
-import type { TokenAmount } from "../../../domain/earn/denomination";
+import {
+  getPendingActionDecryptHandle,
+  isEncryptedBalance,
+} from "../../../domain/earn/confidential-vault";
+import {
+  getPendingActionReturn,
+  type TokenAmount,
+} from "../../../domain/earn/denomination";
 import type { EarnProvider } from "../../../domain/earn/provider";
 import type {
   EarnValidator,
@@ -58,7 +66,7 @@ export type ExitYieldTransactionFlowIntake = {
   readonly walletScope: WalletScopeKey;
 };
 
-type ManageYieldTransactionFlowIntake = {
+export type ManageYieldTransactionFlowIntake = {
   readonly _tag: "Manage";
   /**
    * What the action shows; null when it names no amount, never its
@@ -79,6 +87,51 @@ type ManageYieldTransactionFlowIntake = {
   readonly providersDetails: ReadonlyArray<YieldFlowProviderDetail>;
   readonly request: ManageActionCommand;
   readonly walletScope: WalletScopeKey;
+};
+
+/**
+ * The Manage intake for a pending action prepared on a balance. An encrypted
+ * balance's amount is unknown here, an unfinished instant exit carries the
+ * handle its Decrypt step reveals, and a cancel names what it returns.
+ */
+export const makeManageIntake = ({
+  balance,
+  pendingActionType,
+  prepared,
+  providersDetails,
+  walletScope,
+}: {
+  readonly balance: EarnBalance;
+  readonly pendingActionType: YieldPendingActionType;
+  readonly prepared: {
+    readonly amount: TokenAmount | null;
+    readonly command: ManageActionCommand;
+    readonly gasFeeToken: Token;
+    readonly integrationData: EarnYieldWithProvider;
+  };
+  readonly providersDetails: ReadonlyArray<YieldFlowProviderDetail>;
+  readonly walletScope: WalletScopeKey;
+}): ManageYieldTransactionFlowIntake => {
+  const confidentialHandle = getPendingActionDecryptHandle(
+    balance,
+    pendingActionType
+  );
+  const cancelReturn = getPendingActionReturn(pendingActionType, balance);
+  return {
+    _tag: "Manage",
+    amount: prepared.amount,
+    balanceType: balance.type,
+    ...(isEncryptedBalance(balance) ? { balanceHidden: true } : {}),
+    ...(confidentialHandle ? { confidentialHandle } : {}),
+    ...(cancelReturn ? { cancelReturnToken: cancelReturn.token } : {}),
+    gasFeeToken: prepared.gasFeeToken,
+    integration: prepared.integrationData,
+    interactedToken: balance.token,
+    pendingActionType,
+    providersDetails,
+    request: prepared.command,
+    walletScope,
+  };
 };
 
 export type YieldActionContinuationIntake = {
@@ -135,19 +188,3 @@ export const isYieldTransactionFlowWalletScopeValid = (
 ): boolean =>
   currentWalletScope !== null &&
   sameWalletScopeOwner(intake.walletScope, currentWalletScope);
-
-const isYieldTransactionFlowIntakeVariant = <
-  Variant extends YieldTransactionFlowIntake["_tag"],
->(
-  intake: YieldTransactionFlowIntake,
-  variant: Variant
-): intake is Extract<YieldTransactionFlowIntake, { readonly _tag: Variant }> =>
-  intake._tag === variant;
-
-export const getYieldTransactionFlowIntakeVariant = <
-  Variant extends YieldTransactionFlowIntake["_tag"],
->(
-  intake: YieldTransactionFlowIntake,
-  variant: Variant
-): Extract<YieldTransactionFlowIntake, { readonly _tag: Variant }> | null =>
-  isYieldTransactionFlowIntakeVariant(intake, variant) ? intake : null;

@@ -2,11 +2,9 @@ import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 
 import type { RiskBand } from "../../../domain/borrow/risk-band";
-import {
-  formatLtv,
-  formatPercent,
-  toChartNumber,
-} from "../../../shared/lib/number-format";
+import { toRepresentationNumber } from "../../../domain/finance/exact";
+import { formatPercent } from "../../../shared/lib/number-format";
+import { formatLtv } from "../../borrow-presentation/index";
 
 /**
  * How each risk band reads on every part that shows it. Safe reads plain:
@@ -52,14 +50,14 @@ export const toLtvMeter = ({
   readonly maxLtv: BigNumber | null;
   readonly t: TFunction;
 }): LtvMeter => ({
-  value: Math.min(100, toChartNumber(ltv.multipliedBy(100))),
+  value: Math.min(100, toRepresentationNumber(ltv.multipliedBy(100))),
   valueText: formatLtv(ltv, locale),
   ...(maxLtv === null
     ? {}
     : {
         marker: {
-          value: toChartNumber(maxLtv.multipliedBy(100)),
-          label: t("dashboard.borrow.risk.max_ltv_marker", {
+          value: toRepresentationNumber(maxLtv.multipliedBy(100)),
+          label: t("borrow.risk.max_ltv_marker", {
             value: formatPercent(maxLtv, locale),
           }),
         },

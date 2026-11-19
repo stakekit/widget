@@ -13,7 +13,6 @@ import {
   borrowPositionsResourceAtom,
 } from "../../../resources/borrow-positions/borrow-positions";
 import { walletRuntime } from "../../../runtime/wallet-runtime";
-import { WidgetNavigation } from "../../../services/navigation/widget-navigation";
 import {
   type WidgetPath,
   widgetRoutes,
@@ -21,7 +20,7 @@ import {
 import { BorrowTransactionWorkflowInput } from "../../../services/transaction-workflow/transaction-workflow-model";
 import {
   makeTransactionFlowWorkflowAtoms,
-  type TransactionFlowExecutionStatus,
+  navigateTransactionFlow,
   startTransactionFlowExecution,
 } from "../../transaction-flow/index";
 import { settleBorrowPosition } from "../model/borrow-completion";
@@ -54,9 +53,7 @@ const getBorrowFlowPositionMarketId = ({
   entry._tag === "MarketPosition" ? entry.marketId : command.args.marketId;
 
 const replaceBorrowFlowPage = (to: WidgetPath) =>
-  WidgetNavigation.use((navigation) =>
-    Effect.uninterruptible(navigation.execute({ _tag: "Replace", to }))
-  );
+  navigateTransactionFlow({ _tag: "Replace", to });
 
 /**
  * The Session market's position once the Borrow API reports it after the
@@ -134,27 +131,20 @@ export const makeBorrowFlowExecutionPage = (
   const positionPath = widgetRoutes.borrowPosition.build("Dashboard", {
     marketId: getBorrowFlowPositionMarketId(session),
   });
-  const { dispatchAtom, stateAtom, workflowAtom } =
+  const { completionAtom, dispatchAtom, executionStatusAtom, stateAtom } =
     makeTransactionFlowWorkflowAtoms(
       startBorrowFlowExecution(session, actionId),
-      "borrowFlowExecution"
+      {
+        isFinished: (state) => state._tag === "Completed",
+        label: "borrowFlowExecution",
+      }
     );
 
   return {
-    /** Whether the workflow completed; null until its state is known. */
-    completionAtom: Atom.make((get) => {
-      const state = get(stateAtom);
-      return AsyncResult.isSuccess(state)
-        ? state.value._tag === "Completed"
-        : null;
-    }).pipe(Atom.withLabel("borrowFlowExecutionCompleted")),
+    /** Whether the workflow completed. */
+    completionAtom,
     dispatchAtom,
-    /** `Failed` when the Execution could not start, `Starting` until it runs. */
-    executionStatusAtom: Atom.make((get): TransactionFlowExecutionStatus => {
-      const workflow = get(workflowAtom);
-      if (AsyncResult.isFailure(workflow)) return "Failed";
-      return AsyncResult.isInitial(workflow) ? "Starting" : "Running";
-    }).pipe(Atom.withLabel("borrowFlowExecutionStatus")),
+    executionStatusAtom,
     /** Back from Steps: returns where the flow began. */
     leaveAtom: walletRuntime
       .fn(() => leaveBorrowFlow("Steps"), { initialValue: undefined })
@@ -179,13 +169,16 @@ export const makeBorrowFlowExecutionPage = (
       })
       .pipe(Atom.withLabel("viewBorrowFlowPosition")),
     settledPositionAtom: makeBorrowFlowSettledPositionAtom(session),
-    stateAtom,
+    /** What Steps and Complete show of the workflow. */
     viewAtom: Atom.make((get) => {
       const state = Option.getOrNull(AsyncResult.value(get(stateAtom)));
       return state
         ? projectBorrowExecution(state, session.intake.summary.action)
         : emptyBorrowExecutionView;
     }).pipe(Atom.withLabel("borrowFlowExecutionView")),
-    workflowAtom,
   } as const;
 };
+
+export type BorrowFlowExecutionPage = ReturnType<
+  typeof makeBorrowFlowExecutionPage
+>;

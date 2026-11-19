@@ -1,6 +1,10 @@
 export {
+  executionUnavailableState,
+  TransactionFlowFailureState,
+} from "./model/failure";
+export {
   makeTransactionFlowWorkflowAtoms,
-  type TransactionFlowExecutionStatus,
+  navigateTransactionFlow,
 } from "./state/execution";
 export {
   handOffTransactionFlow,
@@ -8,3 +12,8 @@ export {
   startTransactionFlowExecution,
   type TransactionFlowHandoffOutcome,
 } from "./state/handoff";
+export type { TransactionFlowTrail } from "./model/trail";
+export {
+  makeTransactionFlowContext,
+  useOptionalAtomValue,
+} from "./ui/transaction-flow-context";

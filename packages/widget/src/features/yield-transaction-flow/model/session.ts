@@ -2,6 +2,7 @@ import { Equal, Option, Ref, Schema } from "effect";
 
 import type { DirectTransaction } from "../../../domain/action/direct-transaction";
 import type { YieldAction } from "../../../domain/earn/action-models";
+import type { ConfidentialPreparation } from "../../../domain/earn/confidential-vault";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import type { BalanceDataKey } from "../../../domain/portfolio/positions";
 import { WalletScopeKey } from "../../../domain/wallet/wallet-scope";
@@ -12,7 +13,6 @@ import {
   widgetYieldFlowRoutes,
 } from "../../../services/navigation/widget-routes";
 import { makeDirectTransactionLedger } from "../../../services/transaction-workflow/transaction-workflow-model";
-import type { ConfidentialPreparation } from "../../../services/zama/confidential-preparation";
 import type {
   YieldActionContinuationIntake,
   YieldTransactionFlowIntake,
@@ -30,6 +30,8 @@ type YieldTransactionFlowDestination = WidgetFlowDestination<
 type YieldTransactionFlowMount =
   | Readonly<{
       readonly _tag: "YieldActionContinuation";
+      /** The action Activity continues, which names its routes. */
+      readonly actionId: YieldAction["id"];
     }>
   | Readonly<{ readonly _tag: "Earn" }>
   | Readonly<{
@@ -112,6 +114,15 @@ export type YieldFlowExecutionSource =
       /** Presentation only: the Planned Steps Steps lists until it prepares them. */
       readonly plannedStepTypes: ReadonlyArray<PlannedStepType>;
     }>;
+
+/**
+ * The Planned Steps Steps lists until a confidential vault's action is
+ * prepared; none for an action Review already previewed.
+ */
+export const getYieldFlowPlannedSteps = (
+  source: YieldFlowExecutionSource
+): ReadonlyArray<PlannedStepType> =>
+  source._tag === "Prepare" ? source.plannedStepTypes : [];
 
 /**
  * One confirmation Review handed to the Execution Steps opens. Each is its
@@ -206,17 +217,13 @@ export const makeYieldFlowSession = (
 ): YieldFlowSession => {
   const destination = ((): YieldTransactionFlowDestination => {
     switch (command.mount._tag) {
-      case "YieldActionContinuation": {
-        if (command.intake._tag !== "YieldActionContinuation") {
-          throw new Error("Expected Yield Action Continuation intake.");
-        }
+      case "YieldActionContinuation":
         return {
           ...yieldFlowRoutes.YieldActionContinuation.at({
-            actionId: command.intake.action.id,
+            actionId: command.mount.actionId,
           }),
           finishPath: widgetRoutes.activity.build(),
         };
-      }
       case "Earn":
         return {
           ...yieldFlowRoutes.Earn.at(),
@@ -226,20 +233,9 @@ export const makeYieldFlowSession = (
       // positions list once the position is gone.
       case "PositionExit":
       case "PositionManage":
-        return {
-          ...yieldFlowRoutes[command.mount._tag].at({
-            balanceId: command.mount.balanceId,
-            integrationId: command.mount.integrationId,
-          }),
-          finishPath: widgetRoutes.positionDetails.build({
-            balanceId: command.mount.balanceId,
-            integrationId: command.mount.integrationId,
-          }),
-        };
-      // Only the Dashboard Layout mounts a position's stake flow.
       case "PositionStake":
         return {
-          ...yieldFlowRoutes.PositionStake.at("Dashboard", {
+          ...yieldFlowRoutes[command.mount._tag].at({
             balanceId: command.mount.balanceId,
             integrationId: command.mount.integrationId,
           }),
@@ -263,7 +259,10 @@ export const makeYieldActionContinuationSession = (
   intake: YieldActionContinuationIntake
 ): YieldFlowSession =>
   makeYieldFlowSession(
-    { intake, mount: { _tag: "YieldActionContinuation" } },
+    {
+      intake,
+      mount: { _tag: "YieldActionContinuation", actionId: intake.action.id },
+    },
     intake.walletScope
   );
 

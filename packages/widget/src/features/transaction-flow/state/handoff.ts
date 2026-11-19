@@ -9,7 +9,7 @@ import {
   type TransactionWorkflowHandle,
   TransactionWorkflowService,
 } from "../../../services/transaction-workflow/transaction-workflow-service";
-import { afterCurrentRender } from "../../../shared/effect/after-render";
+import { afterCurrentRender } from "./after-render";
 
 /**
  * The Handoff a Flow Session holds, at most one: waiting for Steps to start
