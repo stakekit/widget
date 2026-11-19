@@ -1,4 +1,4 @@
-import { config } from "../config/widget-defaults";
+import { config } from "../../shared/config/widget-defaults";
 
 const getImage = (name: string) => `${config.assetsUrl}/widget/${name}`;
 

@@ -40,7 +40,7 @@ run("no-layout-name-in-logic", {
   valid: [
     'const layout: WidgetLayout = "Dashboard"',
     'const grouped = layout === "Compact"',
-    'const label = t("dashboard.earn_details.apy")',
+    'const label = t("earn_details.apy")',
     "const formatted = formatCompactNumber(tvl, locale)",
     'export const formatMeaningfulCompactUsd = () => ""',
     'const categoryGrouping = config.yieldGrouping === "category"',

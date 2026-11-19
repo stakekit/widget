@@ -4,7 +4,6 @@ import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 
 import { config } from "../../../../../shared/config/widget-defaults";
-import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import type { ExternalProviderSnapshot } from "../../../../config/external-provider-snapshot";
 import { type CurrentRef, ExternalProvider } from "../../../external-provider";
 import {
@@ -19,6 +18,7 @@ import {
   toWagmiAccounts,
   toWagmiChainId,
 } from "../../wagmi-seam";
+import { makeCurrentValueStream } from "../current-value-stream";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 
 const configMeta = {

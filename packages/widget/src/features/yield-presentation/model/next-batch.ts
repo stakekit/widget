@@ -88,7 +88,7 @@ export const formatDailyBatch = ({
   const schedule = yieldDto.investmentSchedule;
   const cutoff = schedule ? getDailyBatchCutoff(schedule, side) : null;
   return cutoff
-    ? t("dashboard.earn_details.daily_batch", {
+    ? t("earn_details.daily_batch", {
         time: cutoff.time,
         timezone: cutoff.timezone,
       })

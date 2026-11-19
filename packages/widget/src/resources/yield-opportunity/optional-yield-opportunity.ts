@@ -22,6 +22,6 @@ const yieldOpportunityCanonicalAtom = Atom.family((key: YieldOpportunityKey) =>
   )
 );
 
-export const yieldOpportunityAtom = makePresentableResourceFamily(
+export const optionalYieldOpportunityAtom = makePresentableResourceFamily(
   yieldOpportunityCanonicalAtom
 );

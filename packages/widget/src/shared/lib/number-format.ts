@@ -164,11 +164,6 @@ const intlFormatOptions = {
     notation: "compact",
     style: "currency",
   },
-  "compact-health-factor": {
-    notation: "compact",
-    maximumFractionDigits: 2,
-    roundingMode: "trunc",
-  },
   "compact-token-amount-down": {
     notation: "compact",
     maximumFractionDigits: 2,
@@ -481,45 +476,17 @@ export const formatRewardRatePercent = (
     ? unavailableFigure
     : formatRoundedPercent(rewardRate, locale);
 
-/** LTV past 100% means debt exceeds collateral; the exact figure adds nothing. */
-export const formatLtv = (value: OptionalNumericValue, locale: string) => {
-  if (isMissingNumericInput(value)) return unavailableFigure;
-
-  return exactDecimal(value).gt(1)
-    ? `>${withPercentAffixes(formatNumber(100, locale), locale)}`
-    : formatPercent(value, locale);
-};
-
-const healthFactorDecimals = 2;
-const minimumHealthFactor = exactDecimal(1).shiftedBy(-healthFactorDecimals);
-const compactHealthFactor = exactDecimal(1000);
-
 /**
- * Truncated to two places, never rounded up: 0.996 must not read as a safe
- * "1.00". From 1,000 up the digits only restate "far from liquidation" (dust
- * debt reads in the millions), so it goes compact.
+ * Figures of 1,000 and up in short-scale notation ("1K", "2.22M"), truncated
+ * to two fraction digits and never rounded up, so a figure never reads larger
+ * than it is.
  */
-export const formatHealthFactor = (
-  value: OptionalNumericValue,
-  locale: string
-) => {
-  const amount = toFiniteDecimal(value);
-  if (!amount) return unavailableFigure;
-
-  if (amount.gt(0) && amount.lt(minimumHealthFactor)) {
-    return `<${formatNumber(minimumHealthFactor, locale)}`;
-  }
-
-  if (amount.gte(compactHealthFactor)) {
-    // Compact shows at most tens of the integer part; truncate exactly first
-    // so the float conversion cannot round up across a unit boundary.
-    return getIntlFormatter("compact-health-factor", locale).format(
-      amount.decimalPlaces(0, BigNumber.ROUND_DOWN).toNumber()
-    );
-  }
-
-  return formatNumber(amount, locale, healthFactorDecimals);
-};
+export const formatAbbreviatedDown = (value: NumericValue, locale: string) =>
+  // Compact shows at most tens of the integer part; truncate exactly first so
+  // the float conversion cannot round up across a unit boundary.
+  getIntlFormatter("compact-token-amount-down", locale).format(
+    exactDecimal(value).decimalPlaces(0, BigNumber.ROUND_DOWN).toNumber()
+  );
 
 /**
  * A figure as it moves with an action: `before → after`, or just `after` when
@@ -664,48 +631,36 @@ const affixesAround = (parts: ReadonlyArray<Intl.NumberFormatPart>) => {
 };
 
 /**
- * Value-axis labels for amounts: ticks from 1,000 in the compact unit of the
- * largest tick, the rest in full, with one decimal count for each and zero
- * as a bare 0. USD in full shows whole dollars or cents.
+ * Value-axis labels for token amounts, such as "500 / 1.0K / 1.5K": ticks
+ * from 1,000 in the compact unit of the largest tick, the rest in full, with
+ * one decimal count for each and zero as a bare 0.
  */
-const formatAmountTicks = (
+export const formatAmountAxis = (
   values: ReadonlyArray<NumericValue>,
-  locale: string,
-  currency: "usd" | null
+  locale: string
 ): ReadonlyArray<string> => {
   const amounts = values.map((value) => exactDecimal(value));
   const largest = BigNumber.max(0, ...amounts.map((amount) => amount.abs()));
   const unit = compactAxisUnits.find((candidate) => largest.gte(candidate));
-  const plainAffixes: AxisAffixes =
-    currency === "usd"
-      ? affixesAround(getIntlFormatter("usd", locale).formatToParts(1))
-      : { prefix: "", suffix: "" };
   const compactAffixes: AxisAffixes = unit
     ? affixesAround(
-        getIntlFormatter(
-          currency === "usd" ? "compact-usd" : "compact-token-amount-nearest",
-          locale
-        ).formatToParts(unit.toNumber())
+        getIntlFormatter("compact-token-amount-nearest", locale).formatToParts(
+          unit.toNumber()
+        )
       )
-    : plainAffixes;
+    : { prefix: "", suffix: "" };
   const isCompact = (amount: BigNumber) =>
     unit !== undefined && amount.abs().gte(compactAxisFloor);
   const compactDecimals = axisDecimals(
     amounts.filter(isCompact).map((amount) => amount.div(unit ?? 1))
   );
-  const plainExactDecimals = axisDecimals(
+  const plainDecimals = axisDecimals(
     amounts.filter((amount) => !isCompact(amount))
   );
-  const plainDecimals =
-    currency === "usd" && plainExactDecimals > 0
-      ? Math.max(2, plainExactDecimals)
-      : plainExactDecimals;
 
   return amounts.map((amount) => {
     const sign = amount.isNegative() ? "\u2212" : "";
-    if (amount.isZero()) {
-      return `${plainAffixes.prefix}${formatExact(amount, locale, 0)}${plainAffixes.suffix}`;
-    }
+    if (amount.isZero()) return formatExact(amount, locale, 0);
     if (isCompact(amount)) {
       const digits = formatExact(
         amount.abs().div(unit ?? 1),
@@ -714,29 +669,9 @@ const formatAmountTicks = (
       );
       return `${sign}${compactAffixes.prefix}${digits}${compactAffixes.suffix}`;
     }
-    const digits = formatExact(amount.abs(), locale, plainDecimals);
-    return `${sign}${plainAffixes.prefix}${digits}${plainAffixes.suffix}`;
+    return `${sign}${formatExact(amount.abs(), locale, plainDecimals)}`;
   });
 };
-
-/**
- * Value-axis labels for USD values, such as "$500 / $1.0K / $1.5K": ticks
- * from 1,000 in the largest tick's compact unit, ticks under 1,000 in full,
- * zero as `$0`, one decimal count for the compact ticks.
- */
-export const formatUsdAxis = (
-  values: ReadonlyArray<NumericValue>,
-  locale: string
-): ReadonlyArray<string> => formatAmountTicks(values, locale, "usd");
-
-/**
- * Value-axis labels for token amounts, such as "500 / 1.0K / 1.5K": the
- * `formatUsdAxis` rule without the currency.
- */
-export const formatAmountAxis = (
-  values: ReadonlyArray<NumericValue>,
-  locale: string
-): ReadonlyArray<string> => formatAmountTicks(values, locale, null);
 
 const ratioSignificantDigits = { fewest: 4, most: 6 } as const;
 
@@ -766,9 +701,3 @@ export const formatRatio = (value: OptionalNumericValue, locale: string) => {
     )
   );
 };
-
-export const toRepresentationNumber = (
-  value: BigNumber | number | string
-): number => exactDecimal(value).toNumber();
-
-export const toChartNumber = toRepresentationNumber;

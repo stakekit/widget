@@ -9,7 +9,10 @@ export {
   formatNextBatchTiming,
   getNextBatchCopyOptions,
 } from "./model/next-batch";
-export { getRiskRatingTone } from "./model/risk-rating-tone";
+export {
+  getRiskRatingTone,
+  getYieldRiskSourceLabel,
+} from "./model/risk-rating";
 export {
   formatCommission,
   formatCooldownDays,
@@ -35,3 +38,4 @@ export {
   type YieldRateFigure,
   type YieldTvlFigure,
 } from "./model/yield-figures";
+export { getYieldTypeLabels } from "./model/yield-type-labels";

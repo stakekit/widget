@@ -9,7 +9,6 @@ import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 
 import type { InitParams } from "../../../../../services/wallet/init-params";
-import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import type {
   Chain,
   WalletDetailsParams,
@@ -19,6 +18,7 @@ import { WalletIntegrationError } from "../../../wallet-errors";
 import { walletImages } from "../../runtime/assets";
 import type { RunWalletEffect } from "../../runtime/effect-runner";
 import { parseWalletRoutingId, toWagmiAccount } from "../../wagmi-seam";
+import { makeCurrentValueStream } from "../current-value-stream";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import {

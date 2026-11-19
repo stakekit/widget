@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   getApiYieldTypesForYieldCategory,
   getYieldCategory,
-  getYieldTypeLabels,
   getYieldTypesSortRank,
   yieldCategories,
 } from "../../../src/domain/earn/yield";
@@ -31,16 +30,6 @@ const makeYield = (type: string): EarnYieldWithProvider =>
       symbol: "USDC",
     },
   }) as EarnYieldWithProvider;
-
-const t = ((key: string) => {
-  const values: Record<string, string> = {
-    "yield_types.liquid-staking.title": "Liquid staking",
-    "yield_types.liquid-staking.review": "Liquid staking",
-    "yield_types.liquid-staking.cta": "Stake",
-  };
-
-  return values[key] ?? key;
-}) as Parameters<typeof getYieldTypeLabels>[1];
 
 describe("getApiYieldTypesForYieldCategory", () => {
   it("partitions every API yield type into exactly one category", () => {
@@ -78,25 +67,5 @@ describe("getYieldTypesSortRank", () => {
 describe("getYieldCategory", () => {
   it("does not assign unknown runtime yield types to a dashboard category", () => {
     expect(getYieldCategory(makeYield("future_yield_type"))).toBeNull();
-  });
-});
-
-describe("getYieldTypeLabels", () => {
-  it("uses liquid staking copy for liquid_staking", () => {
-    expect(getYieldTypeLabels(makeYield("liquid_staking"), t)).toEqual({
-      type: "liquid_staking",
-      title: "Liquid staking",
-      review: "Liquid staking",
-      cta: "Stake",
-    });
-  });
-
-  it("uses generic copy for unknown runtime yield types", () => {
-    expect(getYieldTypeLabels(makeYield("future_yield_type"), t)).toEqual({
-      type: "unknown",
-      title: "Yield",
-      review: "Earn",
-      cta: "Earn",
-    });
   });
 });

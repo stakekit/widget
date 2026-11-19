@@ -10,7 +10,6 @@ import {
   WalletAddress,
   type WalletAddress as WalletAddressType,
 } from "../../../../../domain/identity/identifiers";
-import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import type {
   WalletAvailability,
   WalletDescriptor,
@@ -24,6 +23,7 @@ import {
   toWagmiAccounts,
   toWagmiChainId,
 } from "../../wagmi-seam";
+import { makeCurrentValueStream } from "../current-value-stream";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { makeWagmiConnectorEvents } from "../wagmi-connector-events";
 import type { CosmosChainsAssets, CosmosChainsMap } from "./chains";

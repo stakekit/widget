@@ -28,13 +28,13 @@ import {
   borrowPositionAtom,
 } from "../../src/features/borrow/positions/state/positions";
 import {
+  PositionsDataKey,
+  TokenOptionsKey,
+} from "../../src/features/earn/model/earn-selection/keys";
+import {
   mergedTokenOptionsAtom,
   positionsDataAtom,
 } from "../../src/features/earn/state/earn-selection/catalog/catalog";
-import {
-  PositionsDataKey,
-  TokenOptionsKey,
-} from "../../src/features/earn/state/earn-selection/catalog/keys";
 import { activityHistoryPullAtom } from "../../src/resources/activity-history/activity-history";
 import { appRuntime } from "../../src/runtime/app-runtime";
 import type { YieldDirectoryRequest } from "../../src/services/api/resource-sources";

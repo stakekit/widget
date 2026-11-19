@@ -5,6 +5,7 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
 
 import { ApplicationRouteContentProvider } from "./app/composition/application-route-content";
+import { preloadImages } from "./app/composition/preload-images";
 import { Providers } from "./app/composition/providers";
 import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
 import { StandaloneWidgetUnavailable } from "./app/composition/standalone-widget-unavailable";
@@ -30,7 +31,6 @@ import type { SKAppProps } from "./public-api/react-types";
 import type { BundledSKWidgetProps } from "./public-api/types";
 import { rejectedWidgetConfigAtom } from "./runtime/widget-config";
 import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
-import { preloadImages } from "./shared/assets/images";
 
 preloadImages();
 

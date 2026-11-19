@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest";
 import { Effect, Fiber, Stream } from "effect";
 
-import { makeCurrentValueStream } from "../../../src/shared/effect/current-value-stream";
+import { makeCurrentValueStream } from "../../../src/services/wallet/internal/adapters/current-value-stream";
 
 describe("current value stream", () => {
   it.effect(

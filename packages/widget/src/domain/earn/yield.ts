@@ -6,11 +6,16 @@ import {
   pipe,
   Schema,
 } from "effect";
-import type { TFunction } from "i18next";
 
+import type { PriceRequest } from "../finance/prices";
 import { type ProviderOption, YieldId } from "../identity/identifiers";
 import type { Network } from "../network/network";
-import { equalTokens, type HostTokenKey, tokenString } from "../token/token";
+import {
+  equalTokens,
+  type HostTokenKey,
+  type Token,
+  tokenString,
+} from "../token/token";
 import {
   YieldCategory,
   type YieldCategory as YieldCategoryType,
@@ -23,7 +28,6 @@ import {
 } from "./validator";
 import type { EarnYieldWithProvider } from "./yield-schema";
 
-type YieldRiskRatingTone = "positive" | "warning" | "danger" | "neutral";
 type YieldRiskEntry = NonNullable<
   EarnYieldWithProvider["risk"]
 >["ratings"][number];
@@ -32,7 +36,6 @@ type YieldRiskRatingSource = KnownYieldRiskRatingSource | (string & {});
 export type YieldRiskDisplay = {
   rating: string;
   source: YieldRiskRatingSource;
-  tone: YieldRiskRatingTone;
 };
 export type YieldMetadata = Pick<
   EarnYieldWithProvider["metadata"],
@@ -68,15 +71,6 @@ type ValidatorDto = {
   readonly address: string;
   readonly name?: string | null;
   readonly preferred?: boolean;
-};
-
-type YieldTypeLabelsMap = {
-  [Key in ExtendedYieldType]: {
-    type: Key;
-    title: string;
-    review: string;
-    cta: string;
-  };
 };
 
 /** Preferred yield ID, or `"*"` for the default choice, per host token key, per network. */
@@ -234,19 +228,20 @@ export const getYieldRewardTokens = (yieldDto: EarnYieldWithProvider) =>
     EArray.filter((token) => tokenString(token) !== tokenString(yieldDto.token))
   );
 
-const getRiskTone = (rating: string): YieldRiskRatingTone => {
-  const normalizedRating = rating.trim().toUpperCase();
-
-  if (normalizedRating.startsWith("A")) return "positive";
-  if (normalizedRating.startsWith("B")) return "warning";
-  if (
-    ["C", "D", "E", "F"].some((prefix) => normalizedRating.startsWith(prefix))
-  ) {
-    return "danger";
-  }
-
-  return "neutral";
-};
+/**
+ * The prices a yield flow values its amounts with: the token it enters with
+ * and the yield's gas fee token, in USD.
+ */
+export const getTokensPricesRequest = ({
+  token,
+  yieldDto,
+}: {
+  readonly token: Token | null;
+  readonly yieldDto: EarnYieldWithProvider | null;
+}): PriceRequest | null =>
+  token && yieldDto
+    ? { currency: "USD", tokenList: [token, yieldDto.mechanics.gasFeeToken] }
+    : null;
 
 export const getYieldRiskDisplay = (
   yieldDto: Pick<EarnYieldWithProvider, "risk">
@@ -256,25 +251,7 @@ export const getYieldRiskDisplay = (
 
   if (!firstRating || !rating) return null;
 
-  return {
-    rating,
-    source: firstRating.source,
-    tone: getRiskTone(rating),
-  };
-};
-
-export const getYieldRiskSourceLabel = (
-  source: YieldRiskRatingSource,
-  t: TFunction
-) => {
-  switch (source) {
-    case "credora":
-      return t("details.risk.sources.credora");
-    case "stakingRewards":
-      return t("details.risk.sources.staking_rewards");
-    default:
-      return source;
-  }
+  return { rating, source: firstRating.source };
 };
 
 export const hasYieldFeeConfigurationEnabled = (
@@ -384,88 +361,6 @@ export const isDepositYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "real_world_asset" ||
   yieldType === "concentrated_liquidity_pool" ||
   yieldType === "liquidity_pool";
-
-export const getYieldTypeLabels = (
-  yieldDto: EarnYieldWithProvider,
-  t: TFunction
-): YieldTypeLabelsMap[keyof YieldTypeLabelsMap] => {
-  const map = {
-    staking: {
-      type: "staking",
-      title: t("yield_types.staking.title"),
-      review: t("yield_types.staking.review"),
-      cta: t("yield_types.staking.cta"),
-    },
-    vault: {
-      type: "vault",
-      title: t("yield_types.vault.title"),
-      review: t("yield_types.vault.review"),
-      cta: t("yield_types.vault.cta"),
-    },
-    lending: {
-      type: "lending",
-      title: t("yield_types.lending.title"),
-      review: t("yield_types.lending.review"),
-      cta: t("yield_types.lending.cta"),
-    },
-    restaking: {
-      type: "restaking",
-      title: t("yield_types.restaking.title"),
-      review: t("yield_types.restaking.review"),
-      cta: t("yield_types.restaking.cta"),
-    },
-    liquid_staking: {
-      type: "liquid_staking",
-      title: t("yield_types.liquid-staking.title"),
-      review: t("yield_types.liquid-staking.review"),
-      cta: t("yield_types.liquid-staking.cta"),
-    },
-    fixed_yield: {
-      type: "fixed_yield",
-      title: t("yield_types.fixed_yield.title"),
-      review: t("yield_types.fixed_yield.review"),
-      cta: t("yield_types.fixed_yield.cta"),
-    },
-    real_world_asset: {
-      type: "real_world_asset",
-      title: t("yield_types.real_world_asset.title"),
-      review: t("yield_types.real_world_asset.review"),
-      cta: t("yield_types.real_world_asset.cta"),
-    },
-    concentrated_liquidity_pool: {
-      type: "concentrated_liquidity_pool",
-      title: t("yield_types.concentrated_liquidity_pool.title"),
-      review: t("yield_types.concentrated_liquidity_pool.review"),
-      cta: t("yield_types.concentrated_liquidity_pool.cta"),
-    },
-    liquidity_pool: {
-      type: "liquidity_pool",
-      title: t("yield_types.liquidity_pool.title"),
-      review: t("yield_types.liquidity_pool.review"),
-      cta: t("yield_types.liquidity_pool.cta"),
-    },
-    native_staking: {
-      type: "native_staking",
-      title: t("yield_types.native_staking.title"),
-      review: t("yield_types.native_staking.review"),
-      cta: t("yield_types.native_staking.cta"),
-    },
-    pooled_staking: {
-      type: "pooled_staking",
-      title: t("yield_types.pooled_staking.title"),
-      review: t("yield_types.pooled_staking.review"),
-      cta: t("yield_types.pooled_staking.cta"),
-    },
-    unknown: {
-      type: "unknown",
-      title: "Yield",
-      review: "Earn",
-      cta: "Earn",
-    },
-  } satisfies YieldTypeLabelsMap;
-
-  return map[getExtendedYieldType(yieldDto)];
-};
 
 const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
   real_world_asset: 1,

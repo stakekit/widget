@@ -75,7 +75,7 @@ export const YieldFactsSection = ({
 
   return (
     <Disclosure
-      title={t("dashboard.earn_details.about")}
+      title={t("earn_details.about")}
       defaultOpen
       testId="yield-facts"
     >
@@ -88,7 +88,7 @@ export const YieldFactsSection = ({
                 href={documentation}
                 newTabLabel={t("shared.opens_in_new_tab")}
               >
-                {t("dashboard.earn_details.read_docs")}
+                {t("earn_details.read_docs")}
               </ExternalLink>
             ) : null}
           </Stack>

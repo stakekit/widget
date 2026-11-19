@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 
 import {
   getYieldRiskDisplay,
-  getYieldRiskSourceLabel,
   type YieldRiskDisplay,
 } from "../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
@@ -14,9 +13,13 @@ import {
   InfoTip,
   Stack,
   Text,
+  type Tone,
   VisuallyHidden,
 } from "../../../../../ui/index";
-import { getRiskRatingTone } from "../../../../yield-presentation/index";
+import {
+  getRiskRatingTone,
+  getYieldRiskSourceLabel,
+} from "../../../../yield-presentation/index";
 
 /**
  * What a rater's scale measures and runs over, and where it explains it. An
@@ -48,13 +51,18 @@ const riskScale = (
   }
 };
 
-/** What the rating's band means; a rating outside the letter bands says none. */
+/**
+ * What the rating's band means, by the tone it reads in; a rating outside the
+ * letter bands says none.
+ */
 const gradeMeanings = {
-  positive: "details.risk.grade.positive",
+  info: "details.risk.grade.positive",
   warning: "details.risk.grade.warning",
   danger: "details.risk.grade.danger",
   neutral: undefined,
-} as const satisfies Record<YieldRiskDisplay["tone"], string | undefined>;
+  accent: undefined,
+  success: undefined,
+} as const satisfies Record<Tone, string | undefined>;
 
 /**
  * Explains the rating: what its rater's scale measures, from best to worst,
@@ -67,7 +75,7 @@ const YieldRiskInfoTooltip = ({
 }) => {
   const { t } = useTranslation();
   const { scale, methodology } = riskScale(risk, t);
-  const meaning = gradeMeanings[risk.tone];
+  const meaning = gradeMeanings[getRiskRatingTone(risk)];
 
   return (
     <InfoTip label={t("details.risk.info_aria_label")}>

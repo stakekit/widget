@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../src/resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../src/resources/yield-opportunity/optional-yield-opportunity";
 import {
   YieldProviderError,
   yieldProviderAtom,
@@ -47,7 +47,7 @@ describe("Yield opportunity and provider resources", () => {
     const registry = makeRegistry(source);
 
     const enriched = registry.get(
-      yieldOpportunityAtom(new YieldOpportunityKey({ yieldId }))
+      optionalYieldOpportunityAtom(new YieldOpportunityKey({ yieldId }))
     );
     const provider = registry.get(yieldProviderAtom(yieldModel.providerId));
 
@@ -76,7 +76,7 @@ describe("Yield opportunity and provider resources", () => {
     );
 
     const enriched = registry.get(
-      yieldOpportunityAtom(new YieldOpportunityKey({ yieldId }))
+      optionalYieldOpportunityAtom(new YieldOpportunityKey({ yieldId }))
     );
     const provider = registry.get(yieldProviderAtom(yieldModel.providerId));
 
