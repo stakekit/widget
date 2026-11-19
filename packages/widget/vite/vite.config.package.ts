@@ -13,6 +13,8 @@ const sharedDependencies = ["scheduler"];
 
 const isNodeModule = /[/\\]node_modules[/\\]/;
 const isCosmosKit = /[/\\]node_modules[/\\]@cosmos-kit[/\\]/;
+const isNodePolyfillShim =
+  /[/\\]node_modules[/\\]vite-plugin-node-polyfills[/\\]shims[/\\]/;
 
 const config = getConfig({
   experimental: chunkRelativeAssetUrls,
@@ -36,7 +38,10 @@ const config = getConfig({
         // re-bundles dist/package. A group also captures every dependency of
         // its modules, so the dependencies the entry loads statically (Node
         // polyfills, bn.js, …) take their own chunk first; in the cosmos-kit
-        // chunk they would make the entry import all of cosmos-kit.
+        // chunk they would make the entry import all of cosmos-kit. The node
+        // polyfill shims a lazy chunk alone needs (Recharts reads `global`)
+        // take their own small chunk for the same reason: in cosmos-kit's
+        // they would make the first chart load all of cosmos-kit.
         codeSplitting: {
           groups: [
             {
@@ -44,6 +49,7 @@ const config = getConfig({
               tags: ["$initial"],
               test: (id) => isNodeModule.test(id) && !isCosmosKit.test(id),
             },
+            { name: "node-polyfill-shims", test: isNodePolyfillShim },
             { name: "cosmos-kit", test: isCosmosKit },
           ],
         },
