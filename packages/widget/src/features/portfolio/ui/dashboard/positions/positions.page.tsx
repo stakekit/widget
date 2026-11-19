@@ -35,7 +35,7 @@ export const PositionsPage = () => {
       case "Disconnected":
         return (
           <PositionsConnectWallet
-            title={t("dashboard.details.positions_connect_wallet")}
+            title={t("positions.connect_wallet_prompt")}
           />
         );
       case "Connecting":
@@ -51,13 +51,13 @@ export const PositionsPage = () => {
             <RevealBalancesHeader
               leading={
                 <Text variant="heading" as="h2">
-                  {t("dashboard.details.my_positions")}
+                  {t("positions.my_positions")}
                 </Text>
               }
               trailing={
                 page._tag === "Ready" && page.total ? (
                   <Text tone="muted">
-                    {t("dashboard.details.positions_active", {
+                    {t("positions.active", {
                       count: page.total,
                     })}
                   </Text>
@@ -71,7 +71,7 @@ export const PositionsPage = () => {
               )}
 
               <VirtualList
-                label={t("dashboard.details.my_positions")}
+                label={t("positions.my_positions")}
                 items={page.rows}
                 getKey={positionsListRowKey}
                 estimateSize={68}

@@ -5,10 +5,7 @@ import { widgetYieldFlowRoutes } from "../../../../../services/navigation/widget
 import { Grid, Stack } from "../../../../../ui/index";
 import { useWidgetRouteMatch } from "../../../../navigation/index";
 import { useSKWallet } from "../../../../wallet/index";
-import {
-  AnimationPage,
-  BackButtonProvider,
-} from "../../../../widget-shell/views";
+import { AnimationPage } from "../../../../widget-shell/views";
 import { hasActivityActions } from "../../../model/page-view";
 import { activityPageViewAtom } from "../../../state/page";
 import { ActivityPageContent } from "../../activity-page/activity-page-content";
@@ -47,9 +44,7 @@ export const ActivityTabPage = () => {
             isExecution ? "activity-execution-panel" : "activity-details-panel"
           }
         >
-          <BackButtonProvider enabled={isExecution}>
-            <Outlet />
-          </BackButtonProvider>
+          <Outlet />
         </Stack>
       </Grid>
     </AnimationPage>

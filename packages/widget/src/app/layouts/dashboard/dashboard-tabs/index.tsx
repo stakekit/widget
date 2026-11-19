@@ -68,8 +68,7 @@ export const DashboardTabs = ({
     categoryGroupingEnabled &&
     (availableYieldCategories.length > 0 || borrowEnabled);
 
-  const tabLabel = (tab: DashboardTab) =>
-    t(`dashboard.details.tabs.${tab}`, tab);
+  const tabLabel = (tab: DashboardTab) => t(`tabs.${tab}`, tab);
   const earnTabs: ReadonlyArray<TabOption<DashboardTab>> =
     categoryGroupingEnabled
       ? availableYieldCategories.map((category) => ({

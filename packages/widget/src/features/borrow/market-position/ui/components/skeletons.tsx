@@ -26,9 +26,9 @@ const SummarySkeleton = () => {
       label={t("position_details.your_position")}
       value=""
       metrics={[
-        { label: t("dashboard.borrow.position_details.debt"), value: "" },
+        { label: t("borrow.position_details.debt"), value: "" },
         {
-          label: t("dashboard.borrow.position_details.health_factor"),
+          label: t("borrow.position_details.health_factor"),
           value: "",
         },
       ]}

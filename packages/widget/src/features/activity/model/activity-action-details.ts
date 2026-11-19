@@ -9,14 +9,16 @@ import type { ActionTransaction } from "../../../domain/earn/action-models";
 import type { ConfidentialSettlement } from "../../../domain/earn/confidential";
 import type { Token } from "../../../domain/token/token";
 import { formatDateTime } from "../../../shared/lib/date";
-import { formatBorrowProviderName } from "../../../shared/lib/formatters";
 import { formatAddress } from "../../../shared/lib/general";
 import {
   formatFigureChange,
-  formatHealthFactor,
-  formatLtv,
   formatTokenAmount,
 } from "../../../shared/lib/number-format";
+import {
+  formatBorrowProviderName,
+  formatHealthFactor,
+  formatLtv,
+} from "../../borrow-presentation/index";
 import type {
   ActivityActionItem,
   BorrowActivityItem,

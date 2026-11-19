@@ -7,10 +7,7 @@ import {
   EarnDetails,
   EarnFlowDetails,
 } from "../../../features/earn/composition";
-import {
-  AnimationPage,
-  BackButtonProvider,
-} from "../../../features/widget-shell/views";
+import { AnimationPage } from "../../../features/widget-shell/views";
 import { SplitView, Stack } from "../../../ui/index";
 
 /**
@@ -51,12 +48,10 @@ const DashboardOverviewSplitView = ({
 
   return (
     <SplitView
-      secondaryLabel={t("dashboard.split_view.details")}
+      secondaryLabel={t("split_view.details")}
       primary={
         <Stack grow gap={32} justify="between">
-          <BackButtonProvider>
-            <Outlet />
-          </BackButtonProvider>
+          <Outlet />
         </Stack>
       }
       secondary={details}

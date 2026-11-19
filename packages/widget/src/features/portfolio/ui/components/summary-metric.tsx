@@ -52,9 +52,7 @@ export const SummaryMetric = ({
         label={label}
         size={size}
         value={unavailableFigure}
-        {...(isPartial
-          ? { caption: t("dashboard.overview.summary.partial") }
-          : {})}
+        {...(isPartial ? { caption: t("portfolio.summary.partial") } : {})}
       />
     );
   }

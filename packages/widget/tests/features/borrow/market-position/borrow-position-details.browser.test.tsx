@@ -178,9 +178,7 @@ describe("Borrow position details", () => {
       .element(app.getByRole("textbox", { name: "Amount" }))
       .toBeInTheDocument();
     // The position's page leads with a way back to the positions list.
-    await expect
-      .element(app.getByTestId("borrow-position-details-back"))
-      .toBeVisible();
+    await expect.element(app.getByTestId("position-page-back")).toBeVisible();
     await expect
       .element(app.getByText("USDC outstanding", { exact: false }))
       .toBeInTheDocument();
@@ -243,7 +241,7 @@ describe("Borrow position details", () => {
 
     await expect.element(app.getByText("Withdraw WETH")).toBeInTheDocument();
     await expect
-      .element(app.getByRole("button", { name: "Back to position" }))
+      .element(app.getByTestId("transaction-flow-back"))
       .toBeInTheDocument();
 
     // Beside Review, the position's summary and details stay in view.
@@ -253,14 +251,14 @@ describe("Borrow position details", () => {
     await expect
       .element(app.getByTestId("borrow-position-details-disclosure"))
       .toBeInTheDocument();
-    await app.getByRole("button", { name: "Back to position" }).click();
+    await app.getByTestId("transaction-flow-back").click();
 
     await expect
       .element(app.getByRole("tab", { name: "Repay", exact: true }))
       .toBeInTheDocument();
 
     const breadcrumbBack = app.container.querySelector<HTMLButtonElement>(
-      '[data-testid="borrow-position-details-back"]'
+      '[data-testid="position-page-back"]'
     );
 
     expect(breadcrumbBack).not.toBeNull();
@@ -331,7 +329,7 @@ describe("Borrow position details", () => {
     );
 
     // Back returns to the positions list.
-    await app.getByTestId("borrow-position-details-back").click();
+    await app.getByTestId("position-page-back").click();
     await expect.element(app.getByText("My positions")).toBeInTheDocument();
     await expect
       .element(app.getByRole("link", { name: /WETH\/USDC/ }))
@@ -542,7 +540,7 @@ describe("Borrow position details", () => {
       .element(app.getByText("No open position in this market."))
       .not.toBeInTheDocument();
 
-    await app.getByRole("button", { name: "Back to position" }).click();
+    await app.getByTestId("transaction-flow-back").click();
     await expect
       .element(app.getByTestId("borrow-collateral-toggle__disableCollateral"))
       .toBeVisible();

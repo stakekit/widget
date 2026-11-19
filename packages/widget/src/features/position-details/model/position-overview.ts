@@ -9,6 +9,10 @@ import type {
 import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
 import { isCancellingBalance } from "../../../domain/earn/confidential-balance";
 import {
+  hasEncryptedBalance,
+  isEncryptedBalance,
+} from "../../../domain/earn/confidential-vault";
+import {
   getPositionShares,
   type TokenAmount,
 } from "../../../domain/earn/denomination";
@@ -212,8 +216,7 @@ const getPositionSummary = ({
     .map((sum) => formatTokenAmountWithSymbol(sum, locale))
     .join(" · ");
   // Hidden balances count zero, so a fully hidden position reads as hidden.
-  const hidden =
-    sums.length === 0 && balances.some((balance) => balance.isEncrypted);
+  const hidden = sums.length === 0 && hasEncryptedBalance(balances);
   const getHero = (): Pick<PositionOverviewSummary, "subvalue" | "value"> => {
     if (hidden) return { value: t("shared.confidential.hidden") };
     if (totalUsd.isGreaterThan(0)) {
@@ -352,14 +355,14 @@ const getBreakdownRows = ({
       t,
     });
     const shares =
-      row.shares && !row.isEncrypted
+      row.shares && !isEncryptedBalance(row)
         ? formatTokenAmountWithSymbol(row.shares, locale)
         : null;
     const subValue = [shares, amountSubValue, batchTiming]
       .filter((part) => !!part)
       .join(" · ");
     const collectable =
-      !row.isEncrypted &&
+      !isEncryptedBalance(row) &&
       (row.type === "claimable" || row.type === "withdrawable");
     return {
       id: `${row.type}-${row.token.symbol}-${index}`,
@@ -368,7 +371,7 @@ const getBreakdownRows = ({
         : formatBalanceTypeLabel(row.type, deposit, t),
       ...(subValue ? { subValue } : {}),
       tone: collectable ? "success" : "default",
-      value: row.isEncrypted
+      value: isEncryptedBalance(row)
         ? t("shared.confidential.hidden")
         : formatTokenAmountWithSymbol(row, locale),
     };
@@ -395,7 +398,7 @@ const getDetailRows = ({
     ? [
         {
           id: "shares",
-          label: t("dashboard.position_details.shares"),
+          label: t("position_details.shares"),
           value: shares,
         },
       ]
@@ -439,21 +442,21 @@ export const getPositionHeaderBadges = (
 
   if (yieldType === "native_staking") {
     badges.push({
-      label: t("dashboard.earn_details.native"),
+      label: t("earn_details.native"),
       tone: "default",
     });
   }
 
   if (yieldType === "pooled_staking") {
     badges.push({
-      label: t("dashboard.earn_details.pooled"),
+      label: t("earn_details.pooled"),
       tone: "default",
     });
   }
 
   if (integrationData.mechanics.rewardClaiming === "auto") {
     badges.push({
-      label: t("dashboard.earn_details.auto_compound"),
+      label: t("earn_details.auto_compound"),
       tone: "auto",
     });
   }

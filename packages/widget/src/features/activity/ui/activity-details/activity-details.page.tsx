@@ -166,7 +166,7 @@ const TransactionRow = ({
   const type = capitalize(
     toLowerCase(
       transaction._tag === "borrow"
-        ? t(`dashboard.borrow.execution_page.tx_type.${transaction.type}`)
+        ? t(`borrow.execution_page.tx_type.${transaction.type}`)
         : formatTransactionTypeLabel(transaction.type, t, {
             context: typeContext,
           })

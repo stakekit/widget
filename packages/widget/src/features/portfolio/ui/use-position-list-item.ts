@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
+import { hasEncryptedBalance } from "../../../domain/earn/confidential-vault";
 import { toInactiveValidatorStatus } from "../../../domain/portfolio/position-callout";
 import {
   formatRewardRatePercent,
@@ -90,9 +91,7 @@ export const usePositionListItem = (item: PositionItem) => {
 
   return {
     campaign,
-    hasHiddenBalance: item.balancesWithAmount.some(
-      (balance) => balance.isEncrypted
-    ),
+    hasHiddenBalance: hasEncryptedBalance(item.balancesWithAmount),
     integrationData,
     providersDetails,
     rewardRate: getRewardRate(),

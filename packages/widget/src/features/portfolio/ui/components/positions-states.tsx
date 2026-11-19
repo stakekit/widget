@@ -80,7 +80,7 @@ export const PositionsPartiallyLoaded = () => {
         </Button>
       }
     >
-      {t("dashboard.details.positions_partial_error")}
+      {t("positions.partial_error")}
     </Notice>
   );
 };

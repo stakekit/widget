@@ -1,11 +1,9 @@
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  getExtendedYieldType,
-  getYieldTypeLabels,
-} from "../../../../domain/earn/yield";
+import { getExtendedYieldType } from "../../../../domain/earn/yield";
 import { Stack, Tabs, Text } from "../../../../ui/index";
+import { getYieldTypeLabels } from "../../../yield-presentation/index";
 import {
   getLeadingPendingAction,
   type PositionDetailsAmountAction,
@@ -14,6 +12,7 @@ import {
   resolvePositionDetailsAmountActions,
 } from "../../model/hub";
 import { usePositionDetails } from "../use-position-details";
+import { PositionDetailsEnterActions } from "./position-details-enter-actions";
 import { PositionDetailsExitActions } from "./position-details-exit-actions";
 import { PositionDetailsPendingActions } from "./position-details-pending-actions";
 import { PositionDetailsSkeleton } from "./position-details-skeleton";
@@ -23,20 +22,11 @@ import { PositionDetailsValidatorModal } from "./position-details-validator-moda
  * A position's actions under its summary: first a card for each one-click
  * action the position has, such as claiming rewards, the required one
  * leading, so it stays in view above the amount form; then the amount
- * actions (exit, and entering further where the Layout offers it) as
- * tabs, the exit selected first, the selected one's form in their panel;
- * with one action, its form alone. With a required action, the forms' calls
- * to action step down to secondary.
+ * actions (exit, and entering further) as tabs, the exit selected first,
+ * the selected one's form in their panel; with one action, its form alone.
+ * With a required action, the forms' calls to action step down to secondary.
  */
-export const PositionDetailsActions = ({
-  renderEnter,
-}: {
-  /**
-   * The form for entering further, in a Layout that offers it, with its
-   * call to action's variant.
-   */
-  readonly renderEnter?: (ctaVariant: "primary" | "secondary") => ReactNode;
-}) => {
+export const PositionDetailsActions = () => {
   const { t } = useTranslation();
   const positionDetails = usePositionDetails();
   // Ephemeral choice: it resets when the page remounts after a flow, so the
@@ -52,16 +42,13 @@ export const PositionDetailsActions = ({
   if (!integrationData || !positionDetails.positionBalancesByType) return null;
 
   if (!positionDetailsHubHasContent(positionDetails)) {
-    return (
-      <Text tone="muted">{t("dashboard.position_details.no_actions")}</Text>
-    );
+    return <Text tone="muted">{t("position_details.no_actions")}</Text>;
   }
 
   const pendingActions = positionDetails.pendingActions ?? [];
-  const actions = resolvePositionDetailsAmountActions({
-    ...resolvePositionDetailsActionCapabilities(positionDetails),
-    offersEnter: renderEnter !== undefined,
-  });
+  const actions = resolvePositionDetailsAmountActions(
+    resolvePositionDetailsActionCapabilities(positionDetails)
+  );
   const action =
     chosen !== null && actions.includes(chosen) ? chosen : actions[0];
   const ctaVariant =
@@ -78,7 +65,9 @@ export const PositionDetailsActions = ({
       {action === "exit" ? (
         <PositionDetailsExitActions ctaVariant={ctaVariant} />
       ) : null}
-      {action === "enter" && renderEnter ? renderEnter(ctaVariant) : null}
+      {action === "enter" ? (
+        <PositionDetailsEnterActions ctaVariant={ctaVariant} />
+      ) : null}
     </Stack>
   );
 

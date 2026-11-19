@@ -5,12 +5,12 @@ import {
   type MarketPosition,
 } from "../../../../../domain/borrow/market-position";
 import { toBorrowNetworkToken } from "../../../../../domain/borrow/token";
-import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
   formatPercent,
   formatTokenAmount,
   formatUsd,
 } from "../../../../../shared/lib/number-format";
+import { formatBorrowProviderName } from "../../../../borrow-presentation/index";
 import { riskBandValueTone } from "../../../../borrow-transaction-flow/index";
 import { getBorrowPositionRiskBand } from "../../../model/positions";
 
@@ -28,14 +28,14 @@ const getBorrowRiskStatus = (
   const band = getBorrowPositionRiskBand(position);
   if (band === "danger") {
     return {
-      text: t("dashboard.borrow.risk.alert.danger_title"),
+      text: t("borrow.risk.alert.danger_title"),
       tone: riskBandValueTone.danger,
       icon: "WarningIcon",
     };
   }
   if (band === "caution") {
     return {
-      text: t("dashboard.borrow.risk.alert.caution_title"),
+      text: t("borrow.risk.alert.caution_title"),
       tone: riskBandValueTone.caution,
       icon: "WarningIcon",
     };
@@ -68,12 +68,12 @@ export const getBorrowMarketPositionListItemModel = ({
     providerName: formatBorrowProviderName(position.integration.name),
     subValue: debtBalance
       ? `${formatPercent(overview.currentLtv, locale)} ${t(
-          "dashboard.borrow.position_details.ltv"
+          "borrow.position_details.ltv"
         )} · ${formatUsd(
           debtBalance.balanceUsd.toString(),
           locale
-        )} ${t("dashboard.borrow.position_details.debt").toLowerCase()}`
-      : t("dashboard.borrow.position_details.supplied"),
+        )} ${t("borrow.position_details.debt").toLowerCase()}`
+      : t("borrow.position_details.supplied"),
     status: getBorrowRiskStatus(position, t),
     title: overview.title,
   };

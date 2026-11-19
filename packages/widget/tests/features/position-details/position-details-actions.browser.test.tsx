@@ -104,7 +104,7 @@ describe("Position details actions", () => {
     await app.unmount();
   });
 
-  it("offers only the exit in the compact Layout, with no action tabs", async ({
+  it("stakes more in the compact Layout: an amount, then Review", async ({
     worker,
   }) => {
     const { account, customConnectors, yieldId, setUrl } = await setup(worker, {
@@ -118,20 +118,26 @@ describe("Position details actions", () => {
 
     const app = await renderApp({ walletListFactory: customConnectors });
 
-    await expect
-      .element(app.getByRole("textbox", { name: "Amount" }))
-      .toBeInTheDocument();
+    // The compact page offers the same amount actions, the exit first.
+    const tabs = app.getByRole("tablist", { name: "Position actions" });
+    const withdraw = tabs.getByRole("tab", { name: "Withdraw", exact: true });
+    const deposit = tabs.getByRole("tab", { name: "Deposit", exact: true });
+    await expect.element(withdraw).toHaveAttribute("aria-selected", "true");
     await expect.element(app.getByTestId("position-summary")).toBeVisible();
-    expect(
-      app.getByRole("tablist", { name: "Position actions" }).query()
-    ).toBeNull();
 
-    // Exiting more than the position holds says so.
+    await userEvent.click(deposit);
+    const amount = app.getByTestId("position-details-enter-amount");
+    await expect.element(amount).toBeInTheDocument();
+
     await userEvent.click(app.getByRole("textbox", { name: "Amount" }));
-    await userEvent.keyboard(moreThanHeld);
+    await userEvent.keyboard("{Control>}a{/Control}{Backspace}1");
+    await userEvent.click(app.getByRole("button", { name: "Deposit" }));
+
+    // Review of the stake replaces the position page.
     await expect
-      .element(app.getByText("Insufficient balance"))
+      .element(app.getByTestId("review-reward-rate"))
       .toBeInTheDocument();
+    await expect.element(amount).not.toBeInTheDocument();
 
     await app.unmount();
   });

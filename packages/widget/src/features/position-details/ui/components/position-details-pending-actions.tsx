@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { getPendingActionLabelContext } from "../../../../domain/action/pending-action";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
-import { humanizePendingActionType } from "../../../../shared/lib/formatters";
+import { humanizeEnumValue } from "../../../../shared/lib/formatters";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { Stack } from "../../../../ui/index";
 import { getLeadingPendingAction } from "../../model/hub";
@@ -67,7 +67,7 @@ export const PositionDetailsPendingActions = () => {
         // Types the API adds before a translation exists read humanized.
         const label = t(labelKey, {
           ...labelOptions,
-          defaultValue: humanizePendingActionType(val.pendingAction.type),
+          defaultValue: humanizeEnumValue(val.pendingAction.type),
         });
         const exitAmountError = val.validation !== null;
 

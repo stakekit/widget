@@ -6,6 +6,7 @@ import { getPendingActionLabelContext } from "../../../../domain/action/pending-
 import type { PendingAction } from "../../../../domain/earn/action-models";
 import type { EarnBalance } from "../../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../../domain/earn/confidential";
+import { isEncryptedBalance } from "../../../../domain/earn/confidential-vault";
 import {
   getPendingActionAmount,
   getPendingActionReturn,
@@ -13,7 +14,7 @@ import {
 import { isEthenaUsdeStaking } from "../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { isPayoutPendingAction } from "../../../../domain/portfolio/position-callout";
-import { humanizePendingActionType } from "../../../../shared/lib/formatters";
+import { humanizeEnumValue } from "../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { ActionCard, Text } from "../../../../ui/index";
@@ -55,7 +56,7 @@ export const StaticActionBlock = ({
   });
   const pendingActionLabel = t(`position_details.pending_action.${actionKey}`, {
     context: isEthenaUsdeStaking(integration.id) ? "ethena_usde" : undefined,
-    defaultValue: humanizePendingActionType(pendingAction.type),
+    defaultValue: humanizeEnumValue(pendingAction.type),
   });
   // An amount paid out to the user is a gain, in the success tone.
   const figure = isPayoutPendingAction(pendingAction.type) ? (
@@ -75,7 +76,7 @@ export const StaticActionBlock = ({
         i18nKey="position_details.action_title"
         context={labelContext}
         values={{
-          amount: yieldBalance.isEncrypted
+          amount: isEncryptedBalance(yieldBalance)
             ? t("shared.confidential.hidden")
             : formatTokenAmount(shown.amount, locale, "down"),
           symbol: shown.token.symbol,
@@ -100,7 +101,7 @@ export const StaticActionBlock = ({
       action={{
         label: t(`position_details.pending_action_button.${actionKey}`, {
           context: labelContext,
-          defaultValue: humanizePendingActionType(pendingAction.type),
+          defaultValue: humanizeEnumValue(pendingAction.type),
         }),
         onClick: () => onPendingActionClick({ yieldBalance, pendingAction }),
       }}

@@ -43,8 +43,8 @@ import {
 } from "../../../src/features/position-details/state/workflow-view";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../src/resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../src/resources/yield-opportunity/optional-yield-opportunity";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
@@ -384,7 +384,7 @@ describe("Position Details action model", () => {
       initialValues: [
         applicationRuntimeInitInitialValue(),
         [
-          yieldOpportunityAtom(
+          optionalYieldOpportunityAtom(
             new YieldOpportunityKey({ yieldId: selectedYield.id })
           ),
           AsyncResult.success(selectedYield),
@@ -877,7 +877,7 @@ const makeWorkflowRegistry = (
     initialValues: [
       applicationRuntimeInitInitialValue(),
       [
-        yieldOpportunityAtom(
+        optionalYieldOpportunityAtom(
           new YieldOpportunityKey({ yieldId: integration.id })
         ),
         AsyncResult.success(integration),

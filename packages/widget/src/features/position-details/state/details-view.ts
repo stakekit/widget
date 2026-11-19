@@ -8,7 +8,7 @@ import {
   getVisibleShares,
 } from "../../../domain/earn/balance";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
-import { isUserRevealableBalance } from "../../../domain/earn/confidential-balance";
+import { getConfidentialRevealState } from "../../../domain/earn/confidential-vault";
 import { getPositionRate } from "../../../domain/earn/position-rate";
 import { isForceMaxAmount } from "../../../domain/earn/stake";
 import { getYieldActionArg } from "../../../domain/earn/yield";
@@ -169,7 +169,10 @@ export const positionDetailsViewAtom = Atom.family(
       const positionBalances = [
         ...(workflow.positionBalancesByType?.values() ?? []),
       ].flat();
-      const hasHiddenBalances = positionBalances.some(isUserRevealableBalance);
+      const revealState = getConfidentialRevealState(
+        integration ?? null,
+        positionBalances
+      );
       // Only a confidential vault's pending balances can be mid-cancel. Read
       // locally: a failed lookup, even after an earlier success, just leaves
       // them looking pending.
@@ -205,13 +208,8 @@ export const positionDetailsViewAtom = Atom.family(
       });
 
       return {
-        hasHiddenBalances,
-        hasRevealedBalances:
-          Boolean(integration && isConfidentialYield(integration)) &&
-          !hasHiddenBalances &&
-          positionBalances.some(
-            (balance) => !balance.isEncrypted && balance.type !== "withdrawable"
-          ),
+        hasHiddenBalances: revealState === "hidden",
+        hasRevealedBalances: revealState === "revealed",
         cancellingHandles,
         canChangeUnstakeAmount: workflow.canChangeUnstakeAmount,
         canUnstake,

@@ -32,7 +32,7 @@ export const BorrowPositionRiskAlertNotice = ({
       action={
         repay === undefined ? undefined : (
           <Button size="sm" variant="primary" onClick={() => onRepay(repay)}>
-            {t("dashboard.borrow.position_details.actions.repay")}
+            {t("borrow.position_details.actions.repay")}
           </Button>
         )
       }

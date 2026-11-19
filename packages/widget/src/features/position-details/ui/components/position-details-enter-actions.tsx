@@ -1,35 +1,35 @@
 import { Match } from "effect";
 import { useTranslation } from "react-i18next";
 
-import { getYieldTypeLabels } from "../../../../../domain/earn/yield";
-import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   amountSeparators,
   fromAmountValue,
   toAmountValue,
-} from "../../../../../shared/lib/amount-value";
+} from "../../../../shared/lib/amount-value";
 import {
   formatNumber,
   formatTokenAmount,
-} from "../../../../../shared/lib/number-format";
-import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { AmountPanel, Skeleton } from "../../../../../ui/index";
-import { CampaignMetaInfo } from "../../../../campaigns/views";
-import { useWidgetRouteMatch } from "../../../../navigation/index";
-import { useWalletScopeRoute } from "../../../../wallet/index";
-import { useWidgetConfig } from "../../../../widget-configuration/index";
-import { type PageCta, PageCtaButton } from "../../../../widget-shell/views";
-import { useNetworkFeeNotes } from "../../../../yield-entry/index";
+} from "../../../../shared/lib/number-format";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { AmountPanel, Skeleton } from "../../../../ui/index";
+import { CampaignMetaInfo } from "../../../campaigns/views";
+import { useWidgetRouteMatch } from "../../../navigation/index";
+import { useWalletScopeRoute } from "../../../wallet/index";
+import { useWidgetConfig } from "../../../widget-configuration/index";
+import { type PageCta, PageCtaButton } from "../../../widget-shell/views";
+import { useNetworkFeeNotes } from "../../../yield-entry/index";
 import {
   TronResourceSelection,
   useConfidentialTokenBalance,
-} from "../../../../yield-entry/views";
-import { KycGateCard } from "../../../../yield-summary/views";
-import { getPricedFiat } from "../../../model/priced-fiat";
-import { PositionDetailsEnterKey } from "../../../state/enter-entry";
-import { PositionDetailsLoadFailed } from "../../components/position-details-load-failed";
-import { usePositionDetailsEnter } from "../hooks/use-position-details-enter";
+} from "../../../yield-entry/views";
+import { getYieldTypeLabels } from "../../../yield-presentation/index";
+import { KycGateCard } from "../../../yield-summary/views";
+import { getPricedFiat } from "../../model/priced-fiat";
+import { PositionDetailsEnterKey } from "../../state/enter-entry";
+import { usePositionDetailsEnter } from "../use-position-details-enter";
 import { PositionDetailsEnterTokenSelect } from "./position-details-enter-token-select";
+import { PositionDetailsLoadFailed } from "./position-details-load-failed";
 
 type PositionDetailsEnterState = ReturnType<typeof usePositionDetailsEnter>;
 

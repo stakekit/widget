@@ -14,19 +14,13 @@ export type PositionDetailsActionCapabilities = {
   readonly canExit: boolean;
 };
 
-/**
- * The amount actions in order, the exit first so the page opens on it, and
- * entering further only in a Layout that offers it.
- */
+/** The amount actions in order, the exit first so the page opens on it. */
 export const resolvePositionDetailsAmountActions = ({
   canEnter,
   canExit,
-  offersEnter,
-}: PositionDetailsActionCapabilities & {
-  readonly offersEnter: boolean;
-}): ReadonlyArray<PositionDetailsAmountAction> => [
+}: PositionDetailsActionCapabilities): ReadonlyArray<PositionDetailsAmountAction> => [
   ...(canExit ? (["exit"] as const) : []),
-  ...(canEnter && offersEnter ? (["enter"] as const) : []),
+  ...(canEnter ? (["enter"] as const) : []),
 ];
 
 /**

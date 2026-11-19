@@ -22,8 +22,8 @@ import {
 import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/session";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../src/resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../src/resources/yield-opportunity/optional-yield-opportunity";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
@@ -105,7 +105,7 @@ const makeRegistry = (
       Atom.initialValue(walletScopeAtom, walletScope),
       Atom.initialValue(walletConnectionStateAtom, connectedWalletState),
       Atom.initialValue(
-        yieldOpportunityAtom.local(
+        optionalYieldOpportunityAtom.local(
           new YieldOpportunityKey({ yieldId: selectedYield.id })
         ),
         AsyncResult.success(selectedYield)
@@ -377,7 +377,7 @@ describe("Position details stake validators", () => {
         applicationRuntimeInitInitialValue(),
         Atom.initialValue(walletScopeAtom, ethereumScope),
         Atom.initialValue(
-          yieldOpportunityAtom.local(
+          optionalYieldOpportunityAtom.local(
             new YieldOpportunityKey({ yieldId: validatorYield.id })
           ),
           AsyncResult.success(validatorYield)
@@ -537,7 +537,7 @@ describe("Position details stake submission", () => {
         Atom.initialValue(walletScopeAtom, ethereumScope),
         Atom.initialValue(walletConnectionStateAtom, walletState.connection),
         Atom.initialValue(
-          yieldOpportunityAtom.local(
+          optionalYieldOpportunityAtom.local(
             new YieldOpportunityKey({ yieldId: selectedYield.id })
           ),
           AsyncResult.success(selectedYield)

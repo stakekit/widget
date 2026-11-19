@@ -13,13 +13,17 @@ import {
   createBorrowMarketPositionRoutes,
 } from "../../../features/borrow/composition";
 import { EarnPageContent } from "../../../features/earn/composition";
-import { useSelectEarnCategory } from "../../../features/earn/index";
+import {
+  useEarnTabCategory,
+  useSelectEarnCategory,
+} from "../../../features/earn/index";
 import { useWidgetRouteState } from "../../../features/navigation/index";
 import { ManagePage } from "../../../features/portfolio/composition";
 import {
   DashboardPositionDetailsPage,
-  PositionDetailsHub,
+  PositionDetailsActions,
 } from "../../../features/position-details/composition";
+import type { TransactionFlowTrail } from "../../../features/transaction-flow/index";
 import { WalletScopeRouteGuard } from "../../../features/wallet/composition";
 import { GlobalModals } from "../../../features/widget-shell/composition";
 // import { RewardsTabPage } from "../../../domain/portfolio/rewards";
@@ -43,9 +47,36 @@ import {
   resolveDashboardRouteTab,
 } from "./dashboard-tabs";
 
+const activityTrail: TransactionFlowTrail = { parent: "tabs.activity" };
+
+// With category grouping, the Earn tab is a tab per yield category, so an
+// Earn flow's trail names the category's tab.
+const earnTrails = {
+  earn: { parent: "tabs.earn" },
+  defi: { parent: "tabs.defi" },
+  rwa: { parent: "tabs.rwa" },
+  stake: { parent: "tabs.stake" },
+} as const satisfies Record<YieldCategory | "earn", TransactionFlowTrail>;
+
+// A new borrow's flow sits under the Borrow tab; a market position's flows,
+// under Manage, where the position is.
+const borrowFlowTrails = {
+  BorrowEntry: { parent: "tabs.borrow" },
+  MarketPosition: { parent: "tabs.manage" },
+} as const satisfies Record<
+  Parameters<typeof createBorrowTransactionFlowRoutes>[0]["entry"],
+  TransactionFlowTrail
+>;
+
 const borrowRouteComposition = {
   WalletScopeRouteGuard,
-  createBorrowTransactionFlowRoutes,
+  createBorrowTransactionFlowRoutes: (
+    input: Parameters<typeof createBorrowTransactionFlowRoutes>[0]
+  ) =>
+    createBorrowTransactionFlowRoutes({
+      ...input,
+      trail: borrowFlowTrails[input.entry],
+    }),
 };
 
 export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
@@ -76,8 +107,11 @@ const resolveDashboardPageKey = (
 
 /** The Dashboard Layout's route tree. */
 export const createDashboardRoutes = ({
+  earnTabCategory,
   registerEarnFooterButton,
 }: {
+  /** The yield category the Earn tab stands for; null without grouping. */
+  readonly earnTabCategory: YieldCategory | null;
   readonly registerEarnFooterButton: boolean;
 }) => {
   const earnPath = widgetRoutes.earn.build();
@@ -102,6 +136,7 @@ export const createDashboardRoutes = ({
           {createYieldFlowRoutes({
             layout: <DashboardEarnFlowOverview />,
             mount: "Earn",
+            trail: earnTrails[earnTabCategory ?? "earn"],
           })}
         </Route>
       </Route>
@@ -122,7 +157,7 @@ export const createDashboardRoutes = ({
             path={widgetRoutes.positionDetails.pattern}
             element={<DashboardPositionDetailsPage />}
           >
-            <Route index element={<PositionDetailsHub />} />
+            <Route index element={<PositionDetailsActions />} />
 
             <Route path={widgetRoutes.positionStake.pattern}>
               <Route index element={<Navigate replace to=".." />} />
@@ -132,7 +167,7 @@ export const createDashboardRoutes = ({
 
             <Route
               path={widgetRoutes.positionSelectValidator.pattern}
-              element={<PositionDetailsHub />}
+              element={<PositionDetailsActions />}
             />
 
             <Route path={widgetRoutes.positionUnstake.pattern}>
@@ -160,6 +195,7 @@ export const createDashboardRoutes = ({
           ActionScopeGuard: WalletScopeRouteGuard,
           receiptPlacement: "pane",
           selectsDefaultAction: true,
+          trail: activityTrail,
         })}
       </Route>
     </>
@@ -169,6 +205,7 @@ export const createDashboardRoutes = ({
 export const DashboardRoutes = () => {
   const location = useLocation();
   const selectCategory = useSelectEarnCategory();
+  const earnTabCategory = useEarnTabCategory();
   const earnNavigation = useWidgetRouteState(dashboardEarnRoute);
   const isEarnPage = Option.isSome(widgetRoutes.earn.match(location.pathname));
   const acceptedCategory = isEarnPage
@@ -225,7 +262,10 @@ export const DashboardRoutes = () => {
           {/* The leaving page keeps its location, so it renders the page being left. */}
           <PageScrollReset locationKey={location.key} />
           <Routes location={location}>
-            {createDashboardRoutes({ registerEarnFooterButton })}
+            {createDashboardRoutes({
+              earnTabCategory,
+              registerEarnFooterButton,
+            })}
           </Routes>
         </PageTransition>
       </DashboardShell>

@@ -16,7 +16,7 @@ export const PositionsSectionHeader = ({
     <Box paddingBlock={8}>
       <Stack direction="row" align="center" justify="between" gap={8}>
         <Text variant="overline" tone="muted">
-          {t(`dashboard.details.positions_sections.${category}`)}
+          {t(`positions.sections.${category}`)}
         </Text>
         <Text variant="caption" tone="muted" numeric>
           {count}

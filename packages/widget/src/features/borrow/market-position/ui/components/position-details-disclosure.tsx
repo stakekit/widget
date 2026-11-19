@@ -48,7 +48,7 @@ export const BorrowPositionDetailsDisclosure = ({
             <DetailRow key={row.id} label={row.label} value={row.value} />
           ))}
           <DetailRow
-            label={t("dashboard.borrow.details.pool_address")}
+            label={t("borrow.details.pool_address")}
             value={formatAddress(position.market.poolAddress)}
             copyable={{
               value: position.market.poolAddress,

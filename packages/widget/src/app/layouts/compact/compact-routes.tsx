@@ -70,9 +70,10 @@ export const createCompactRoutes = () => {
             element={<CompactPositionDetailsPage />}
           />
 
-          {/* Legacy / accidental stake prefix → hub (no form) */}
+          {/* Staking further */}
           <Route path={widgetRoutes.positionStake.pattern}>
             <Route index element={<Navigate replace to=".." />} />
+            {createYieldFlowRoutes({ mount: "PositionStake" })}
             <Route path="*" element={<Navigate replace to="../.." />} />
           </Route>
 

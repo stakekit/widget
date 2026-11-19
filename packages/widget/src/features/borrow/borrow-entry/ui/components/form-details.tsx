@@ -49,27 +49,21 @@ export const BorrowFormDetails = ({
   const renderRiskNote = () => {
     if (riskBlock) {
       return (
-        <Notice tone="danger" title={t("dashboard.borrow.risk_block.title")}>
-          {t(`dashboard.borrow.risk_block.${riskBlock}`)}
+        <Notice tone="danger" title={t("borrow.risk_block.title")}>
+          {t(`borrow.risk_block.${riskBlock}`)}
         </Notice>
       );
     }
     if (riskWarning) {
-      return (
-        <Notice tone="warning">
-          {t("dashboard.borrow.form.validation.ltv")}
-        </Notice>
-      );
+      return <Notice tone="warning">{t("borrow.form.validation.ltv")}</Notice>;
     }
-    return (
-      <Notice tone="neutral">{t("dashboard.borrow.form.ltv_note")}</Notice>
-    );
+    return <Notice tone="neutral">{t("borrow.form.ltv_note")}</Notice>;
   };
 
   return (
     <Stack gap={16}>
       <Text variant="heading" as="h3">
-        {t("dashboard.borrow.form.details")}
+        {t("borrow.form.details")}
       </Text>
       <Card padding={16}>
         <DetailList>

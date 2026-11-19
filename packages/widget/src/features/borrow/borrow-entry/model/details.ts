@@ -10,20 +10,20 @@ import {
 import { deriveMarketRiskLimits } from "../../../../domain/borrow/market-risk";
 import { classifyRiskBand } from "../../../../domain/borrow/risk-band";
 import { exactDecimal, exactZero } from "../../../../domain/finance/exact";
-import {
-  formatBorrowProviderName,
-  formatNetworkName,
-} from "../../../../shared/lib/formatters";
+import { formatNetworkName } from "../../../../shared/lib/formatters";
 import {
   formatFigureChange,
-  formatHealthFactor,
-  formatLtv,
   formatPercent,
   formatRoundedPercent,
   formatTokenAmount,
   formatUsd,
   unavailableFigure,
 } from "../../../../shared/lib/number-format";
+import {
+  formatBorrowProviderName,
+  formatHealthFactor,
+  formatLtv,
+} from "../../../borrow-presentation/index";
 import {
   type LtvMeter,
   type RiskValueTone,
@@ -149,13 +149,13 @@ export const getBorrowDetailsModel = ({
   const metricCards: BorrowMetricCard[] = [
     {
       id: "borrow-apy",
-      label: t("dashboard.borrow.details.borrow_apy"),
+      label: t("borrow.details.borrow_apy"),
       subValue: market.loanToken.symbol,
       value: formatRoundedPercent(market.borrowRate, locale),
     },
     {
       id: "max-ltv",
-      label: t("dashboard.borrow.details.max_ltv"),
+      label: t("borrow.details.max_ltv"),
       value: formatPercent(maxLtv, locale),
     },
   ];
@@ -209,15 +209,15 @@ export const getBorrowDetailsModel = ({
     ltvValue === null
       ? {
           id: "ltv",
-          label: t("dashboard.borrow.form.ltv_ratio"),
+          label: t("borrow.form.ltv_ratio"),
           value: unavailableFigure,
           ...(projectionUnavailable
-            ? { caption: t("dashboard.borrow.form.projection_unavailable") }
+            ? { caption: t("borrow.form.projection_unavailable") }
             : {}),
         }
       : {
           id: "ltv",
-          label: t("dashboard.borrow.form.ltv_ratio"),
+          label: t("borrow.form.ltv_ratio"),
           tone: riskTone,
           value: ltvValue,
           meter: toLtvMeter({
@@ -229,12 +229,12 @@ export const getBorrowDetailsModel = ({
         },
     {
       id: "max-ltv",
-      label: t("dashboard.borrow.details.max_ltv"),
+      label: t("borrow.details.max_ltv"),
       value: formatPercent(maxLtv, locale),
     },
     {
       id: "collateral-value",
-      label: t("dashboard.borrow.form.collateral_value"),
+      label: t("borrow.form.collateral_value"),
       value: hasExistingPosition
         ? (formatFigureChange(
             formatUsd,
@@ -248,17 +248,17 @@ export const getBorrowDetailsModel = ({
     },
     {
       id: "loan",
-      label: t("dashboard.borrow.form.loan"),
+      label: t("borrow.form.loan"),
       value: loanValue,
     },
     {
       id: "borrow-rate",
-      label: t("dashboard.borrow.form.borrow_rate"),
+      label: t("borrow.form.borrow_rate"),
       value: formatRoundedPercent(market.borrowRate, locale),
     },
     {
       id: "health-factor",
-      label: t("dashboard.borrow.form.health_factor"),
+      label: t("borrow.form.health_factor"),
       ...(healthFactor === null
         ? { value: unavailableFigure }
         : { tone: riskTone, value: formatHealthFactor(healthFactor, locale) }),
@@ -268,7 +268,7 @@ export const getBorrowDetailsModel = ({
   const marketRows: BorrowDetailsRow[] = [
     {
       id: "total-supply",
-      label: t("dashboard.borrow.details.total_supply"),
+      label: t("borrow.details.total_supply"),
       value: formatUsd(
         market.totalSupply.multipliedBy(market.loanTokenPriceUsd),
         locale
@@ -276,7 +276,7 @@ export const getBorrowDetailsModel = ({
     },
     {
       id: "total-borrow",
-      label: t("dashboard.borrow.details.total_borrow"),
+      label: t("borrow.details.total_borrow"),
       value: formatUsd(
         market.totalBorrow.multipliedBy(market.loanTokenPriceUsd),
         locale
@@ -284,14 +284,14 @@ export const getBorrowDetailsModel = ({
     },
     {
       id: "available-liquidity",
-      label: t("dashboard.borrow.details.available_liquidity"),
+      label: t("borrow.details.available_liquidity"),
       value: `${formatTokenAmount(market.availableLiquidity, locale, "down")} ${
         market.loanToken.symbol
       }`,
     },
     {
       id: "utilization",
-      label: t("dashboard.borrow.details.utilization"),
+      label: t("borrow.details.utilization"),
       value: formatPercent(market.utilizationRate, locale),
     },
   ];
@@ -303,13 +303,13 @@ export const getBorrowDetailsModel = ({
   const protocolRows: BorrowDetailsRow[] = [
     {
       id: "provider",
-      label: t("dashboard.borrow.details.provider"),
+      label: t("borrow.details.provider"),
       logo: { name: providerName, src: integration?.metadata.logoURI },
       value: providerName,
     },
     {
       id: "network",
-      label: t("dashboard.borrow.details.network"),
+      label: t("borrow.details.network"),
       ...(networkLogo === null
         ? {}
         : { logo: { name: networkName, src: networkLogo } }),
@@ -317,8 +317,8 @@ export const getBorrowDetailsModel = ({
     },
     {
       id: "market-type",
-      label: t("dashboard.borrow.details.market_type"),
-      value: t(`dashboard.borrow.market_type.${market.type}`),
+      label: t("borrow.details.market_type"),
+      value: t(`borrow.market_type.${market.type}`),
     },
   ];
 

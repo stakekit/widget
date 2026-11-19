@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import {
-  formatPositionCallout,
   getPositionCallout,
   type InactiveValidatorStatus,
   type PositionCallout,
@@ -27,6 +26,7 @@ import {
 import type { CampaignRowBadgeTone } from "../../../campaigns/index";
 import { useWidgetLinkProps } from "../../../navigation/index";
 import type { YieldSummaryProvider } from "../../../yield-summary/index";
+import { formatPositionCallout } from "../../model/position-callout";
 import type { PositionItem } from "../../model/positions";
 
 export type EarnPositionListItemDetails = {

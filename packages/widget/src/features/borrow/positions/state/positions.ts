@@ -5,6 +5,7 @@ import * as Atom from "effect/reactivity/Atom";
 import type { MarketId } from "../../../../domain/borrow/ids";
 import { isBorrowNetwork } from "../../../../domain/borrow/network";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
+import { borrowIntegrationsResourceAtom } from "../../../../resources/borrow-integrations/borrow-integrations";
 import {
   BorrowPositionsKey,
   borrowPositionsResourceAtom,
@@ -42,6 +43,17 @@ export const borrowPositionAtom = Atom.family((key: BorrowPositionKey) => {
     (refresh) => refresh(positionsAtom)
   );
 });
+
+/**
+ * Loads a market's position again after a failure. Positions refresh only
+ * their own data, so a failed integrations load is refreshed here too.
+ */
+export const retryBorrowPositionAtom = Atom.family((key: BorrowPositionKey) =>
+  Atom.fnSync((_input: undefined, get) => {
+    get.refresh(borrowIntegrationsResourceAtom.local);
+    get.refresh(borrowPositionAtom(key));
+  }).pipe(Atom.withLabel("retryBorrowPositionAtom"))
+);
 
 export const currentBorrowPositionsAtom = Atom.make((get) => {
   const borrowEnabled = get(widgetConfigAtom).borrowEnabled;

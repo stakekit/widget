@@ -18,6 +18,7 @@ import {
   type EarnBalance,
   getVisibleShares,
 } from "../../../domain/earn/balance";
+import { isEncryptedBalance } from "../../../domain/earn/confidential-vault";
 import { getExitUnit } from "../../../domain/earn/denomination";
 import {
   type EarnValidator,
@@ -313,7 +314,7 @@ const preparePositionDetailsExitAction = (facts: PositionDetailsExitFacts) => {
   const shareBalances =
     getExitUnit(facts.integration, facts.stakedOrLiquidBalances) === "shares"
       ? facts.stakedOrLiquidBalances.filter(
-          (balance) => balance.shareToken && !balance.isEncrypted
+          (balance) => balance.shareToken && !isEncryptedBalance(balance)
         )
       : [];
   const shareToken = shareBalances[0]?.shareToken;

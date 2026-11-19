@@ -12,6 +12,7 @@ import {
   useWidgetRoutePrefixMatch,
 } from "../../navigation/index";
 import { WidgetNavigate } from "../../navigation/views";
+import type { TransactionFlowTrail } from "../../transaction-flow/index";
 import { walletScopeAtom } from "../../wallet/index";
 import { YieldActionContinuationSessionRoute } from "../../yield-transaction-flow/views";
 import {
@@ -59,10 +60,13 @@ export const ActivityActionRoute = ({
   receiptPlacement,
   selectsDefaultAction,
   source,
+  trail,
 }: {
   readonly receiptPlacement: ActivityReceiptPlacement;
   readonly selectsDefaultAction: boolean;
   readonly source: ActivitySelectionTarget["source"];
+  /** Where a continuation's pages sit, in a Layout that heads them. */
+  readonly trail: TransactionFlowTrail | null;
 }) => {
   const borrowActionId = useWidgetRoutePrefixMatch(
     widgetRoutes.activityBorrowAction
@@ -93,6 +97,7 @@ export const ActivityActionRoute = ({
   return (
     <BoundActivityActionRoute
       receiptPlacement={receiptPlacement}
+      trail={trail}
       selectionKey={
         new ActivitySelectionKey({
           intent: parsed.intent,
@@ -107,9 +112,11 @@ export const ActivityActionRoute = ({
 const BoundActivityActionRoute = ({
   receiptPlacement,
   selectionKey,
+  trail,
 }: {
   readonly receiptPlacement: ActivityReceiptPlacement;
   readonly selectionKey: ActivitySelectionKey;
+  readonly trail: TransactionFlowTrail | null;
 }) => {
   const result = useAtomValue(activityDetailsViewAtom(selectionKey));
   const retry = useAtomSet(retryActivityActionRouteAtom(selectionKey));
@@ -135,7 +142,9 @@ const BoundActivityActionRoute = ({
     return resolveUnavailableActivitySelection(selectionKey.intent) ===
       "clear-route" ? (
       <WidgetNavigate replace to={widgetRoutes.activity.build()} />
-    ) : null;
+    ) : (
+      <ActivityDetailsUnavailable onRetry={() => retry(undefined)} />
+    );
   }
 
   const { item } = result;
@@ -177,6 +186,7 @@ const BoundActivityActionRoute = ({
             selectedYield: item.yieldData,
             walletScope: item.walletScope,
           }}
+          trail={trail}
         />
       ) : (
         <Outlet />

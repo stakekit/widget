@@ -253,7 +253,7 @@ describe("Borrow with an external provider", () => {
 
     await expect.poll(() => sendBorrowTransaction).toHaveBeenCalledOnce();
     await expect
-      .element(app.getByRole("button", { name: "Back to position" }))
+      .element(app.getByTestId("transaction-flow-back"))
       .toBeEnabled();
     // Sent to the network, the transaction can no longer be cancelled.
     await expect
@@ -320,8 +320,9 @@ describe("Borrow with an external provider", () => {
     const app = await renderBorrowApp(makeWallet({ sendBorrowTransaction }));
     await confirmWithdraw(app);
 
+    // The failure shows once, on its step, with the host's reason.
     await expect
-      .element(app.getByText("Blocked by host policy"))
+      .element(app.getByText("Blocked by host policy", { exact: false }))
       .toBeInTheDocument();
     await expect
       .element(app.getByRole("button", { name: "Cancel" }))
@@ -329,11 +330,15 @@ describe("Borrow with an external provider", () => {
 
     await app.getByRole("button", { name: "Try again" }).click();
     await expect
-      .element(app.getByText("The transaction couldn't be sent. Try again."))
+      .element(
+        app.getByText("The transaction couldn't be sent. Try again.", {
+          exact: false,
+        })
+      )
       .toBeInTheDocument();
     expect(api.submitted.has(withdrawTransaction.id)).toBe(false);
     await expect
-      .element(app.getByRole("button", { name: "Back to position" }))
+      .element(app.getByTestId("transaction-flow-back"))
       .toBeEnabled();
 
     // The host broadcast the transaction: the footer offers Leave, not
@@ -419,6 +424,61 @@ describe("Borrow with an external provider", () => {
     expect(api.submitted.get(withdrawTransaction.id)).toEqual({
       transactionHash,
     });
+
+    await app.unmount();
+  });
+
+  it("leaves a position's flow from Steps' back, after asking, not to Review", async ({
+    worker,
+  }) => {
+    const api = makeBorrowApi();
+    worker.use(...api.handlers([withdrawTransaction]));
+    const sendBorrowTransaction = vi.fn<
+      SKBorrowWallet["sendBorrowTransaction"]
+    >(() => new Promise(() => {}));
+
+    const app = await renderBorrowApp(makeWallet({ sendBorrowTransaction }));
+    await confirmWithdraw(app);
+    await expect.poll(() => sendBorrowTransaction).toHaveBeenCalledOnce();
+
+    // One header heads Steps, and its back leaves as Leave does.
+    await expect
+      .element(app.getByTestId("position-page-back"))
+      .not.toBeInTheDocument();
+    await app.getByRole("button", { name: "Back", exact: true }).click();
+    await app
+      .getByTestId("leave-confirmation")
+      .getByRole("button", { name: "Leave" })
+      .click();
+
+    await expect.poll(() => stepsPageShown(app)).toBe(false);
+    await expect.element(app.getByTestId("position-page-back")).toBeVisible();
+    expect(app.getByRole("button", { name: "Confirm" }).query()).toBeNull();
+
+    await app.unmount();
+  });
+
+  it("finishes a position's flow from Complete's back, not to Review", async ({
+    worker,
+  }) => {
+    const api = makeBorrowApi();
+    worker.use(...api.handlers([withdrawTransaction]));
+    const sendBorrowTransaction = vi
+      .fn<SKBorrowWallet["sendBorrowTransaction"]>()
+      .mockResolvedValue(broadcastSuccess);
+
+    const app = await renderBorrowApp(makeWallet({ sendBorrowTransaction }));
+    await confirmWithdraw(app);
+    await expect.poll(() => completePageShown(app)).toBe(true);
+
+    await expect
+      .element(app.getByTestId("position-page-back"))
+      .not.toBeInTheDocument();
+    await app.getByRole("button", { name: "Back", exact: true }).click();
+
+    await expect.poll(() => completePageShown(app)).toBe(false);
+    await expect.element(app.getByTestId("position-page-back")).toBeVisible();
+    expect(app.getByRole("button", { name: "Confirm" }).query()).toBeNull();
 
     await app.unmount();
   });

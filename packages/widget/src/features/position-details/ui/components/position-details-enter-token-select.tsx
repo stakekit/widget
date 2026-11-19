@@ -1,14 +1,14 @@
 import { useTranslation } from "react-i18next";
 
-import { type Token, tokenString } from "../../../../../domain/token/token";
-import { formatTokenAmount } from "../../../../../shared/lib/number-format";
+import { type Token, tokenString } from "../../../../domain/token/token";
+import { formatTokenAmount } from "../../../../shared/lib/number-format";
 import {
   useTokenLogo,
   useTokenLogoResolver,
-} from "../../../../../shared/react/token-logo";
-import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { SelectSheet, PickerTrigger } from "../../../../../ui/index";
-import type { PositionEnterTokenOption } from "../../../model/enter-token";
+} from "../../../../shared/react/token-logo";
+import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
+import { SelectSheet, PickerTrigger } from "../../../../ui/index";
+import type { PositionEnterTokenOption } from "../../model/enter-token";
 
 const triggerTestId = "position-details-stake-token";
 

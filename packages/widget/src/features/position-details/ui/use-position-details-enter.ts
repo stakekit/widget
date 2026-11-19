@@ -1,8 +1,8 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 
-import type { PositionDetailsEnterKey } from "../../../state/enter-entry";
-import { positionDetailsEnterAtoms } from "../../../state/enter-view";
-import { usePositionDetails } from "../../use-position-details";
+import type { PositionDetailsEnterKey } from "../state/enter-entry";
+import { positionDetailsEnterAtoms } from "../state/enter-view";
+import { usePositionDetails } from "./use-position-details";
 
 export const usePositionDetailsEnter = (key: PositionDetailsEnterKey) => {
   const atoms = useAtomValue(positionDetailsEnterAtoms(key));

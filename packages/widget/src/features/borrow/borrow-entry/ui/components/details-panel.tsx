@@ -7,10 +7,7 @@ import type { Integration } from "../../../../../domain/borrow/integration";
 import type { Market } from "../../../../../domain/borrow/market";
 import { toBorrowNetworkToken } from "../../../../../domain/borrow/token";
 import { exactZero } from "../../../../../domain/finance/exact";
-import {
-  formatBorrowProviderName,
-  formatNetworkName,
-} from "../../../../../shared/lib/formatters";
+import { formatNetworkName } from "../../../../../shared/lib/formatters";
 import { formatAddress } from "../../../../../shared/lib/general";
 import {
   useNetworkLogoResolver,
@@ -29,6 +26,7 @@ import {
   Stack,
   Text,
 } from "../../../../../ui/index";
+import { formatBorrowProviderName } from "../../../../borrow-presentation/index";
 import type {
   BorrowEntryView,
   BorrowFormProjection,
@@ -64,8 +62,8 @@ export const BorrowEntryDetailsPanel = ({
   if (!selectedMarket) {
     return (
       <EmptyState
-        title={t("dashboard.borrow.details.empty_title")}
-        body={t("dashboard.borrow.details.empty_description")}
+        title={t("borrow.details.empty_title")}
+        body={t("borrow.details.empty_description")}
       />
     );
   }
@@ -90,8 +88,8 @@ const BorrowCatalogFailed = () => {
   return (
     <ErrorState
       fill
-      title={t("dashboard.borrow.error_title")}
-      body={t("dashboard.borrow.error_description")}
+      title={t("borrow.error_title")}
+      body={t("borrow.error_description")}
       action={{ label: t("shared.retry"), onClick: () => retry(undefined) }}
     />
   );
@@ -147,7 +145,7 @@ export const BorrowMarketDetails = ({
             : {}),
         }}
         details={[formatNetworkName(market.network)]}
-        badges={[{ label: t(`dashboard.borrow.market_type.${market.type}`) }]}
+        badges={[{ label: t(`borrow.market_type.${market.type}`) }]}
       />
 
       <MetricGroup columns={2} framed>
@@ -161,20 +159,17 @@ export const BorrowMarketDetails = ({
         ))}
       </MetricGroup>
 
-      <Disclosure title={t("dashboard.borrow.details.about")} defaultOpen>
+      <Disclosure title={t("borrow.details.about")} defaultOpen>
         <Text as="p" tone="muted">
           {integration?.metadata.description ??
-            t("dashboard.borrow.details.about_fallback", {
+            t("borrow.details.about_fallback", {
               market: model.title,
               provider: providerName,
             })}
         </Text>
       </Disclosure>
 
-      <Disclosure
-        title={t("dashboard.borrow.details.market_stats")}
-        defaultOpen
-      >
+      <Disclosure title={t("borrow.details.market_stats")} defaultOpen>
         <DetailList>
           {model.marketRows.map((row) => (
             <DetailRow
@@ -187,7 +182,7 @@ export const BorrowMarketDetails = ({
         </DetailList>
       </Disclosure>
 
-      <Disclosure title={t("dashboard.borrow.details.protocol")} defaultOpen>
+      <Disclosure title={t("borrow.details.protocol")} defaultOpen>
         <DetailList>
           {model.protocolRows.map((row) => (
             <DetailRow
@@ -200,7 +195,7 @@ export const BorrowMarketDetails = ({
           ))}
           {market.poolAddress ? (
             <DetailRow
-              label={t("dashboard.borrow.details.pool_address")}
+              label={t("borrow.details.pool_address")}
               value={formatAddress(market.poolAddress)}
               copyable={{
                 value: market.poolAddress,

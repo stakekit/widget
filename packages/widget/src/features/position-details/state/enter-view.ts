@@ -9,6 +9,7 @@ import type {
   EarnValidatorKey,
 } from "../../../domain/earn/validator";
 import {
+  getTokensPricesRequest,
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
   resolveYieldProviderOption,
@@ -25,14 +26,13 @@ import {
 } from "../../../domain/token/token";
 import { sameWalletScopeOwner } from "../../../domain/wallet/wallet-scope";
 import {
-  getTokensPricesRequest,
   PricesKey,
-  pricesAtom,
-} from "../../../resources/token-prices/prices";
+  optionalTokenPricesAtom,
+} from "../../../resources/token-prices/token-prices";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../resources/yield-opportunity/optional-yield-opportunity";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
@@ -103,7 +103,7 @@ export const positionDetailsEnterAtoms = Atom.family(
     const selectedYieldResultAtom = Atom.make((get) =>
       toPresentable(
         get(
-          yieldOpportunityAtom.foreground(
+          optionalYieldOpportunityAtom.foreground(
             new YieldOpportunityKey({ yieldId: key.integrationId })
           )
         )
@@ -236,7 +236,9 @@ export const positionDetailsEnterAtoms = Atom.family(
         yieldDto: selectedYield,
       });
       const pricesResult = get(
-        pricesAtom.foreground(new PricesKey({ request: pricesRequest }))
+        optionalTokenPricesAtom.foreground(
+          new PricesKey({ request: pricesRequest })
+        )
       );
       const prices = pricesResult.pipe(AsyncResult.value, Option.getOrNull);
       const validatorsResult = get(

@@ -158,6 +158,7 @@ describe("activity and completion workflows", () => {
           amount="1"
           completion={{
             attribution: null,
+            back: vi.fn(),
             cta: null,
             onViewTransactionClick,
             pendingActionMatch: false,

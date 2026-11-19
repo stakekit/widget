@@ -138,6 +138,17 @@ One look per concept:
   claim, is `primary`: the card tints in the accent and its button fills,
   and the screen's own call to action (Unstake) steps down to secondary, so
   one accent fill leads. A figure paid out to the user reads in `success`.
+- **Back navigation.** A page has one way back, set by the Layout. In the
+  Dashboard every page nested under a tab (a yield or borrow position, an
+  Earn, Borrow or Activity flow's Review, Steps and Complete) leads with a
+  `PageHeader`: its `back` button and the trail from the tab's name
+  (`parent`) to the page's (`title`), the trail stopping at the tab while
+  the page's own header names it. A page that hosts a flow, such as a
+  position, owns that one header; the flow inside it adds none. The Compact
+  Layout has no `PageHeader`: the shell header's back arrow steps back
+  through the Widget's history on every page but the tabs. Which of the two
+  a page gets comes from its Layout's composition (a prop such as a flow's
+  trail), never from the Feature reading the Layout.
 - **Position details.** A position's page, in both Layouts, reads in one
   order: the `AssetHeader` (logo, name, "via Provider · Network"; the
   positions list's row carries the status, not the page), then a
@@ -520,12 +531,12 @@ named widths; `Text` takes a type role and tone; `as` accepts a fixed list of
 elements. Components and patterns take finite `tone`, `size` and `variant`
 props, so the compiler lists the looks that exist.
 
-A layout value can vary with the container's width: pass
+A `Grid`'s `columns` can vary with the container's width: pass
 `{ base, sm, md, split }` instead of a single value, for example
-`<Stack direction={{ base: "column", md: "row" }} />`. `base` applies at every
-width and each other key from its container size up. The Widget root and
-each `SplitView` pane are size containers, so in-Widget layout never reads
-the viewport.
+`<Grid columns={{ base: 1, split: 2 }} />`. `base` applies at every width and
+each other key from its container size up. Every other layout prop takes a
+single value. The Widget root and each `SplitView` pane are size containers,
+so in-Widget layout never reads the viewport.
 
 Icons come from one component, `<Icon name="CopyIcon" />`, in sizes `sm`, `md`,
 `lg` and `xl` (16, 20, 24, 32) and the text tones; unset, an icon draws in the
