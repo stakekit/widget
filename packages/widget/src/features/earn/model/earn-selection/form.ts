@@ -1,17 +1,17 @@
 import type BigNumber from "bignumber.js";
 
-import { getEnterAmountConstraint } from "../../../../../domain/earn/stake";
+import { getEnterAmountConstraint } from "../../../../domain/earn/stake";
 import {
   getYieldActionArg,
   resolveYieldProviderOption,
-} from "../../../../../domain/earn/yield";
-import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
-import { exactDecimal } from "../../../../../domain/finance/exact";
+} from "../../../../domain/earn/yield";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
+import { exactDecimal } from "../../../../domain/finance/exact";
 import {
   hasActivePositionForYield,
   type PositionsData,
-} from "../../../../../domain/portfolio/positions";
-import type { EarnEntryIntent, EarnSelectionForm } from "../types";
+} from "../../../../domain/portfolio/positions";
+import type { EarnEntryIntent, EarnSelectionForm } from "./types";
 
 export const canSubmitEarnForm = ({
   availableAmount,

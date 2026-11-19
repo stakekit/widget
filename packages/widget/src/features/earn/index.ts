@@ -18,6 +18,7 @@ export const earnEntryIntentEventProjectionAtom = appRuntime
   .pipe(Atom.withLabel("earnEntryIntentEventProjectionAtom"));
 
 export {
+  useEarnTabCategory,
   useEarnYieldSelection,
   useSelectEarnCategory,
 } from "./ui/use-earn-facades";

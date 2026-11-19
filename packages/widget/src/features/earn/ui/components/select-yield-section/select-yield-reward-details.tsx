@@ -2,10 +2,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { getEffectiveYieldRewardRateDetails } from "../../../../../domain/earn/reward-rate";
 import type { EarnValidator } from "../../../../../domain/earn/validator";
-import {
-  getYieldOutputToken,
-  getYieldTypeLabels,
-} from "../../../../../domain/earn/yield";
+import { getYieldOutputToken } from "../../../../../domain/earn/yield";
 import type { Token } from "../../../../../domain/token/token";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import {
@@ -20,6 +17,7 @@ import {
   CampaignStrip,
 } from "../../../../campaigns/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
+import { getYieldTypeLabels } from "../../../../yield-presentation/index";
 import {
   EstimatedRewardAmounts,
   getRewardTokenSymbols,

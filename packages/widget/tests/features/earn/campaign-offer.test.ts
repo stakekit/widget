@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import { tokenString } from "../../../src/domain/token/token";
+import type { EarnTokenOption } from "../../../src/features/earn/model/earn-selection/types";
 import { getCampaignOffer } from "../../../src/features/earn/state/campaign-offer";
-import type { EarnTokenOption } from "../../../src/features/earn/state/earn-selection/types";
 import { yieldApiYieldDtoFixture, yieldApiYieldFixture } from "../../fixtures";
 
 const baseYield = yieldApiYieldDtoFixture();

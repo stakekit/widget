@@ -10,13 +10,13 @@ import {
   WalletAddress,
 } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import type { EarnEntry } from "../../../src/features/earn/model/earn-selection/types";
 import {
   earnSelectionStatusViewAtom,
   earnSelectionViewAtom,
   setEarnSelectionAmountAtom,
 } from "../../../src/features/earn/state/earn-selection";
 import { earnEntryAtom } from "../../../src/features/earn/state/earn-selection/state/atoms";
-import type { EarnEntry } from "../../../src/features/earn/state/earn-selection/types";
 import { appRuntime } from "../../../src/runtime/app-runtime";
 import {
   LegacyResourceSource,

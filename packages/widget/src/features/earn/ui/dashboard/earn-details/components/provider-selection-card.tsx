@@ -24,7 +24,7 @@ import {
   formatProviderWebsiteHref,
 } from "../../../../../yield-presentation/index";
 import type { YieldSummaryProvider } from "../../../../../yield-summary/index";
-import type { EarnProviderOption } from "../../../../state/earn-selection/types";
+import type { EarnProviderOption } from "../../../../model/earn-selection/types";
 import { EarnProviderOptionSelection } from "../../../components/earn-provider-option-selection";
 import { EarnValidatorSelection } from "../../../components/earn-validator-selection";
 import {

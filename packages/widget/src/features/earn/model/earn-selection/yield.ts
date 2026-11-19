@@ -1,24 +1,24 @@
 import type BigNumber from "bignumber.js";
 import { Option, Schema } from "effect";
 
-import { getMinStakeAmount } from "../../../../../domain/earn/stake";
+import { getMinStakeAmount } from "../../../../domain/earn/stake";
 import {
   isNonZeroRewardRateYield,
   isYieldVisible,
-} from "../../../../../domain/earn/yield";
+} from "../../../../domain/earn/yield";
 import {
   getRankedDefaultYield,
   type YieldProviderOrder,
-} from "../../../../../domain/earn/yield-provider-order";
-import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
-import { YieldId } from "../../../../../domain/identity/identifiers";
+} from "../../../../domain/earn/yield-provider-order";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
+import { YieldId } from "../../../../domain/identity/identifiers";
 import {
   hasActivePositionForYield,
   type PositionsData,
-} from "../../../../../domain/portfolio/positions";
-import { hostTokenKey } from "../../../../../domain/token/token";
-import { isWalletNetwork } from "../../../../../domain/wallet/network";
-import type { EarnEntry, EarnTokenOption } from "../types";
+} from "../../../../domain/portfolio/positions";
+import { hostTokenKey } from "../../../../domain/token/token";
+import { isWalletNetwork } from "../../../../domain/wallet/network";
+import type { EarnEntry, EarnTokenOption } from "./types";
 
 export const resolveYieldOptions = ({
   selectedToken,

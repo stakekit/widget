@@ -1,6 +1,8 @@
+import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
 import { Entrance, Stack, StandIn } from "../../../../../ui/index";
 import { useMountAnimation } from "../../../../mount-animation/index";
 import { useTrackPage } from "../../../../tracking/index";
+import { TransactionFlowFailureNotice } from "../../../../transaction-flow/views";
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { PageContainer, PageCtaButton } from "../../../../widget-shell/views";
@@ -56,6 +58,8 @@ const EarnPage = () => {
         ) : (
           <>
             <Stack gap={12}>
+              <TransactionFlowFailureNotice route={widgetRoutes.earn} />
+
               <ZerionChainModal />
 
               <EarnCampaignOffer />

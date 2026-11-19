@@ -9,13 +9,13 @@ import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { tokenString } from "../../../src/domain/token/token";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
 import {
+  TokenOptionsKey,
+  YieldValidatorsKey,
+} from "../../../src/features/earn/model/earn-selection/keys";
+import {
   mergedTokenOptionsAtom,
   yieldValidatorsAtom,
 } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
-import {
-  TokenOptionsKey,
-  YieldValidatorsKey,
-} from "../../../src/features/earn/state/earn-selection/catalog/keys";
 import { tokenBalancesResourceAtom } from "../../../src/resources/token-balances/token-balances";
 import { preferredValidatorsResourceAtom } from "../../../src/resources/validator-directory/validator-directory";
 import { appRuntime } from "../../../src/runtime/app-runtime";

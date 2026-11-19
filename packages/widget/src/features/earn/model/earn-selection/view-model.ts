@@ -1,11 +1,11 @@
 import { Option } from "effect";
 
-import type { PositionsData } from "../../../../../domain/portfolio/positions";
+import type { PositionsData } from "../../../../domain/portfolio/positions";
 import type {
   EarnEntryIntent,
   EarnSelectionForm,
   EarnSelectionView,
-} from "../types";
+} from "./types";
 import { disabledValidatorsViewResource } from "./view-inputs";
 
 export const makeEmptyPositionsData = (): PositionsData => new Map();

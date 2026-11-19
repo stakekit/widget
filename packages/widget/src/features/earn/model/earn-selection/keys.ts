@@ -1,9 +1,9 @@
 import { Data } from "effect";
 
-import type { YieldCategory } from "../../../../../domain/earn/contract";
-import type { YieldId } from "../../../../../domain/identity/identifiers";
-import type { Network } from "../../../../../domain/network/network";
-import type { WalletScopeKey } from "../../../../../domain/wallet/wallet-scope";
+import type { YieldCategory } from "../../../../domain/earn/contract";
+import type { YieldId } from "../../../../domain/identity/identifiers";
+import type { Network } from "../../../../domain/network/network";
+import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 
 export class YieldCatalogKey extends Data.TaggedClass("YieldCatalogKey")<{
   category: YieldCategory | null;

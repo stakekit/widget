@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 
 import {
   type ExtendedYieldType,
-  getYieldTypeLabels,
   isDepositYieldType,
 } from "../../../../../domain/earn/yield";
 import { amountSeparators } from "../../../../../shared/lib/amount-value";
@@ -21,6 +20,7 @@ import {
   type YieldEntryBalanceWarning,
 } from "../../../../yield-entry/index";
 import { useConfidentialTokenBalance } from "../../../../yield-entry/views";
+import { getYieldTypeLabels } from "../../../../yield-presentation/index";
 import { useEarnEntry, useEarnTokenSelection } from "../../use-earn-facades";
 import { AmountPanelSkeleton } from "../earn-form-skeleton";
 import { SelectToken } from "./select-token";

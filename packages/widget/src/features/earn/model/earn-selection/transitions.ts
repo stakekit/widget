@@ -1,18 +1,18 @@
-import type { YieldCategory } from "../../../../../domain/earn/contract";
-import type { TronResource } from "../../../../../domain/earn/tron-resource";
+import type { YieldCategory } from "../../../../domain/earn/contract";
+import type { TronResource } from "../../../../domain/earn/tron-resource";
 import type {
   EarnValidator,
   EarnValidatorKey,
-} from "../../../../../domain/earn/validator";
+} from "../../../../domain/earn/validator";
 import type {
   ProviderOption,
   YieldId,
-} from "../../../../../domain/identity/identifiers";
+} from "../../../../domain/identity/identifiers";
 import type {
   CatalogYieldTarget,
   EarnEntryIntent,
   EarnTokenKey,
-} from "../types";
+} from "./types";
 
 const resetYieldIntent = (
   intent: EarnEntryIntent,

@@ -7,9 +7,9 @@ import {
   YieldId,
 } from "../../../src/domain/identity/identifiers";
 import { tokenString } from "../../../src/domain/token/token";
+import { makeDefaultEarnIntent } from "../../../src/features/earn/model/earn-selection/types";
 import type { EarnEntryState } from "../../../src/features/earn/state/earn-selection/state/owner";
 import { clearEarnEntryAmounts } from "../../../src/features/earn/state/earn-selection/state/owner";
-import { makeDefaultEarnIntent } from "../../../src/features/earn/state/earn-selection/types";
 
 const owner = {
   address: Schema.decodeSync(WalletAddress)(

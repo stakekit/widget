@@ -1,5 +1,5 @@
-import type { EarnValidator } from "../../../../../domain/earn/validator";
-import { validatorAddressIdentity } from "../../../../../domain/earn/validator";
+import type { EarnValidator } from "../../../../domain/earn/validator";
+import { validatorAddressIdentity } from "../../../../domain/earn/validator";
 
 const sameValidator = (first: EarnValidator, second: EarnValidator) =>
   validatorAddressIdentity(first.address) ===

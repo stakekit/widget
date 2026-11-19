@@ -1,27 +1,30 @@
 import { Option, Schema } from "effect";
-import * as AsyncResult from "effect/reactivity/AsyncResult";
 
-import { getConfidentialAssetToken } from "../../../../../domain/earn/confidential";
-import type { YieldCategory } from "../../../../../domain/earn/contract";
-import { filterValidators } from "../../../../../domain/earn/yield";
-import { orderYieldsByProvider } from "../../../../../domain/earn/yield-provider-order";
-import { YieldId } from "../../../../../domain/identity/identifiers";
+import { getConfidentialAssetToken } from "../../../../domain/earn/confidential";
+import type { YieldCategory } from "../../../../domain/earn/contract";
+import { filterValidators } from "../../../../domain/earn/yield";
+import { orderYieldsByProvider } from "../../../../domain/earn/yield-provider-order";
+import { YieldId } from "../../../../domain/identity/identifiers";
 import {
   hostTokenKey,
   sameTokenContract,
-} from "../../../../../domain/token/token";
+} from "../../../../domain/token/token";
+import {
+  type Presentable,
+  toPresentable,
+} from "../../../../shared/effect/async-result";
+import { canSubmitEarnForm, resolveForm } from "./form";
+import { findReachableDefaultToken, resolveToken } from "./token";
 import type {
+  EarnCatalogError,
   EarnEntry,
   EarnEntryIntent,
   EarnSelectionView,
   EarnTokenOption,
-} from "../types";
-import { canSubmitEarnForm, resolveForm } from "./form";
-import { findReachableDefaultToken, resolveToken } from "./token";
+} from "./types";
 import { resolveValidators } from "./validators";
 import {
   disabledValidatorsViewResource,
-  type EarnResourceResult,
   type EarnViewObservations,
 } from "./view-inputs";
 import {
@@ -31,18 +34,23 @@ import {
 } from "./view-model";
 import { resolveYield, resolveYieldOptions } from "./yield";
 
-const getAvailableValue = <A>(result: EarnResourceResult<A>, fallback: A): A =>
-  AsyncResult.getOrElse(result, () => fallback);
+type EarnPresentable<A> = Presentable<A, EarnCatalogError>;
 
-const hasAvailableValue = <A>(result: EarnResourceResult<A>) =>
-  Option.isSome(AsyncResult.value(result));
+const readyValue = <A>(presentable: EarnPresentable<A>, fallback: A): A =>
+  presentable._tag === "Ready" ? presentable.value : fallback;
 
-const isResolving = <A>(result: EarnResourceResult<A>) =>
-  result.waiting ||
-  (!hasAvailableValue(result) && !AsyncResult.isFailure(result));
-
-const isBlockingFailure = <A>(result: EarnResourceResult<A>) =>
-  AsyncResult.isFailure(result) && !hasAvailableValue(result);
+/**
+ * A list loads until it has items: while nothing is shown yet, and while an
+ * empty list revalidates.
+ */
+const isListLoading = (
+  presentable: EarnPresentable<unknown>,
+  items: ReadonlyArray<unknown>
+) =>
+  presentable._tag === "Loading" ||
+  (presentable._tag === "Ready" &&
+    presentable.refreshing &&
+    items.length === 0);
 
 const decodeInitYieldId = (entry: EarnEntry) =>
   entry.initParams?.yieldId
@@ -69,10 +77,9 @@ const findCategory = (
   matches: (option: EarnTokenOption) => boolean
 ): CategoryLookup => {
   for (const { category, result } of catalogs) {
-    if (!hasAvailableValue(result) && !AsyncResult.isFailure(result)) {
-      return "pending";
-    }
-    if (getAvailableValue(result, []).some(matches)) return category;
+    const catalog = toPresentable(result);
+    if (catalog._tag === "Loading") return "pending";
+    if (readyValue(catalog, []).some(matches)) return category;
   }
   return null;
 };
@@ -156,12 +163,12 @@ const resolveCategorySelection = ({
 
   return {
     available: catalogs
-      .filter(({ result }) => getAvailableValue(result, []).length > 0)
+      .filter(({ result }) => readyValue(toPresentable(result), []).length > 0)
       .map(({ category }) => category),
     // Every catalog has answered, none with tokens.
     blockingFailure:
       selected === null &&
-      catalogs.some(({ result }) => isBlockingFailure(result)),
+      catalogs.some(({ result }) => toPresentable(result)._tag === "Failed"),
     category: selected,
     loading: false,
   };
@@ -179,7 +186,11 @@ export const resolveEarnView = ({
   readonly previous?: EarnSelectionView | null;
 }): EarnSelectionView => {
   const positions = observations.initial.positions;
-  const positionsData = getAvailableValue(positions, makeEmptyPositionsData());
+  const presentedPositions = toPresentable(positions);
+  const positionsData = readyValue(
+    presentedPositions,
+    makeEmptyPositionsData()
+  );
   const category = resolveCategorySelection({
     entry,
     intent,
@@ -212,14 +223,14 @@ export const resolveEarnView = ({
   }
 
   const tokenResult = observations.tokenOptions;
-  const tokenOptions = getAvailableValue(tokenResult, []);
-  const tokenLoading = isResolving(tokenResult) && tokenOptions.length === 0;
-  const tokenFailure = isBlockingFailure(tokenResult);
-  const reachableDefaultYields = observations.reachableDefaultYields;
-  const reachableDefaultLoading =
-    reachableDefaultYields !== null &&
-    !hasAvailableValue(reachableDefaultYields) &&
-    isResolving(reachableDefaultYields);
+  const presentedTokens = toPresentable(tokenResult);
+  const tokenOptions = readyValue(presentedTokens, []);
+  const tokenLoading = isListLoading(presentedTokens, tokenOptions);
+  const tokenFailure = presentedTokens._tag === "Failed";
+  const reachableDefaultYields =
+    observations.reachableDefaultYields &&
+    toPresentable(observations.reachableDefaultYields);
+  const reachableDefaultLoading = reachableDefaultYields?._tag === "Loading";
   const tokenFacts: EarnViewFacts = {
     ...categoryFacts,
     blockingFailure: tokenFailure,
@@ -256,7 +267,7 @@ export const resolveEarnView = ({
           entry,
           positions: positionsData,
           tokenOptions,
-          yields: getAvailableValue(reachableDefaultYields, []),
+          yields: readyValue(reachableDefaultYields, []),
         })
       : null) ??
     resolveToken({
@@ -271,7 +282,8 @@ export const resolveEarnView = ({
   }
 
   const yieldResult = observations.yieldCatalog;
-  const yieldCatalog = getAvailableValue(yieldResult, []);
+  const presentedYields = toPresentable(yieldResult);
+  const yieldCatalog = readyValue(presentedYields, []);
   const yieldOptions = resolveYieldOptions({
     selectedToken,
     yieldsById: yieldCatalog,
@@ -289,8 +301,8 @@ export const resolveEarnView = ({
     selectedYieldId: intent.selectedYieldId,
     yieldOptions,
   });
-  const yieldLoading = isResolving(yieldResult) && yieldOptions.length === 0;
-  const yieldFailure = isBlockingFailure(yieldResult);
+  const yieldLoading = isListLoading(presentedYields, yieldOptions);
+  const yieldFailure = presentedYields._tag === "Failed";
   const yieldFacts: EarnViewFacts = {
     ...tokenFacts,
     blockingFailure: yieldFailure,
@@ -316,14 +328,14 @@ export const resolveEarnView = ({
     return makeEarnView({ ...yieldFacts, intent });
   }
 
-  if (!hasAvailableValue(positions)) {
+  if (presentedPositions._tag !== "Ready") {
     return makeEarnView({
       ...yieldFacts,
-      blockingFailure: isBlockingFailure(positions),
+      blockingFailure: presentedPositions._tag === "Failed",
       intent,
       loading: {
         ...yieldFacts.loading,
-        positions: isResolving(positions),
+        positions: presentedPositions._tag === "Loading",
       },
       selection: {
         category: category.category,
@@ -371,17 +383,18 @@ export const resolveEarnView = ({
     },
   };
 
-  if (
-    validatorInput._tag === "enabled" &&
-    !hasAvailableValue(validatorInput.result)
-  ) {
+  const presentedValidators =
+    validatorInput._tag === "enabled"
+      ? toPresentable(validatorInput.result)
+      : null;
+  if (presentedValidators && presentedValidators._tag !== "Ready") {
     return makeEarnView({
       ...validatorFacts,
-      blockingFailure: isBlockingFailure(validatorInput.result),
+      blockingFailure: presentedValidators._tag === "Failed",
       intent,
       loading: {
         ...validatorFacts.loading,
-        validators: isResolving(validatorInput.result),
+        validators: presentedValidators._tag === "Loading",
       },
     });
   }
@@ -396,12 +409,12 @@ export const resolveEarnView = ({
         })
       : null;
   const requestedLookup =
-    validatorInput._tag === "enabled" ? validatorInput.requested : null;
+    validatorInput._tag === "enabled" && validatorInput.requested
+      ? toPresentable(validatorInput.requested)
+      : null;
   const selectedValidators = resolveValidators({
     complete: validatorInput._tag === "enabled" && validatorInput.complete,
-    requestedMatch: requestedLookup
-      ? getAvailableValue(requestedLookup, null)
-      : null,
+    requestedMatch: requestedLookup ? readyValue(requestedLookup, null) : null,
     requestedValidator: intent.requestedValidator,
     selectedValidators: selectedValidatorIntent,
     validatorOptions,
@@ -430,7 +443,9 @@ export const resolveEarnView = ({
     intent,
     loading: {
       ...validatorFacts.loading,
-      validators: requestedLookup !== null && isResolving(requestedLookup),
+      validators:
+        requestedLookup?._tag === "Loading" ||
+        (requestedLookup?._tag === "Ready" && requestedLookup.refreshing),
     },
     selection: {
       category: category.category,

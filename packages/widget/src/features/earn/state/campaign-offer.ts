@@ -9,13 +9,13 @@ import { EarnTokenCatalogKey } from "../../../resources/earn-token-catalog/earn-
 import { earningCampaignsAtom } from "../../../resources/project-campaigns/project-campaigns";
 import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/yield-opportunity";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
-import { earnSelectionYieldOptionsViewAtom } from "./earn-selection";
-import { earnTokenCatalogAtom } from "./earn-selection/catalog/catalog";
-import { earnEntryAtom } from "./earn-selection/state/atoms";
 import type {
   CatalogYieldTarget,
   EarnTokenOption,
-} from "./earn-selection/types";
+} from "../model/earn-selection/types";
+import { earnSelectionYieldOptionsViewAtom } from "./earn-selection";
+import { earnTokenCatalogAtom } from "./earn-selection/catalog/catalog";
+import { earnEntryAtom } from "./earn-selection/state/atoms";
 
 /** A yield with an earning campaign, and the selection that switches to it. */
 export type CampaignOffer = {

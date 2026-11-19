@@ -1,16 +1,16 @@
 import { Option, Schema } from "effect";
 
-import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
-import { YieldId } from "../../../../../domain/identity/identifiers";
-import type { PositionsData } from "../../../../../domain/portfolio/positions";
-import { hostTokenKey, tokenString } from "../../../../../domain/token/token";
-import type { InitToken } from "../../../../../services/wallet/init-params";
+import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
+import { YieldId } from "../../../../domain/identity/identifiers";
+import type { PositionsData } from "../../../../domain/portfolio/positions";
+import { hostTokenKey, tokenString } from "../../../../domain/token/token";
+import type { InitToken } from "../../../../services/wallet/init-params";
 import type {
   EarnEntry,
   EarnEntryIntent,
   EarnTokenKey,
   EarnTokenOption,
-} from "../types";
+} from "./types";
 import { isReachableDefaultYield, resolveYieldOptions } from "./yield";
 
 /**

@@ -19,7 +19,7 @@ import {
   formatProviderWebsite,
   formatProviderWebsiteHref,
 } from "../../../../../../yield-presentation/index";
-import type { EarnProviderOption } from "../../../../../state/earn-selection/types";
+import type { EarnProviderOption } from "../../../../../model/earn-selection/types";
 import { EarnProviderOptionSelection } from "../../../../components/earn-provider-option-selection";
 
 const getProviderTvl = (

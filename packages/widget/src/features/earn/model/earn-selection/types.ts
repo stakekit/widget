@@ -1,7 +1,5 @@
 import type BigNumber from "bignumber.js";
 import { Data } from "effect";
-import type { AsyncResult } from "effect/reactivity/AsyncResult";
-import type { Atom, PullResult, Writable } from "effect/reactivity/Atom";
 
 import type { YieldCategory } from "../../../../domain/earn/contract";
 import type { EarnProvider } from "../../../../domain/earn/provider";
@@ -18,11 +16,7 @@ import type { PositionsData } from "../../../../domain/portfolio/positions";
 import type { Token, TokenString } from "../../../../domain/token/token";
 import type { WalletScopeKey } from "../../../../domain/wallet/wallet-scope";
 import type { InitParams } from "../../../../services/wallet/init-params";
-import type { PullPage } from "../../../../shared/effect/pagination";
-import type {
-  YieldValidatorsKey,
-  YieldValidatorsPullKey,
-} from "./catalog/keys";
+import type { YieldValidatorsKey } from "./keys";
 
 export type EarnTokenOption = {
   readonly token: Token;
@@ -104,27 +98,6 @@ export type EarnSelectionForm = {
 export type EarnProviderOption = {
   readonly value: ProviderOption;
   readonly provider: EarnProvider | null;
-};
-
-export type EarnTokenOptionsState = AsyncResult<
-  ReadonlyArray<EarnTokenOption>,
-  EarnCatalogError
->;
-
-export type EarnValidatorsResource = {
-  readonly enabled: boolean;
-  readonly initialValidatorsResultAtom: Atom<
-    AsyncResult<
-      Readonly<{
-        readonly complete: boolean;
-        readonly items: ReadonlyArray<EarnValidator>;
-      }>,
-      EarnCatalogError
-    >
-  >;
-  readonly validatorsPullAtom: (
-    key: YieldValidatorsPullKey
-  ) => Writable<PullResult<PullPage<EarnValidator>, EarnCatalogError>, void>;
 };
 
 export type EarnSelectionView = {

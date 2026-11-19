@@ -17,7 +17,7 @@ import {
   YieldDetailsHeader,
   YieldFactsSection,
 } from "../../../../yield-summary/views";
-import { useYieldFlowIntake } from "../../../../yield-transaction-flow/index";
+import { useYieldFlowEnterIntake } from "../../../../yield-transaction-flow/index";
 import {
   getRewardRateHistoryChart,
   getTvlHistoryChart,
@@ -60,7 +60,7 @@ export const EarnDetails = () => {
  * Session intake. It never follows the Earn form's live selection.
  */
 export const EarnFlowDetails = () => {
-  const intake = useYieldFlowIntake("Enter");
+  const intake = useYieldFlowEnterIntake();
   const yieldDto = useEarnFlowYield(intake.selectedStake);
   const selectedValidators = [...intake.selectedValidators.values()];
 
@@ -107,7 +107,7 @@ const EarnDetailsPanel = ({
   if (isLoading) return <EarnDetailsSkeleton />;
 
   if (!yieldDto) {
-    return <EmptyState title={t("dashboard.earn_details.empty")} />;
+    return <EmptyState title={t("earn_details.empty")} />;
   }
 
   const {

@@ -1,4 +1,4 @@
-import { toChartNumber } from "../../../../../shared/lib/number-format";
+import { toRepresentationNumber } from "../../../../../domain/finance/exact";
 import type { YieldRateFigure } from "../../../../yield-presentation/index";
 
 /**
@@ -13,4 +13,4 @@ export type YieldPercent =
 export const getYieldPercent = (rate: YieldRateFigure): YieldPercent =>
   rate.rateType.toLowerCase() === "variable" || !rate.ratio.isPositive()
     ? { _tag: "Static", text: rate.value }
-    : { _tag: "Rate", ratio: toChartNumber(rate.ratio) };
+    : { _tag: "Rate", ratio: toRepresentationNumber(rate.ratio) };

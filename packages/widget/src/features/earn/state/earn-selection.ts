@@ -27,7 +27,11 @@ import {
   selectYield,
   setAmount,
   setMaxAmount,
-} from "./earn-selection/model/transitions";
+} from "../model/earn-selection/transitions";
+import type {
+  CatalogYieldTarget,
+  EarnTokenKey,
+} from "../model/earn-selection/types";
 import {
   earnEntryIntentAtom,
   earnSelectionViewAtom as internalEarnSelectionViewAtom,
@@ -36,10 +40,12 @@ import {
   earnValidatorsPageAtom,
   loadMoreEarnValidatorsPageAtom,
 } from "./earn-selection/state/view-resources";
-import type { CatalogYieldTarget, EarnTokenKey } from "./earn-selection/types";
 import { earnProviderOptionAtom } from "./flow-target";
 
-export type { EarnSelection, EarnTokenOption } from "./earn-selection/types";
+export type {
+  EarnSelection,
+  EarnTokenOption,
+} from "../model/earn-selection/types";
 
 const validatorSearchAtom = Atom.make("").pipe(
   Atom.withLabel("earnSelectionValidatorSearchAtom")

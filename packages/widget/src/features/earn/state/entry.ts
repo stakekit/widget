@@ -5,6 +5,7 @@ import * as Atom from "effect/reactivity/Atom";
 import type { TronResource } from "../../../domain/earn/tron-resource";
 import {
   getExtendedYieldType,
+  getTokensPricesRequest,
   getYieldRewardTokens,
   isBittensorStaking,
 } from "../../../domain/earn/yield";
@@ -12,10 +13,9 @@ import { getTokenPriceInUSD } from "../../../domain/finance/price";
 import type { ProviderOption } from "../../../domain/identity/identifiers";
 import { hasActivePositionForYield } from "../../../domain/portfolio/positions";
 import {
-  getTokensPricesRequest,
   PricesKey,
-  pricesAtom,
-} from "../../../resources/token-prices/prices";
+  optionalTokenPricesAtom,
+} from "../../../resources/token-prices/token-prices";
 import { appRuntime } from "../../../runtime/app-runtime";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import {
@@ -115,7 +115,9 @@ export const earnEntryViewAtom = Atom.make((get) => {
     yieldDto: selectedYield,
   });
   const prices = get(
-    pricesAtom.foreground(new PricesKey({ request: pricesRequest }))
+    optionalTokenPricesAtom.foreground(
+      new PricesKey({ request: pricesRequest })
+    )
   ).pipe(AsyncResult.value, Option.getOrNull);
   const availableAmount = input.availableAmount;
   const symbol = selectedToken?.symbol ?? "";

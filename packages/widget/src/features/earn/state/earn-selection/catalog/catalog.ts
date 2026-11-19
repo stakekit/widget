@@ -17,8 +17,8 @@ import {
 import { tokenBalancesResourceAtom } from "../../../../../resources/token-balances/token-balances";
 import {
   PricesKey,
-  pricesAtom,
-} from "../../../../../resources/token-prices/prices";
+  optionalTokenPricesAtom,
+} from "../../../../../resources/token-prices/token-prices";
 import {
   preferredValidatorsResourceAtom,
   ValidatorsKey,
@@ -32,21 +32,44 @@ import { yieldPositionsResourceAtom } from "../../../../../resources/yield-posit
 import { widgetConfigAtom } from "../../../../../runtime/widget-config";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
-import { makeEmptyPositionsData } from "../model/view-model";
-import {
-  EarnCatalogError,
-  type EarnCatalogOperation,
-  type EarnTokenOption,
-  type EarnTokenOptionsState,
-  type EarnValidatorsResource,
-} from "../types";
+import type { PullPage } from "../../../../../shared/effect/pagination";
 import type {
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
   YieldValidatorsPullKey,
-} from "./keys";
+} from "../../../model/earn-selection/keys";
+import {
+  EarnCatalogError,
+  type EarnCatalogOperation,
+  type EarnTokenOption,
+} from "../../../model/earn-selection/types";
+import { makeEmptyPositionsData } from "../../../model/earn-selection/view-model";
+
+type EarnTokenOptionsState = AsyncResult.AsyncResult<
+  ReadonlyArray<EarnTokenOption>,
+  EarnCatalogError
+>;
+
+type EarnValidatorsResource = {
+  readonly enabled: boolean;
+  readonly initialValidatorsResultAtom: Atom.Atom<
+    AsyncResult.AsyncResult<
+      Readonly<{
+        readonly complete: boolean;
+        readonly items: ReadonlyArray<EarnValidator>;
+      }>,
+      EarnCatalogError
+    >
+  >;
+  readonly validatorsPullAtom: (
+    key: YieldValidatorsPullKey
+  ) => Atom.Writable<
+    Atom.PullResult<PullPage<EarnValidator>, EarnCatalogError>,
+    void
+  >;
+};
 
 const toCatalogError = (operation: EarnCatalogOperation) => (cause: unknown) =>
   new EarnCatalogError({ operation, cause });
@@ -231,7 +254,7 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
       : [];
     // The same request the token sheet prices its balances with.
     const prices = get(
-      pricesAtom.foreground(
+      optionalTokenPricesAtom.foreground(
         new PricesKey({
           request:
             tokenList.length > 0

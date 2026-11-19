@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import {
   getYieldOutputToken,
   getYieldRiskDisplay,
-  getYieldTypeLabels,
 } from "../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import { capitalizeFirstLetters } from "../../../../../shared/lib/formatters";
@@ -22,6 +21,7 @@ import { useTrackEvent } from "../../../../tracking/index";
 import {
   getRiskRatingTone,
   getYieldFigures,
+  getYieldTypeLabels,
 } from "../../../../yield-presentation/index";
 import { useEarnYieldSelection } from "../../use-earn-facades";
 
