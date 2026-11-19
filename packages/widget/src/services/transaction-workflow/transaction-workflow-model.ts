@@ -9,6 +9,8 @@ import type {
   YieldAction,
 } from "../../domain/earn/action-models";
 import type { ConfidentialChainId } from "../../domain/earn/confidential";
+import type { ConfidentialPreparation } from "../../domain/earn/confidential-vault";
+import { toRepresentationNumber } from "../../domain/finance/exact";
 import type {
   SignedTransactionPayload,
   TransactionHash,
@@ -17,7 +19,6 @@ import type {
 } from "../../domain/identity/identifiers";
 import type { Network } from "../../domain/network/network";
 import { WalletScopeKey } from "../../domain/wallet/wallet-scope";
-import { toRepresentationNumber } from "../../shared/lib/number-format";
 import type { EvmRpcError } from "../evm-rpc/evm-rpc";
 import { ExternalProviderError } from "../wallet/external-provider";
 import type {
@@ -29,7 +30,6 @@ import type {
   WalletSigningError,
 } from "../wallet/wallet-errors";
 import type { YieldActionMeta } from "../wallet/wallet-transactions";
-import type { ConfidentialPreparation } from "../zama/confidential-preparation";
 
 export type DirectTransactionRecord = Readonly<{
   readonly _tag: "Confirmed" | "Sent";

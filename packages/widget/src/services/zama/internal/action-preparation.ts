@@ -6,9 +6,9 @@ import {
   toConfidentialArguments,
 } from "../../../domain/earn/confidential";
 import { ConfidentialTokenBalanceKey } from "../../../domain/earn/confidential-balance";
+import type { ConfidentialEncryptPreparation } from "../../../domain/earn/confidential-vault";
 import { WalletService } from "../../wallet/wallet-service";
 import {
-  type ConfidentialEncryptPreparation,
   type ConfidentialPreparationApi,
   ConfidentialPreparationError,
 } from "../confidential-preparation";

@@ -14,6 +14,7 @@ import { vi } from "vitest";
 import { ConfidentialHandle } from "../../src/domain/earn/balance";
 import type { ConfidentialConversion } from "../../src/domain/earn/confidential";
 import { ConfidentialTokenBalanceKey } from "../../src/domain/earn/confidential-balance";
+import type { ConfidentialPreparation } from "../../src/domain/earn/confidential-vault";
 import {
   WalletAddress,
   WalletSignature,
@@ -25,7 +26,6 @@ import {
 } from "../../src/domain/wallet/wallet-scope";
 import { WidgetConfigService } from "../../src/services/config/widget-config";
 import type { WalletState } from "../../src/services/wallet/wallet-state";
-import type { ConfidentialPreparation } from "../../src/services/zama/confidential-preparation";
 import { RevealedBalances } from "../../src/services/zama/revealed-balances";
 import { ZamaService } from "../../src/services/zama/zama-service";
 import { confidentialFixture, confidentialYieldFixture } from "../fixtures";

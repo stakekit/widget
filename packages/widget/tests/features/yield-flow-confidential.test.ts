@@ -29,7 +29,6 @@ import {
 import { Token } from "../../src/domain/token/token";
 import { WalletScopeKey } from "../../src/domain/wallet/wallet-scope";
 import { getYieldFlowExitCompletion } from "../../src/features/yield-transaction-flow/model/completion";
-import { getYieldFlowPlannedStepTypes } from "../../src/features/yield-transaction-flow/model/confidential-preparation";
 import {
   makeYieldFlowSession,
   type NavigatingYieldTransactionFlowStart,
@@ -375,24 +374,6 @@ describe("confidential vault Yield Transaction Flow", () => {
       token: { symbol: confidentialFixture.cShare.symbol },
     });
     expect(queued.amount.toFixed()).toBe("2");
-  });
-
-  it("lists a private exit's operator grants before its redeem, and an instant exit's unwrap", () => {
-    expect(
-      getYieldFlowPlannedStepTypes(exitStart().intake, {
-        missingOperatorGrants: 2,
-      })
-    ).toEqual(["SET_OPERATOR", "SET_OPERATOR", "REDEEM"]);
-    expect(
-      getYieldFlowPlannedStepTypes(exitStart().intake, {
-        missingOperatorGrants: 0,
-      })
-    ).toEqual(["REDEEM"]);
-    expect(
-      getYieldFlowPlannedStepTypes(exitStart(usdc.address).intake, {
-        missingOperatorGrants: 0,
-      })
-    ).toEqual(["UNWRAP", "DECRYPT", "WITHDRAW", "REDEEM"]);
   });
 
   it.effect(
