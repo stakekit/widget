@@ -406,6 +406,19 @@ describe("WidgetTranslation resource ownership", () => {
     }
   });
 
+  it("gives a Utila host its staking wording in French as in English", () => {
+    const resources = composeWidgetTranslationResources({
+      apiErrors: undefined,
+      customTranslations: undefined,
+      language: "fr",
+      translationOverlay: "utila",
+    });
+    expect(resources).toMatchObject({
+      en: { translation: { details: { earn_with: "Stake with" } } },
+      fr: { translation: { details: { earn_with: "Staker avec" } } },
+    });
+  });
+
   it("uses local error copy only while the API catalog omits the identity", () => {
     const local = composeWidgetTranslationResources({
       apiErrors: undefined,

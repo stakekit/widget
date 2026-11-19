@@ -41,6 +41,10 @@ import {
   mapLegacyTheme,
   resolveWidgetAppearance,
 } from "./legacy-theme-mapping";
+import {
+  migrateLegacyTranslationKeys,
+  type RenamedTranslationKey,
+} from "./legacy-translation-keys";
 import { decodeTheme, type ThemeDecodeWarning } from "./theme-decoder";
 import type { WidgetAppearance, WidgetLayout } from "./widget-config-model";
 
@@ -372,15 +376,22 @@ export type HostConfigurationWarning =
       readonly path: string;
     }>;
 
-export type HostConfigurationDecodeSuccess = Readonly<{
-  configuration: DecodedHostConfiguration;
+/** What a host set that still works but should change, for one warning each. */
+export type HostConfigurationDeprecations = Readonly<{
   /**
    * Customized legacy `theme` leaves that no longer apply, by dotted path,
    * for the warning that points to `appearance`.
    */
-  droppedLegacyThemeKeys: ReadonlyArray<string>;
-  /** Deprecated Host Configuration options the host set, for a warning. */
-  deprecatedOptions: ReadonlyArray<"dashboardVariant">;
+  legacyThemeKeys: ReadonlyArray<string>;
+  /** Deprecated Host Configuration options the host set. */
+  options: ReadonlyArray<"dashboardVariant">;
+  /** Translation keys the host set under their old name. */
+  translationKeys: ReadonlyArray<RenamedTranslationKey>;
+}>;
+
+export type HostConfigurationDecodeSuccess = Readonly<{
+  configuration: DecodedHostConfiguration;
+  deprecations: HostConfigurationDeprecations;
   warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
@@ -769,8 +780,13 @@ export const decodeHostConfiguration = (
     (value) => decodeValidatorPolicy(value)
   );
 
+  const translations = migrateLegacyTranslationKeys(values.customTranslations);
+
   const configuration: DecodedHostConfiguration = {
     ...values,
+    ...(translations.customTranslations
+      ? { customTranslations: translations.customTranslations }
+      : {}),
     appearance: theme.appearance,
     chainIconMapping: capabilities.chainIconMapper ?? chainIcons.entries,
     chainModal: capabilities.chainModal,
@@ -799,9 +815,14 @@ export const decodeHostConfiguration = (
 
   return Result.succeed({
     configuration,
-    droppedLegacyThemeKeys: theme.droppedLegacyThemeKeys,
-    deprecatedOptions:
-      configuration.dashboardVariant === undefined ? [] : ["dashboardVariant"],
+    deprecations: {
+      legacyThemeKeys: theme.droppedLegacyThemeKeys,
+      options:
+        configuration.dashboardVariant === undefined
+          ? []
+          : ["dashboardVariant"],
+      translationKeys: translations.renamed,
+    },
     warnings: [
       ...theme.warnings,
       ...chainIcons.warnings,

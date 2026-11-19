@@ -50,10 +50,12 @@ Run pnpm through the version pinned by mise: `mise exec -- pnpm ...`. Root
 - `pnpm --filter @stakekit/widget test:storybook` — every story as a Chromium
   test; accessibility violations, failed plays and console errors fail it.
   `pnpm test` and `pnpm check` include it.
-- `pnpm check-hygiene` — dependency-cruiser, Knip, and jscpd duplication of
-  source and of tests; run after changing the import graph or copying code
-  between Modules. The tests' limit (`packages/widget/.jscpd-tests.json`) is a
-  ratchet: lower it when duplication drops, never raise it to pass.
+- `pnpm check-hygiene` — dependency-cruiser, Knip, jscpd duplication of
+  source and of tests, and the translation files (English and French hold the
+  same keys and placeholders; no key goes unread); run after changing the
+  import graph, copying code between Modules, or editing copy. The tests'
+  limit (`packages/widget/.jscpd-tests.json`) is a ratchet: lower it when
+  duplication drops, never raise it to pass.
 - `pnpm --filter @stakekit/widget gen:yield-providers` — regenerates the
   public `YieldProviderId` constants from the backend's yield provider enum,
   read from `YIELD_PROVIDERS_ENUM_PATH` (set in `mise.local.toml`) or

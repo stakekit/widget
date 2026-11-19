@@ -248,7 +248,7 @@ describe("legacy theme mapping", () => {
       colorScheme: "light",
       ...noValues,
     });
-    expect(decoded.droppedLegacyThemeKeys).toEqual([]);
+    expect(decoded.deprecations.legacyThemeKeys).toEqual([]);
   });
 
   it("gives an unchanged darkTheme the dark default with nothing dropped", () => {
@@ -258,7 +258,7 @@ describe("legacy theme mapping", () => {
       colorScheme: "dark",
       ...noValues,
     });
-    expect(decoded.droppedLegacyThemeKeys).toEqual([]);
+    expect(decoded.deprecations.legacyThemeKeys).toEqual([]);
   });
 
   it("feeds the legacy theme only into the Appearance", () => {
@@ -298,7 +298,7 @@ describe("legacy theme mapping", () => {
       colorScheme: "light",
       values: { [role]: "#123456" },
     });
-    expect(decoded.droppedLegacyThemeKeys).toEqual([]);
+    expect(decoded.deprecations.legacyThemeKeys).toEqual([]);
   });
 
   it.each(settingKeyCases)(
@@ -309,7 +309,7 @@ describe("legacy theme mapping", () => {
       expect(decoded.configuration.appearance[group]).toEqual({
         [setting]: "7px",
       });
-      expect(decoded.droppedLegacyThemeKeys).toEqual([]);
+      expect(decoded.deprecations.legacyThemeKeys).toEqual([]);
     }
   );
 
@@ -330,7 +330,7 @@ describe("legacy theme mapping", () => {
     expect(decoded.configuration.appearance.legacyColors?.values[role]).toBe(
       "#111111"
     );
-    expect(decoded.droppedLegacyThemeKeys).toEqual([second]);
+    expect(decoded.deprecations.legacyThemeKeys).toEqual([second]);
   });
 
   it("lets the second key apply when the first is unchanged", () => {
@@ -370,7 +370,7 @@ describe("legacy theme mapping", () => {
       colorScheme: "light",
       ...noValues,
     });
-    expect([...decoded.droppedLegacyThemeKeys].sort()).toEqual(
+    expect([...decoded.deprecations.legacyThemeKeys].sort()).toEqual(
       [
         "borderRadius.baseContract.sm",
         "color.disabledButtonBackground",

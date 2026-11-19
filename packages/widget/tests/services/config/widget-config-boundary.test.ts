@@ -467,4 +467,79 @@ describe("decodeHostConfiguration", () => {
       );
     }
   });
+
+  it("moves a host's translations from renamed `dashboard.*` keys to their new keys, and reports each", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      customTranslations: {
+        en: {
+          translation: {
+            dashboard: {
+              borrow: { form: { title: "Lend & borrow" } },
+              details: {
+                positions_active_one: "{{count}} open",
+                tabs: { manage: "Portfolio" },
+              },
+            },
+            shared: { back: "Go back" },
+          },
+        },
+        fr: {
+          translation: {
+            dashboard: { overview: { summary: { debt: "Dette totale" } } },
+          },
+        },
+      },
+      variant: "default",
+    });
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isFailure(result)) return;
+    expect(result.success.configuration.customTranslations).toEqual({
+      en: {
+        translation: {
+          borrow: { form: { title: "Lend & borrow" } },
+          positions: { active_one: "{{count}} open" },
+          shared: { back: "Go back" },
+          tabs: { manage: "Portfolio" },
+        },
+      },
+      fr: {
+        translation: { portfolio: { summary: { debt: "Dette totale" } } },
+      },
+    });
+    expect(result.success.deprecations.translationKeys).toEqual([
+      { from: "dashboard.borrow.form.title", to: "borrow.form.title" },
+      {
+        from: "dashboard.details.positions_active_one",
+        to: "positions.active_one",
+      },
+      { from: "dashboard.details.tabs.manage", to: "tabs.manage" },
+      {
+        from: "dashboard.overview.summary.debt",
+        to: "portfolio.summary.debt",
+      },
+    ]);
+  });
+
+  it("keeps a host's own translation for a new key over its renamed old one", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      customTranslations: {
+        en: {
+          translation: {
+            borrow: { form: { title: "New" } },
+            dashboard: { borrow: { form: { title: "Old" } } },
+          },
+        },
+      },
+      variant: "default",
+    });
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isFailure(result)) return;
+    expect(result.success.configuration.customTranslations).toEqual({
+      en: { translation: { borrow: { form: { title: "New" } } } },
+    });
+  });
 });
