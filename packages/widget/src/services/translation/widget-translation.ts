@@ -17,13 +17,14 @@ import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
-import { mergeDeep } from "../../shared/effect/merge-deep";
 import type { HostProfile } from "../config/host-profile";
 import { WidgetConfigService } from "../config/widget-config";
 import type { WidgetConfig } from "../config/widget-config-model";
 import translationEN from "./English/translations.json";
-import utilaTranslations from "./English/utila-variant.json";
+import utilaTranslationsEN from "./English/utila-variant.json";
 import translationFR from "./French/translations.json";
+import utilaTranslationsFR from "./French/utila-variant.json";
+import { mergeDeep } from "./internal/merge-deep";
 
 const localResources = {
   en: { translation: translationEN },
@@ -89,7 +90,10 @@ export const composeWidgetTranslationResources = ({
   mergeDeep(
     localResources,
     translationOverlay === "utila"
-      ? { en: { translation: utilaTranslations } }
+      ? {
+          en: { translation: utilaTranslationsEN },
+          fr: { translation: utilaTranslationsFR },
+        }
       : {},
     apiErrors ? { [language]: { translation: { errors: apiErrors } } } : {},
     customTranslations ?? {}

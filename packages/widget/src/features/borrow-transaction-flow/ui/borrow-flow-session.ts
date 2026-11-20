@@ -1,11 +1,15 @@
 import { useAtomValue } from "@effect/atom-react";
-import { createContext, useContext } from "react";
 import { useLocation } from "react-router";
 
 import { useWidgetRouteState } from "../../navigation/index";
+import {
+  makeTransactionFlowContext,
+  useOptionalAtomValue,
+} from "../../transaction-flow/index";
 import { type BorrowFlowSession, borrowFlowRoutes } from "../model/session";
 import {
   BorrowFlowExecutionKey,
+  type BorrowFlowExecutionPage,
   borrowFlowExecutionPage,
 } from "../state/execution-page";
 import {
@@ -13,22 +17,25 @@ import {
   borrowFlowReviewPage,
 } from "../state/review-page";
 
-export const BorrowFlowSessionContext = createContext<BorrowFlowSession | null>(
-  null
+export const {
+  context: BorrowFlowSessionContext,
+  useValue: useBorrowFlowSession,
+} = makeTransactionFlowContext<BorrowFlowSession>("Borrow Flow Session");
+
+/** The Execution Steps and Complete show, which their route provides. */
+export const {
+  context: BorrowFlowExecutionContext,
+  useValue: useProvidedBorrowFlowExecution,
+} = makeTransactionFlowContext<BorrowFlowExecutionPage>(
+  "Borrow Flow Execution"
 );
 
-export const useBorrowTransactionFlow = (): BorrowFlowSession => {
-  const session = useContext(BorrowFlowSessionContext);
-  if (!session) throw new Error("Borrow Flow Session is unavailable.");
-  return session;
-};
-
 /** This visit's Review: the same Atoms for every render of it. */
-export const useBorrowTransactionFlowReview = () =>
+export const useBorrowFlowReview = () =>
   useAtomValue(
     borrowFlowReviewPage(
       new BorrowFlowReviewVisit({
-        session: useBorrowTransactionFlow(),
+        session: useBorrowFlowSession(),
         visit: useLocation().key,
       })
     )
@@ -36,19 +43,25 @@ export const useBorrowTransactionFlowReview = () =>
 
 /** The action Steps and Complete were navigated to run, if any. */
 export const useBorrowFlowExecutionActionId = () => {
-  const { intake } = useBorrowTransactionFlow();
+  const { intake } = useBorrowFlowSession();
   return (
     useWidgetRouteState(borrowFlowRoutes[intake.entry._tag])
       ?.executionActionId ?? null
   );
 };
 
-/** The Execution of the action Steps and Complete were navigated to run. */
-export const useBorrowTransactionFlowExecution = () => {
-  const actionId = useBorrowFlowExecutionActionId();
-  const session = useBorrowTransactionFlow();
-  if (!actionId) throw new Error("Borrow Flow Execution is unavailable.");
-  return useAtomValue(
-    borrowFlowExecutionPage(new BorrowFlowExecutionKey({ actionId, session }))
-  );
-};
+/**
+ * The Execution of the action Steps and Complete were navigated to run;
+ * null without one.
+ */
+export const useNavigatedBorrowFlowExecution =
+  (): BorrowFlowExecutionPage | null => {
+    const actionId = useBorrowFlowExecutionActionId();
+    const session = useBorrowFlowSession();
+    return useOptionalAtomValue(
+      borrowFlowExecutionPage,
+      actionId === null
+        ? null
+        : new BorrowFlowExecutionKey({ actionId, session })
+    );
+  };

@@ -25,7 +25,10 @@ import {
   type BorrowTransactionFlowIntake,
   getBorrowTransactionFlowDestination,
 } from "../../../src/features/borrow-transaction-flow/model/session";
-import { makeBorrowFlowExecutionPage } from "../../../src/features/borrow-transaction-flow/state/execution-page";
+import {
+  makeBorrowFlowExecutionPage,
+  startBorrowFlowExecution,
+} from "../../../src/features/borrow-transaction-flow/state/execution-page";
 import {
   BorrowFlowReviewVisit,
   BorrowReviewConfirmationFailure,
@@ -33,6 +36,7 @@ import {
   makeBorrowFlowReviewPage,
   toBorrowReviewConfirmation,
 } from "../../../src/features/borrow-transaction-flow/state/review-page";
+import { makeTransactionFlowWorkflowAtoms } from "../../../src/features/transaction-flow/state/execution";
 import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import type { BorrowOperations } from "../../../src/services/api/operations";
 import { ApiRequestError } from "../../../src/services/api/resource-sources";
@@ -357,11 +361,14 @@ describe("Borrow flow Execution page", () => {
         const { awaitValue, handle, registry } = yield* makeHarness();
         const page = makeBorrowFlowExecutionPage(handle, action.id);
         registry.mount(page.viewAtom);
-
-        const workflow = yield* awaitValue(
-          page.workflowAtom,
-          AsyncResult.isFailure
+        // The workflow's raw result is private machinery, built as the page
+        // does.
+        const { workflowAtom } = makeTransactionFlowWorkflowAtoms(
+          startBorrowFlowExecution(handle, action.id),
+          { isFinished: () => false, label: "borrowFlowExecution" }
         );
+
+        const workflow = yield* awaitValue(workflowAtom, AsyncResult.isFailure);
 
         expect(
           AsyncResult.isFailure(workflow) && Cause.hasInterrupts(workflow.cause)

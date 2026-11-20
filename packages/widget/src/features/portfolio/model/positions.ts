@@ -8,6 +8,7 @@ import {
 import type { EarnBalance } from "../../../domain/earn/balance";
 import type { YieldCampaign } from "../../../domain/earn/campaign";
 import { isCampaignRewardsBalance } from "../../../domain/earn/campaign-rewards";
+import { isEncryptedBalance } from "../../../domain/earn/confidential-vault";
 import type { TokenAmount } from "../../../domain/earn/denomination";
 import { getPositionHeadlineRate } from "../../../domain/earn/position-rate";
 import type { YieldRewardRate } from "../../../domain/earn/reward-rate";
@@ -61,8 +62,7 @@ export const toPositionItems = (
         const balancesWithAmount = value.balances.filter((balance) => {
           const amount = exactDecimal(balance.amount);
           return (
-            balance.isEncrypted === true ||
-            (!amount.isZero() && !amount.isNaN())
+            isEncryptedBalance(balance) || (!amount.isZero() && !amount.isNaN())
           );
         });
 

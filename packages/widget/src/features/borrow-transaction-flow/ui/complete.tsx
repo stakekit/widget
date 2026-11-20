@@ -1,10 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
-import {
-  formatBorrowProviderName,
-  formatNetworkName,
-} from "../../../shared/lib/formatters";
+import { formatNetworkName } from "../../../shared/lib/formatters";
 import { formatTransactionHash } from "../../../shared/lib/general";
 import {
   formatTokenAmount,
@@ -13,7 +10,9 @@ import {
 import { useTokenLogoResolver } from "../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../shared/react/widget-presentation";
 import { CompleteSummary, Stack } from "../../../ui/index";
+import { formatBorrowProviderName } from "../../borrow-presentation/index";
 import { useTrackPage } from "../../tracking/index";
+import { TransactionFlowPageHeader } from "../../transaction-flow/views";
 import {
   AnimationPage,
   PageContainer,
@@ -26,8 +25,8 @@ import {
 } from "../model/borrow-completion";
 import { getBorrowTransactionFlowAmountLabelKey } from "../model/review";
 import {
-  useBorrowTransactionFlow,
-  useBorrowTransactionFlowExecution,
+  useBorrowFlowSession,
+  useProvidedBorrowFlowExecution,
 } from "./borrow-flow-session";
 import {
   getBorrowFlowOriginationRows,
@@ -48,8 +47,8 @@ export const BorrowCompletePage = () => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const resolveTokenLogo = useTokenLogoResolver();
-  const flow = useBorrowTransactionFlow();
-  const executionFlow = useBorrowTransactionFlowExecution();
+  const flow = useBorrowFlowSession();
+  const executionFlow = useProvidedBorrowFlowExecution();
   const settled = useAtomValue(executionFlow.settledPositionAtom);
   const execution = useBorrowExecution();
   const finish = useAtomSet(executionFlow.finishAtom);
@@ -77,8 +76,8 @@ export const BorrowCompletePage = () => {
   const positionClosed = settled?.positionOpen === false;
   const done = action(
     isPositionFlow && positionClosed
-      ? t("dashboard.borrow.success_page.back_to_positions")
-      : t("dashboard.borrow.success_page.done"),
+      ? t("borrow.success_page.back_to_positions")
+      : t("borrow.success_page.done"),
     () => finish(undefined)
   );
   const originationRows = getBorrowFlowOriginationRows({
@@ -93,19 +92,23 @@ export const BorrowCompletePage = () => {
     summary.action === "repay";
   const amountLabel = headlineIsLoan
     ? t(getBorrowTransactionFlowAmountLabelKey(summary.action))
-    : t("dashboard.borrow.review_page.collateral_amount");
+    : t("borrow.review_page.collateral_amount");
 
   return (
     <AnimationPage>
       <PageContainer>
         <Stack hostHook="borrow-complete-page" gap={20}>
+          <TransactionFlowPageHeader
+            back={() => finish(undefined)}
+            page="Complete"
+          />
           <CompleteSummary
             mark={{
               name: tokenLogo?.name ?? headline.symbol,
               tokenSrc: tokenLogo?.src,
               providerSrc: logos.providerSrc ?? undefined,
             }}
-            title={t(`dashboard.borrow.success_page.titles.${summary.action}`, {
+            title={t(`borrow.success_page.titles.${summary.action}`, {
               symbol: headline.symbol,
             })}
             detail={`${formatBorrowProviderName(summary.providerName)} · ${formatNetworkName(summary.network)}`}
@@ -125,9 +128,7 @@ export const BorrowCompletePage = () => {
               ...(collateralSupplied
                 ? [
                     {
-                      label: t(
-                        "dashboard.borrow.success_page.collateral_supplied"
-                      ),
+                      label: t("borrow.success_page.collateral_supplied"),
                       value: `${formatTokenAmount(collateralSupplied.amount, locale, "down")} ${collateralSupplied.symbol}`,
                     },
                   ]
@@ -135,7 +136,7 @@ export const BorrowCompletePage = () => {
               ...(collateralFee
                 ? [
                     {
-                      label: t("dashboard.borrow.review_page.collateral_fee"),
+                      label: t("borrow.review_page.collateral_fee"),
                       value: `${formatTokenAmount(collateralFee.amount, locale, "up")} ${collateralFee.symbol}`,
                     },
                   ]
@@ -146,9 +147,7 @@ export const BorrowCompletePage = () => {
             ]}
             sections={[
               {
-                heading: t(
-                  `dashboard.borrow.success_page.position.${position.source}`
-                ),
+                heading: t(`borrow.success_page.position.${position.source}`),
                 rows: getBorrowFlowPositionChangeRows({
                   change: position.change,
                   locale,
@@ -157,19 +156,18 @@ export const BorrowCompletePage = () => {
               },
             ]}
             transactions={{
-              heading: t("dashboard.borrow.success_page.transactions"),
+              heading: t("borrow.success_page.transactions"),
               items: result.transactions.map((transaction) => {
                 const type = t(
-                  `dashboard.borrow.execution_page.tx_type.${transaction.type}`
+                  `borrow.execution_page.tx_type.${transaction.type}`
                 );
                 return {
                   id: transaction.id,
                   label: type,
                   href: transaction.explorerUrl,
-                  viewLabel: t(
-                    "dashboard.borrow.success_page.view_transaction",
-                    { type }
-                  ),
+                  viewLabel: t("borrow.success_page.view_transaction", {
+                    type,
+                  }),
                   ...(transaction.hash
                     ? { hash: formatTransactionHash(transaction.hash) }
                     : {}),

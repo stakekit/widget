@@ -22,21 +22,22 @@ import { gzipSync } from "node:zlib";
 import { widgetRoot } from "../paths";
 import { type BuildManifest, entryLoadFiles } from "./entry-load";
 
-// Measured on 2026-11-14: package 1.79 MB, bundle 1.20 MB (gzip). Neither
-// entry imports the cosmos-kit, TON or Solana code statically, and both ship
-// their dependencies' production builds.
+// Measured on 2026-11-19: package 1.59 MB, bundle 0.95 MB (gzip). Neither
+// entry imports the cosmos-kit, TON or Solana code or Recharts statically,
+// both ship their dependencies' production builds, and the bundle is printed
+// without whitespace.
 const budgets = [
   {
     name: "package",
     directory: "dist/package",
     entry: "src/index.package.ts",
-    maxGzipBytes: 1_850_000,
+    maxGzipBytes: 1_640_000,
   },
   {
     name: "bundle",
     directory: "dist/bundle",
     entry: "src/index.bundle.ts",
-    maxGzipBytes: 1_250_000,
+    maxGzipBytes: 990_000,
   },
 ] as const;
 

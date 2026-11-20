@@ -2,12 +2,10 @@ import type BigNumber from "bignumber.js";
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
-import {
-  formatFigureChange,
-  formatLtv,
-} from "../../../../../shared/lib/number-format";
+import { formatFigureChange } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { DetailRow } from "../../../../../ui/index";
+import { formatLtv } from "../../../../borrow-presentation/index";
 import {
   riskValueTone,
   toLtvMeter,
@@ -39,7 +37,7 @@ export const LtvTransitionRow = ({
 
   return (
     <DetailRow
-      label={t("dashboard.borrow.form.ltv_ratio")}
+      label={t("borrow.form.ltv_ratio")}
       value={value}
       tone={riskValueTone(projectedRisk.band)}
       {...(projectedRisk.band === null

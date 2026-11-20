@@ -25,6 +25,7 @@ import {
   EarnPosition,
 } from "../../../src/domain/earn/balance";
 import { zeroEncryptedBalance } from "../../../src/domain/earn/confidential-balance";
+import type { ConfidentialPreparation } from "../../../src/domain/earn/confidential-vault";
 import {
   SignedTransactionPayload,
   TransactionHash,
@@ -49,10 +50,7 @@ import {
   TransactionWorkflowService,
 } from "../../../src/services/transaction-workflow/transaction-workflow-service";
 import { WalletRequestCancelledError } from "../../../src/services/wallet/wallet-errors";
-import {
-  type ConfidentialPreparation,
-  ConfidentialPreparationError,
-} from "../../../src/services/zama/confidential-preparation";
+import { ConfidentialPreparationError } from "../../../src/services/zama/confidential-preparation";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,

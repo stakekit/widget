@@ -4,10 +4,10 @@ import { Effect } from "effect";
 import { getAddress, withTimeout } from "viem";
 import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
 
-import { makeCurrentValueStream } from "../../../../../shared/effect/current-value-stream";
 import { isWalletIframe } from "../../../browser-environment";
 import type { Chain, WalletList } from "../../../wallet-descriptors";
 import { WalletIntegrationError } from "../../../wallet-errors";
+import { makeCurrentValueStream } from "../current-value-stream";
 import { wagmiConnectResult } from "../wagmi-connect-result";
 import { configMeta, type ExtraProps } from "./safe-connector-meta";
 

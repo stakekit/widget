@@ -1,5 +1,7 @@
 import { useWidgetConfig } from "../../../../../features/widget-configuration/index";
+import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
 import { Divider, Stack } from "../../../../../ui/index";
+import { TransactionFlowFailureNotice } from "../../../../transaction-flow/views";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnLoadFailed } from "../../components/earn-load-failed";
 import { EarnPageCta } from "../../components/earn-page-cta";
@@ -28,6 +30,7 @@ export const EarnPageContent = ({
 
   return (
     <Stack gap={16} grow>
+      <TransactionFlowFailureNotice route={widgetRoutes.earn} />
       <Stack gap={12}>
         <SelectTokenSection />
 

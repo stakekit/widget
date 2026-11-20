@@ -18,8 +18,8 @@ import {
   BorrowTransactionFlowRoute,
 } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-route";
 import {
-  useBorrowTransactionFlowExecution,
-  useBorrowTransactionFlowReview,
+  useProvidedBorrowFlowExecution,
+  useBorrowFlowReview,
 } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-session";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import { walletRuntime } from "../../../src/runtime/wallet-runtime";
@@ -90,7 +90,7 @@ const action = Schema.decodeSync(Action)({
 });
 
 const ReviewProbe = () => {
-  const review = useBorrowTransactionFlowReview();
+  const review = useBorrowFlowReview();
   const confirmation = useAtomValue(review.confirmAtom);
   const confirm = useAtomSet(review.confirmAtom);
   return (
@@ -107,7 +107,7 @@ const ReviewProbe = () => {
 };
 
 const ExecutionProbe = ({ page }: { readonly page: "Complete" | "Steps" }) => {
-  const execution = useBorrowTransactionFlowExecution();
+  const execution = useProvidedBorrowFlowExecution();
   const view = useAtomValue(execution.viewAtom);
   return (
     <>
@@ -132,7 +132,9 @@ const renderFlow = async ({ invalidInput = false, pathname }: FlowOptions) => {
     [
       { path: "/borrow", element: <output data-testid="page">Entry</output> },
       {
-        element: <BorrowTransactionFlowRoute expected="BorrowEntry" />,
+        element: (
+          <BorrowTransactionFlowRoute expected="BorrowEntry" trail={null} />
+        ),
         children: [
           { path: "/borrow/review", element: <ReviewProbe /> },
           {

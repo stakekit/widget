@@ -1,5 +1,4 @@
 import { Option, Record } from "effect";
-import type { TFunction } from "i18next";
 
 import { isOptionalPendingAction } from "../action/pending-action";
 import type { YieldPendingActionType } from "../earn/action-models";
@@ -132,50 +131,19 @@ type PositionCalloutInput = {
 
 /**
  * Every status a position can call out, the most pressing first, with when it
- * applies and how it reads, wherever it shows: its row in the positions list
- * and its page's header read the same. A required action is named when it is
- * known; only an unknown one reads as Action required.
+ * applies. A required action is named when it is known; only an unknown one
+ * calls out `actionRequired`.
  */
 const positionCallouts = {
-  readyToWithdraw: {
-    applies: ({ attention }) => attention.requiredAction === "withdraw",
-    label: "positions.ready_to_withdraw",
-  },
-  readyToUnlock: {
-    applies: ({ attention }) => attention.requiredAction === "unlock",
-    label: "positions.ready_to_unlock",
-  },
-  lockedBalance: {
-    applies: ({ attention }) => attention.requiredAction === "locked",
-    label: "positions.locked_balance",
-  },
-  actionRequired: {
-    applies: ({ attention }) => attention.requiredAction === "other",
-    label: "positions.action_required",
-  },
-  validatorsJailed: {
-    applies: ({ inactiveValidator }) => inactiveValidator === "jailed",
-    label: "details.validators_jailed",
-  },
-  validatorsInactive: {
-    applies: ({ inactiveValidator }) => inactiveValidator === "other",
-    label: "details.validators_inactive",
-  },
-  rewardsToClaim: {
-    applies: ({ attention }) => attention.hasPendingClaimRewards,
-    label: "positions.rewards_to_claim",
-  },
-  inProgress: {
-    applies: ({ attention }) => attention.hasPendingRequest,
-    label: "positions.in_progress",
-  },
-} as const satisfies Record<
-  string,
-  {
-    readonly applies: (input: PositionCalloutInput) => boolean;
-    readonly label: string;
-  }
->;
+  readyToWithdraw: ({ attention }) => attention.requiredAction === "withdraw",
+  readyToUnlock: ({ attention }) => attention.requiredAction === "unlock",
+  lockedBalance: ({ attention }) => attention.requiredAction === "locked",
+  actionRequired: ({ attention }) => attention.requiredAction === "other",
+  validatorsJailed: ({ inactiveValidator }) => inactiveValidator === "jailed",
+  validatorsInactive: ({ inactiveValidator }) => inactiveValidator === "other",
+  rewardsToClaim: ({ attention }) => attention.hasPendingClaimRewards,
+  inProgress: ({ attention }) => attention.hasPendingRequest,
+} as const satisfies Record<string, (input: PositionCalloutInput) => boolean>;
 
 /** The one status a position calls out, the most pressing first. */
 export type PositionCallout = keyof typeof positionCallouts;
@@ -184,11 +152,6 @@ export const getPositionCallout = (
   input: PositionCalloutInput
 ): PositionCallout | null =>
   Option.match(
-    Record.findFirst(positionCallouts, ({ applies }) => applies(input)),
+    Record.findFirst(positionCallouts, (applies) => applies(input)),
     { onNone: () => null, onSome: ([callout]) => callout }
   );
-
-export const formatPositionCallout = (
-  callout: PositionCallout,
-  t: TFunction
-): string => t(positionCallouts[callout].label);

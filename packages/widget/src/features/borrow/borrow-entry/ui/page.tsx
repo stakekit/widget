@@ -2,6 +2,7 @@ import { useAtomSet } from "@effect/atom-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import {
   formatNumber,
   formatTokenAmount,
@@ -9,6 +10,7 @@ import {
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { Notice } from "../../../../ui/index";
 import { useTrackPage } from "../../../tracking/index";
+import { TransactionFlowFailureNotice } from "../../../transaction-flow/views";
 import { PageCtaButton } from "../../../widget-shell/views";
 import { BorrowAmountField } from "../../amount-input/views";
 import type { BorrowWalletView } from "../../wallet/index";
@@ -50,7 +52,12 @@ export const BorrowFormPage = () => {
 const BorrowConnectedFormPage = () => {
   const view = useBorrowEntryView();
 
-  return <BorrowFormPanel view={view} />;
+  return (
+    <>
+      <TransactionFlowFailureNotice route={widgetRoutes.borrow} />
+      <BorrowFormPanel view={view} />
+    </>
+  );
 };
 
 const BorrowEntryFormPage = ({
@@ -67,8 +74,8 @@ const BorrowEntryFormPage = ({
   if (walletView.status === "connection-required") {
     return (
       <>
-        <Notice title={t("dashboard.borrow.connect_title")}>
-          {t("dashboard.borrow.connect_description")}
+        <Notice title={t("borrow.connect_title")}>
+          {t("borrow.connect_description")}
         </Notice>
 
         <BorrowConnectCta />
@@ -115,10 +122,10 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
   const onReviewClick = () => startReview(undefined);
   const getBorrowAmountWarningText = () => {
     if (borrowAmountGreaterThanAvailable) {
-      return t("dashboard.borrow.form.validation.available_liquidity");
+      return t("borrow.form.validation.available_liquidity");
     }
     if (projectedDebtBelowMinimum) {
-      return t("dashboard.borrow.form.validation.minimum_loan");
+      return t("borrow.form.validation.minimum_loan");
     }
     return null;
   };
@@ -130,15 +137,15 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
     }
     if (marketsView._tag === "Failed") {
       return (
-        <Notice tone="danger" title={t("dashboard.borrow.error_title")}>
-          {t("dashboard.borrow.error_description")}
+        <Notice tone="danger" title={t("borrow.error_title")}>
+          {t("borrow.error_description")}
         </Notice>
       );
     }
     if (!selectedMarket || !selectedCollateralToken) {
       return (
-        <Notice title={t("dashboard.borrow.empty_title")}>
-          {t("dashboard.borrow.empty_description")}
+        <Notice title={t("borrow.empty_title")}>
+          {t("borrow.empty_description")}
         </Notice>
       );
     }
@@ -158,7 +165,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
             />
           }
           amount={borrowAmount}
-          label={t("dashboard.borrow.form.borrow")}
+          label={t("borrow.form.borrow")}
           onAmountChange={setBorrowAmount}
           usdValue={borrowAmount.multipliedBy(selectedMarket.loanTokenPriceUsd)}
           warning={borrowAmountWarningText}
@@ -174,16 +181,16 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
           }
           amount={collateralAmount}
           balance={{
-            short: t("dashboard.borrow.form.wallet_balance", {
+            short: t("borrow.form.wallet_balance", {
               amount: formatTokenAmount(collateralBalance, locale, "down"),
               symbol: collateralSymbol,
             }),
-            full: t("dashboard.borrow.form.wallet_balance", {
+            full: t("borrow.form.wallet_balance", {
               amount: formatNumber(collateralBalance, locale),
               symbol: collateralSymbol,
             }),
           }}
-          label={t("dashboard.borrow.form.collateral")}
+          label={t("borrow.form.collateral")}
           onAmountChange={setCollateralAmount}
           onMaxClick={
             canSelectCollateralMaxAmount
@@ -195,7 +202,7 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
           )}
           warning={
             collateralAmountGreaterThanBalance
-              ? t("dashboard.borrow.form.validation.wallet_balance")
+              ? t("borrow.form.validation.wallet_balance")
               : null
           }
         />
@@ -216,21 +223,21 @@ const BorrowFormPanel = ({ view }: { readonly view: BorrowEntryView }) => {
 
   const getCtaLabel = () => {
     if (!isActionReady && riskBlock === null) {
-      return t("dashboard.borrow.enter_amounts");
+      return t("borrow.enter_amounts");
     }
     // Collateral without a borrow amount opens a supply-only action.
     if (borrowAmount.isZero()) {
-      return t("dashboard.borrow.review_actions.supply");
+      return t("borrow.review_actions.supply");
     }
-    return t("dashboard.borrow.review_actions.borrow");
+    return t("borrow.review_actions.borrow");
   };
   const ctaLabel = getCtaLabel();
 
   return (
     <>
       {catalogResetNotice ? (
-        <Notice title={t("dashboard.borrow.form_reset.title")}>
-          {t("dashboard.borrow.form_reset.description")}
+        <Notice title={t("borrow.form_reset.title")}>
+          {t("borrow.form_reset.description")}
         </Notice>
       ) : null}
 

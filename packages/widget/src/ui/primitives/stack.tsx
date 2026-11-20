@@ -11,19 +11,17 @@ import {
   type Justify,
   justifyStyles,
   type LayoutElementProps,
-  layoutStyles,
-  type Responsive,
   type Space,
 } from "./layout";
 
 type StackProps = LayoutElementProps & {
-  readonly direction?: Responsive<Direction>;
+  readonly direction?: Direction;
   /** Space between children; the only space a Stack adds. */
-  readonly gap?: Responsive<Space>;
+  readonly gap?: Space;
   /** Cross-axis alignment. */
-  readonly align?: Responsive<Align>;
+  readonly align?: Align;
   /** Main-axis distribution. */
-  readonly justify?: Responsive<Justify>;
+  readonly justify?: Justify;
   readonly wrap?: boolean;
   /** Takes the remaining space in a parent row or column. */
   readonly grow?: boolean;
@@ -51,14 +49,10 @@ export const Stack = ({
       "data-rk": hostHook,
       ...stylex.props(
         styles.root,
-        layoutStyles.direction,
-        layoutStyles.gap,
-        layoutStyles.align,
-        layoutStyles.justify,
-        directionStyles(direction),
-        gapStyles(gap),
-        alignStyles(align),
-        justifyStyles(justify),
+        directionStyles[direction],
+        gapStyles[gap],
+        alignStyles[align],
+        justifyStyles[justify],
         wrap && styles.wrap,
         grow && flexItemStyles.grow
       ),

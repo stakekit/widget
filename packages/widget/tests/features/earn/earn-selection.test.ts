@@ -17,6 +17,7 @@ import {
 } from "../../../src/domain/identity/identifiers";
 import { hostTokenKey, tokenString } from "../../../src/domain/token/token";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import type { EarnEntry } from "../../../src/features/earn/model/earn-selection/types";
 import {
   earnSelectionProviderOptionsViewAtom,
   earnSelectionStatusViewAtom,
@@ -28,7 +29,6 @@ import {
   setEarnSelectionAmountAtom,
 } from "../../../src/features/earn/state/earn-selection";
 import { earnEntryAtom } from "../../../src/features/earn/state/earn-selection/state/atoms";
-import type { EarnEntry } from "../../../src/features/earn/state/earn-selection/types";
 import { earnEntryViewAtom } from "../../../src/features/earn/state/entry";
 import { earnYieldSelectionViewAtom } from "../../../src/features/earn/state/yield-selection";
 import { appRuntime } from "../../../src/runtime/app-runtime";

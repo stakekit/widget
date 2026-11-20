@@ -37,7 +37,10 @@ const layoutRoutes: Readonly<Record<WidgetLayout, ReadonlyArray<RouteObject>>> =
   {
     Compact: createRoutesFromElements(createCompactRoutes()),
     Dashboard: createRoutesFromElements(
-      createDashboardRoutes({ registerEarnFooterButton: false })
+      createDashboardRoutes({
+        earnTabCategory: null,
+        registerEarnFooterButton: false,
+      })
     ),
   };
 

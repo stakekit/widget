@@ -158,14 +158,6 @@ export const isUnfinishedInstantExit = (
   balance.type === "withdrawable" &&
   pendingActionType === "WITHDRAW";
 
-export const getPendingActionDecryptHandle = (
-  balance: Pick<EarnBalance, "isEncrypted" | "shares" | "type">,
-  pendingActionType: YieldPendingActionType
-): ConfidentialHandle | null =>
-  isUnfinishedInstantExit(balance, pendingActionType)
-    ? getEncryptedHandle(balance)
-    : null;
-
 // The API sends empty amounts for encrypted balances; their shares are a handle.
 export const zeroEncryptedBalance = <
   Balance extends Readonly<{ readonly isEncrypted?: boolean }>,

@@ -162,7 +162,7 @@ const makeReviewHarness = Effect.fn("test.makeReviewHarness")(function* ({
   const handle = session;
   const page = makeYieldFlowReviewPage(handle);
   registry.mount(page.reviewViewAtom);
-  registry.mount(page.activityReviewViewAtom);
+  registry.mount(page.confirmViewAtom);
 
   return {
     awaitView: <A>(
@@ -328,7 +328,8 @@ describe("Yield flow Review page", () => {
             walletScope
           ),
         });
-        const fee = exit.registry.get(exit.page.reviewViewAtom).withdrawalFee;
+        const fee =
+          exit.page._tag === "Exit" ? exit.page.withdrawalFee : undefined;
         expect(fee?.amount.toString()).toBe("0.02");
         expect(fee?.ratio.toString()).toBe("0.005");
 
@@ -341,9 +342,8 @@ describe("Yield flow Review page", () => {
             walletScope
           ),
         });
-        expect(
-          enter.registry.get(enter.page.reviewViewAtom).withdrawalFee
-        ).toBeNull();
+        // Only an exit's Review carries a withdrawal fee.
+        expect(enter.page).not.toHaveProperty("withdrawalFee");
       })
   );
 
@@ -534,7 +534,7 @@ describe("Yield flow Review page", () => {
         });
 
       yield* awaitView(
-        page.activityReviewViewAtom,
+        page.confirmViewAtom,
         (view) => !view.confirmDisabled && !view.confirmLoading
       );
       expect(yield* confirm).toEqual({ _tag: "Confirmed" });
@@ -576,9 +576,7 @@ describe("Yield flow Review page", () => {
         }
       );
 
-      expect(registry.get(page.activityReviewViewAtom).confirmDisabled).toBe(
-        true
-      );
+      expect(registry.get(page.confirmViewAtom).confirmDisabled).toBe(true);
       expect(yield* confirm).toEqual({ _tag: "RejectedExpired" });
       expect(yield* Ref.get(handle.handoff)).toBeNull();
       expect(yield* kit.navigation.commands).toEqual([]);

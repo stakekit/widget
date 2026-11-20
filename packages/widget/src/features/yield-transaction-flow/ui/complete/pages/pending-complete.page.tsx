@@ -4,12 +4,16 @@ import { getExtendedYieldType } from "../../../../../domain/earn/yield";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
-import { useYieldFlowIntake } from "../../yield-flow-session";
+import type { YieldFlowExecutionVariant } from "../../../state/execution-page";
 import { CompletePage } from "./common.page.tsx";
 
-export const PendingCompletePage = () => {
+export const PendingCompletePage = ({
+  execution,
+}: {
+  readonly execution: YieldFlowExecutionVariant<"Manage">;
+}) => {
   const { locale } = useWidgetPresentation();
-  const manageFlow = useYieldFlowIntake("Manage");
+  const manageFlow = execution.intake;
   const integrationData = manageFlow.integration;
   // The action's amount, or none; an encrypted balance's is unknown, not zero.
   const token = manageFlow.amount?.token ?? manageFlow.interactedToken;
@@ -21,6 +25,7 @@ export const PendingCompletePage = () => {
 
   return (
     <CompletePage
+      execution={execution}
       amount={amount ? formatTokenAmount(amount, locale, "down") : ""}
       integrationId={integrationData.id}
       network={token.symbol}

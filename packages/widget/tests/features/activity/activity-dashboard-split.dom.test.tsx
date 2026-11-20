@@ -40,8 +40,6 @@ vi.mock("@effect/atom-react", async (importOriginal) => ({
 }));
 vi.mock("../../../src/features/widget-shell/views", () => ({
   AnimationPage: ({ children }: { readonly children: ReactNode }) => children,
-  BackButtonProvider: ({ children }: { readonly children: ReactNode }) =>
-    children,
 }));
 
 const renderTab = (initialPath = "/activity") =>

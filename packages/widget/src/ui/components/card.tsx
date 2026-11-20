@@ -3,10 +3,8 @@ import { createElement, type ReactNode } from "react";
 
 import {
   flexItemStyles,
-  layoutStyles,
   paddingBlockStyles,
   paddingInlineStyles,
-  type Responsive,
   type Space,
 } from "../primitives/layout";
 import { borderWidth, insetEdge } from "../tokens/border.stylex";
@@ -27,7 +25,7 @@ type CommonProps = {
    * inside a `borderStrong` edge.
    */
   readonly variant?: keyof typeof variantStyles;
-  readonly padding?: Responsive<Space>;
+  readonly padding?: Space;
   /** Tints the surface with a tone's soft color; outlined cards also edge in it. */
   readonly tone?: Tone;
   /** Marks the card as the chosen one: a ring plus the accent tint. */
@@ -93,10 +91,8 @@ export const Card = (props: CardProps) => {
   const interactive = props.onClick !== undefined || props.href !== undefined;
   const styleProps = stylex.props(
     styles.root,
-    layoutStyles.paddingBlock,
-    layoutStyles.paddingInline,
-    paddingBlockStyles(padding),
-    paddingInlineStyles(padding),
+    paddingBlockStyles[padding],
+    paddingInlineStyles[padding],
     variantStyles[variant],
     interactive && interactiveStyles.root,
     interactive && hoverStyles[variant],

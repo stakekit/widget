@@ -26,8 +26,8 @@ export const BorrowNetworkRecoveryPanel = ({
 
   if (recovery._tag === "SwitchManually") {
     return (
-      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
-        {t("dashboard.borrow.switch_network_manually", {
+      <Notice tone="warning" title={t("borrow.unsupported_network")}>
+        {t("borrow.switch_network_manually", {
           networks: recovery.chains.map((chain) => chain.name).join(", "),
         })}
       </Notice>
@@ -36,16 +36,16 @@ export const BorrowNetworkRecoveryPanel = ({
 
   if (recovery._tag === "Unavailable") {
     return (
-      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
-        {t("dashboard.borrow.network_unavailable")}
+      <Notice tone="warning" title={t("borrow.unsupported_network")}>
+        {t("borrow.network_unavailable")}
       </Notice>
     );
   }
 
   return (
     <>
-      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
-        {t("dashboard.borrow.unsupported_network_description")}
+      <Notice tone="warning" title={t("borrow.unsupported_network")}>
+        {t("borrow.unsupported_network_description")}
       </Notice>
 
       <BorrowConnectCta />
@@ -80,13 +80,13 @@ const BorrowNetworkSwitch = ({
 
   return (
     <>
-      <Notice tone="warning" title={t("dashboard.borrow.unsupported_network")}>
-        {t("dashboard.borrow.unsupported_network_description")}
+      <Notice tone="warning" title={t("borrow.unsupported_network")}>
+        {t("borrow.unsupported_network_description")}
       </Notice>
 
       {selection?.failedChainId !== undefined && (
         <Notice tone="danger" title={t("wallet_modal.confirm_error")}>
-          {t("dashboard.borrow.switch_network_error")}
+          {t("borrow.switch_network_error")}
         </Notice>
       )}
 
@@ -94,7 +94,7 @@ const BorrowNetworkSwitch = ({
         cta={{
           disabled: false,
           isLoading: selection?.pendingChainId !== undefined,
-          label: t("dashboard.borrow.switch_network"),
+          label: t("borrow.switch_network"),
           onClick: onSwitchClick,
         }}
       />

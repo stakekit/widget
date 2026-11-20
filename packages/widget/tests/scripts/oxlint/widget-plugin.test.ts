@@ -208,6 +208,10 @@ run("no-tonumber-outside-representation", {
       code: "const value = amount.toNumber()",
       filename: `${widget}src/shared/lib/formatters.ts`,
     },
+    {
+      code: "const value = amount.toNumber()",
+      filename: `${widget}src/domain/finance/exact.ts`,
+    },
     { code: "const value = amount.toNumber()", filename: testFile },
   ],
 });

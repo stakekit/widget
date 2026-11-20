@@ -3,14 +3,8 @@ import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
-import {
-  getYieldOutputAmount,
-  getYieldTypeLabels,
-} from "../../../../../domain/earn/yield";
-import {
-  formatTokenAmountInUSD,
-  getGasFeeInUSD,
-} from "../../../../../shared/lib/formatters";
+import { getYieldOutputAmount } from "../../../../../domain/earn/yield";
+import { formatTokenAmountInUSD } from "../../../../../shared/lib/formatters";
 import {
   formatRewardRatePercent,
   formatTokenAmount,
@@ -21,12 +15,13 @@ import { useWidgetPresentation } from "../../../../../shared/react/widget-presen
 import type { HostHook } from "../../../../../ui/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import type { PageCta } from "../../../../widget-shell/views";
-import { formatRewardRateLabel } from "../../../../yield-presentation/index";
-import { getYieldFlowAttribution } from "../../../model/attribution";
 import {
-  useYieldFlowIntake,
-  useYieldFlowReview,
-} from "../../yield-flow-session";
+  formatRewardRateLabel,
+  getYieldTypeLabels,
+} from "../../../../yield-presentation/index";
+import { getYieldFlowAttribution } from "../../../model/attribution";
+import { formatFeeWithUsd } from "../../../model/fee";
+import type { YieldFlowReviewVariant } from "../../../state/review-page";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
 import type { ReviewFact } from "../pages/review-overview";
 import {
@@ -44,19 +39,14 @@ const rewardHostHooks = {
   yearly: "estimated-reward__yearly",
 } as const satisfies Record<string, HostHook>;
 
-export const useEnterReview = () => {
+export const useEnterReview = (facade: YieldFlowReviewVariant<"Enter">) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const enterFlow = useYieldFlowIntake("Enter");
-  const facade = useYieldFlowReview();
+  const enterFlow = facade.intake;
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const refreshKyc = useAtomSet(facade.refreshKycAtom);
   const review = useAtomValue(facade.reviewViewAtom);
-
-  const stakeReview = review.stake;
-  if (!stakeReview) {
-    throw new Error("Enter Review requires an Enter Flow Session.");
-  }
+  const stakeReview = useAtomValue(facade.stakeViewAtom);
   const stakeAmount = stakeReview.stakeAmount;
   const selectedStake = enterFlow.selectedStake;
   const selectedToken = enterFlow.selectedToken;
@@ -147,11 +137,11 @@ export const useEnterReview = () => {
     yieldName: selectedStake.metadata.name,
   });
 
-  const fee = getGasFeeInUSD({
-    gas: stakeReview.gasAmount,
+  const fee = formatFeeWithUsd({
+    amount: stakeReview.gasAmount,
     locale,
     prices: stakeReview.prices,
-    yieldDto: selectedStake,
+    token: selectedStake.mechanics.gasFeeToken,
   });
   const feeWarning = getNetworkFeeWarning({
     feeUsd: getReviewUsdValue({

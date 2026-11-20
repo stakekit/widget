@@ -28,3 +28,11 @@ export const toSafeIntegerCount = (value: BigNumber): number | null => {
 
   return Number.isSafeInteger(count) ? count : null;
 };
+
+/**
+ * An exact value as a JavaScript number, for representations that take one,
+ * such as charts, meters and host-facing payloads. Never for arithmetic.
+ */
+export const toRepresentationNumber = (
+  value: string | number | BigNumber
+): number => exactDecimal(value).toNumber();

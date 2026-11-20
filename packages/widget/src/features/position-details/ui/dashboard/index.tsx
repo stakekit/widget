@@ -3,16 +3,10 @@ import { Outlet } from "react-router";
 
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { SplitView, Stack } from "../../../../ui/index";
-import {
-  useWidgetNavigate,
-  useWidgetRoutePrefixMatch,
-} from "../../../navigation/index";
+import { useWidgetRoutePrefixMatch } from "../../../navigation/index";
 import { WidgetNavigate } from "../../../navigation/views";
-import {
-  AnimationPage,
-  BackButton,
-  BackButtonProvider,
-} from "../../../widget-shell/views";
+import { PositionPageHeader } from "../../../portfolio/views";
+import { AnimationPage } from "../../../widget-shell/views";
 import { resolvePositionDetailsPageLayout } from "../../model/hub";
 import { PositionCampaignRewards } from "../components/position-campaign-rewards";
 import { PositionDetailsDisclosure } from "../components/position-details-disclosure";
@@ -21,46 +15,7 @@ import { PositionHeader } from "../components/position-header";
 import { PositionSummaryCard } from "../components/position-summary-card";
 import { PositionYieldFacts } from "../components/position-yield-facts";
 import { usePositionDetails } from "../use-position-details";
-import {
-  PositionDetailsBreadcrumb,
-  PositionDetailsPane,
-} from "./components/position-details-layout";
-
-/**
- * The trail from the positions list. Off a flow, back returns to the list,
- * however the page was reached; in a flow, it steps back through it to the
- * position.
- */
-const PositionBreadcrumb = ({
-  flowActive,
-  positionName,
-}: {
-  readonly flowActive: boolean;
-  readonly positionName: string | null;
-}) => {
-  const { t } = useTranslation();
-  const navigation = useWidgetNavigate();
-
-  return (
-    <BackButtonProvider>
-      <PositionDetailsBreadcrumb
-        backButton={
-          <BackButton
-            testId="position-details-back"
-            {...(flowActive
-              ? {}
-              : {
-                  onClick: () =>
-                    void navigation.push(widgetRoutes.positions.build()),
-                })}
-          />
-        }
-        positionName={positionName}
-        rootLabel={t("dashboard.position_details.breadcrumb_root")}
-      />
-    </BackButtonProvider>
-  );
-};
+import { PositionDetailsPane } from "./components/position-details-layout";
 
 /**
  * A position's own page, laid out as the Earn tab is: its actions on the
@@ -90,12 +45,18 @@ const PositionDetailsPageComponent = () => {
 
   const shouldShowActions = layout === "Actions";
   // Off a flow the header names the position, so the trail stops at its root.
-  const positionName = flowActive
-    ? (positionDetails.integrationData?.metadata.name ?? null)
-    : null;
+  // Off a flow, back returns to the positions list however the page was
+  // reached; in a flow, it steps back through it to the position.
   const head = (
     <>
-      <PositionBreadcrumb flowActive={flowActive} positionName={positionName} />
+      <PositionPageHeader
+        back={flowActive ? "History" : "PositionsList"}
+        title={
+          flowActive
+            ? (positionDetails.integrationData?.metadata.name ?? null)
+            : null
+        }
+      />
       {flowActive ? null : <PositionHeader />}
     </>
   );
@@ -103,7 +64,7 @@ const PositionDetailsPageComponent = () => {
   return (
     <AnimationPage>
       <SplitView
-        secondaryLabel={t("dashboard.split_view.details")}
+        secondaryLabel={t("split_view.details")}
         primary={
           shouldShowActions ? (
             <PositionDetailsPane kind="actions">

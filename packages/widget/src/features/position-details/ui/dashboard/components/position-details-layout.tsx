@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Stack, Text } from "../../../../../ui/index";
+import { Stack } from "../../../../../ui/index";
 
 /**
  * One side of the position details split view: its actions or its facts. It
@@ -15,26 +15,5 @@ export const PositionDetailsPane = ({
 }) => (
   <Stack grow gap={kind === "actions" ? 16 : 24}>
     {children}
-  </Stack>
-);
-
-/** The back button, then the trail from the positions list to this position. */
-export const PositionDetailsBreadcrumb = ({
-  backButton,
-  positionName,
-  rootLabel,
-}: {
-  readonly backButton: ReactNode;
-  readonly positionName: string | null;
-  readonly rootLabel: string;
-}) => (
-  <Stack direction="row" align="center" gap={8}>
-    {backButton}
-    <Text weight="semibold">{rootLabel}</Text>
-    {positionName ? (
-      <Text tone="muted" truncate>
-        {`/ ${positionName}`}
-      </Text>
-    ) : null}
   </Stack>
 );

@@ -4,12 +4,11 @@ import { classifyRiskBand } from "../../../domain/borrow/risk-band";
 import { exactDecimal } from "../../../domain/finance/exact";
 import {
   formatFigureChange,
-  formatHealthFactor,
-  formatLtv,
   formatTokenAmount,
   formatUsd,
   unavailableFigure,
 } from "../../../shared/lib/number-format";
+import { formatHealthFactor, formatLtv } from "../../borrow-presentation/index";
 import type { BorrowPositionChange } from "../model/borrow-completion";
 import {
   type LtvMeter,
@@ -45,7 +44,7 @@ export const getBorrowFlowCollateralAmountRow = ({
 }: Formatting & {
   readonly collateral: SummaryAmount;
 }): BorrowFlowRow => ({
-  label: t("dashboard.borrow.review_page.collateral_amount"),
+  label: t("borrow.review_page.collateral_amount"),
   value: `${formatTokenAmount(collateral.amount, locale, "down")} ${collateral.symbol}`,
 });
 
@@ -77,11 +76,11 @@ export const getBorrowFlowOriginationRows = ({
 
   return {
     fee: {
-      label: t("dashboard.borrow.review_page.origination_fee"),
+      label: t("borrow.review_page.origination_fee"),
       value: feeUsd === unavailableFigure ? fee : `${fee} (${feeUsd})`,
     },
     principal: {
-      label: t("dashboard.borrow.review_page.debt_principal"),
+      label: t("borrow.review_page.debt_principal"),
       value: `${formatTokenAmount(origination.principalAmount, locale, "up")} ${origination.symbol}`,
     },
   };
@@ -129,7 +128,7 @@ export const getBorrowFlowPositionChangeRows = ({
   const getLtvRow = (): BorrowFlowRow | null => {
     if (!ltv || !ltvAfter) return null;
     const row = withRiskTone({
-      label: t("dashboard.borrow.review_page.ltv"),
+      label: t("borrow.review_page.ltv"),
       value: ltv,
     });
     if (band === null) return row;
@@ -141,19 +140,19 @@ export const getBorrowFlowPositionChangeRows = ({
     ...(collateral
       ? [
           {
-            label: t("dashboard.borrow.form.collateral_value"),
+            label: t("borrow.form.collateral_value"),
             value: collateral,
           },
         ]
       : []),
     ...(debt
-      ? [{ label: t("dashboard.borrow.position_details.debt"), value: debt }]
+      ? [{ label: t("borrow.position_details.debt"), value: debt }]
       : []),
     ...(ltvRow ? [ltvRow] : []),
     ...(healthFactor
       ? [
           withRiskTone({
-            label: t("dashboard.borrow.review_page.health_factor"),
+            label: t("borrow.review_page.health_factor"),
             value: healthFactor,
           }),
         ]

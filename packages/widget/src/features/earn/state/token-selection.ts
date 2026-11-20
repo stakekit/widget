@@ -6,7 +6,10 @@ import * as Atom from "effect/reactivity/Atom";
 import { isFundedBalance } from "../../../domain/finance/funded-balance";
 import type { Prices } from "../../../domain/finance/prices";
 import { tokenString } from "../../../domain/token/token";
-import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
+import {
+  PricesKey,
+  optionalTokenPricesAtom,
+} from "../../../resources/token-prices/token-prices";
 import { appRuntime } from "../../../runtime/app-runtime";
 import { TrackingService } from "../../../services/tracking/tracking-service";
 import { config } from "../../../shared/config/widget-defaults";
@@ -56,7 +59,7 @@ export const earnTokenSelectionViewAtom = Atom.make((get) => {
     (option) => positiveAmount(option) !== null
   );
   const prices = get(
-    pricesAtom.foreground(
+    optionalTokenPricesAtom.foreground(
       new PricesKey({
         request:
           positive.length > 0

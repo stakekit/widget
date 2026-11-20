@@ -91,7 +91,7 @@ export const getYieldFigures = ({
       ? {
           usd,
           token: tokenTvl?.isGreaterThan(0)
-            ? t("dashboard.earn_details.tvl_in_token", {
+            ? t("earn_details.tvl_in_token", {
                 amount: formatTvlAmount(
                   tokenTvl,
                   yieldDto.token.symbol,

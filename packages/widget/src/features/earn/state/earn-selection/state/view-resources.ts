@@ -3,8 +3,8 @@ import * as Atom from "effect/reactivity/Atom";
 
 import type { EarnValidator } from "../../../../../domain/earn/validator";
 import type { PullPage } from "../../../../../shared/effect/pagination";
+import { YieldValidatorsPullKey } from "../../../model/earn-selection/keys";
 import { yieldValidatorsAtom } from "../catalog/catalog";
-import { YieldValidatorsPullKey } from "../catalog/keys";
 import { earnSelectionViewAtom } from "./atoms";
 
 const getPullPage = <A, E>(result: Atom.PullResult<PullPage<A>, E>) =>

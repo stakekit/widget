@@ -39,6 +39,16 @@ const groupYields = (items: ReadonlyArray<EarnYieldWithProvider>) => {
   return [...groups.values()];
 };
 
+/**
+ * The yield category the Dashboard's Earn tab stands for: the selected one
+ * while category grouping splits Earn into a tab per category, else null.
+ */
+export const earnTabCategoryAtom = Atom.make((get) =>
+  get(widgetConfigAtom).earnCategoryGrouping
+    ? get(earnSelectionYieldOptionsViewAtom).selectedCategory
+    : null
+).pipe(Atom.withLabel("earnTabCategoryAtom"));
+
 export const earnYieldSelectionViewAtom = Atom.make((get) => {
   const config = get(widgetConfigAtom);
   const status = get(earnSelectionStatusViewAtom);

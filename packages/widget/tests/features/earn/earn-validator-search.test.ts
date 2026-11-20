@@ -3,11 +3,11 @@ import { Duration, Effect, Layer } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/reactivity";
 
 import type { EarnYield } from "../../../src/domain/earn/yield-schema";
-import { yieldValidatorsAtom } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   YieldValidatorsKey,
   YieldValidatorsPullKey,
-} from "../../../src/features/earn/state/earn-selection/catalog/keys";
+} from "../../../src/features/earn/model/earn-selection/keys";
+import { yieldValidatorsAtom } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
 import {
   earnValidatorSelectionViewAtom,
   selectEarnValidatorAtom,

@@ -176,7 +176,7 @@ const getHistoryChart = (
     },
     latestLabel: latest ? formatValue(latest.value) : null,
     caption: endsEarly
-      ? t("dashboard.earn_details.chart_data_to", {
+      ? t("earn_details.chart_data_to", {
           date: formatHistoryDate(seriesLatest.time, locale, {}),
         })
       : null,
@@ -209,7 +209,7 @@ export const getRewardRateHistoryChart = ({
         locale
       ),
     secondary: null,
-    title: rate?.label ?? t("dashboard.earn_details.reward_rate"),
+    title: rate?.label ?? t("earn_details.reward_rate"),
   });
 };
 
@@ -237,6 +237,6 @@ export const getTvlHistoryChart = ({
     formatValue,
     formatValueAxis: (ticks) => formatAmountAxis(ticks, locale),
     secondary: tvl?.token ?? null,
-    title: t("dashboard.earn_details.tvl"),
+    title: t("earn_details.tvl"),
   });
 };

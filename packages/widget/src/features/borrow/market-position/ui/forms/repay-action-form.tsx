@@ -53,7 +53,7 @@ export const RepayActionForm = ({
     <Stack gap={16}>
       <AmountInputCard
         amount={view.amount}
-        balanceLabel={t("dashboard.borrow.position_details.outstanding_debt", {
+        balanceLabel={t("borrow.position_details.outstanding_debt", {
           amount: formatTokenAmount(debtBalance.balance, locale, "up"),
           symbol: debtBalance.tokenSymbol,
         })}
@@ -75,12 +75,10 @@ export const RepayActionForm = ({
             label={
               <Stack as="span" gap={2}>
                 <Text weight="semibold">
-                  {t("dashboard.borrow.position_details.repay_full")}
+                  {t("borrow.position_details.repay_full")}
                 </Text>
                 <Text variant="caption" tone="muted">
-                  {t(
-                    "dashboard.borrow.position_details.repay_full_description"
-                  )}
+                  {t("borrow.position_details.repay_full_description")}
                 </Text>
               </Stack>
             }
@@ -95,7 +93,7 @@ export const RepayActionForm = ({
               projectedRisk={view.projectedRisk}
             />
             <DetailRow
-              label={t("dashboard.borrow.form.loan")}
+              label={t("borrow.form.loan")}
               value={withFigureUnit(
                 formatFigureChange(
                   (amount, language) =>
@@ -114,7 +112,7 @@ export const RepayActionForm = ({
         cta={{
           disabled: !view.canSubmit,
           isLoading: false,
-          label: t("dashboard.borrow.review_actions.repay"),
+          label: t("borrow.review_actions.repay"),
           onClick: startReview,
         }}
       />

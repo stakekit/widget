@@ -1,10 +1,8 @@
 import { useTranslation } from "react-i18next";
 
-import {
-  formatBorrowProviderName,
-  formatNetworkName,
-} from "../../../shared/lib/formatters";
+import { formatNetworkName } from "../../../shared/lib/formatters";
 import { Stack, Text } from "../../../ui/index";
+import { formatBorrowProviderName } from "../../borrow-presentation/index";
 import {
   type BorrowTransactionFlowReview,
   getBorrowTransactionFlowTitle,

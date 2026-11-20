@@ -1,9 +1,9 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 
-import { useBorrowTransactionFlowExecution } from "./borrow-flow-session";
+import { useProvidedBorrowFlowExecution } from "./borrow-flow-session";
 
 export const useBorrowExecution = () => {
-  const execution = useBorrowTransactionFlowExecution();
+  const execution = useProvidedBorrowFlowExecution();
   const view = useAtomValue(execution.viewAtom);
   const dispatch = useAtomSet(execution.dispatchAtom);
 

@@ -13,7 +13,6 @@ import {
 import { getBorrowOriginationFeeBps } from "../../../../../domain/borrow/origination-fee";
 import { toBorrowNetworkToken } from "../../../../../domain/borrow/token";
 import type { Token } from "../../../../../domain/token/token";
-import { formatBorrowProviderName } from "../../../../../shared/lib/formatters";
 import {
   formatRoundedPercent,
   formatUsd,
@@ -25,6 +24,7 @@ import {
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { SelectSheet, PickerTrigger } from "../../../../../ui/index";
+import { formatBorrowProviderName } from "../../../../borrow-presentation/index";
 import { filterBorrowMarketGroups } from "../../model/market-groups";
 import { selectBorrowMarketAtom } from "../../state/borrow-entry";
 
@@ -110,9 +110,9 @@ const MarketSelect = ({
         title: "select-modal__title",
         search: "select-modal__search-input",
       }}
-      title={t("dashboard.borrow.form.select_market")}
+      title={t("borrow.form.select_market")}
       closeLabel={t("shared.close")}
-      listLabel={t("dashboard.borrow.form.borrowable_assets")}
+      listLabel={t("borrow.form.borrowable_assets")}
       trigger={
         <PickerTrigger
           testId="borrow-market-select"
@@ -132,10 +132,10 @@ const MarketSelect = ({
         value: search,
         onValueChange: setSearch,
         label: t("shared.search"),
-        placeholder: t("dashboard.borrow.form.search_assets"),
+        placeholder: t("borrow.form.search_assets"),
         clearLabel: t("shared.clear_search"),
       }}
-      empty={{ title: t("dashboard.borrow.form.no_assets") }}
+      empty={{ title: t("borrow.form.no_assets") }}
       groups={marketGroups.map((group) => {
         const bestRate = formatRoundedPercent(group.bestRate, locale);
         const loanLogo = resolveLogo(
@@ -151,7 +151,7 @@ const MarketSelect = ({
           logo: { ...loanLogo, name: group.loanToken.symbol },
           caption:
             group.marketItems.length > 1
-              ? t("dashboard.borrow.form.rate_from", { rate: bestRate })
+              ? t("borrow.form.rate_from", { rate: bestRate })
               : bestRate,
           options: group.marketItems.map((market) => {
             const integration = integrationsById.get(market.integrationId);
@@ -166,13 +166,13 @@ const MarketSelect = ({
               testId: `borrow-market-select__item_${market.id}`,
               title: isPool ? providerName : getBorrowMarketPairLabel(market),
               subtitle: isPool
-                ? t("dashboard.borrow.form.pooled_collaterals", {
+                ? t("borrow.form.pooled_collaterals", {
                     count: getListedCollateralTokens(market).length,
                   })
                 : providerName,
               value: formatRoundedPercent(market.borrowRate, locale),
               subvalue: [
-                t("dashboard.borrow.form.liquidity_available", {
+                t("borrow.form.liquidity_available", {
                   amount: formatUsd(
                     getMarketAvailableLiquidityUsd(market),
                     locale
@@ -180,7 +180,7 @@ const MarketSelect = ({
                 }),
                 ...(feeBps > 0
                   ? [
-                      t("dashboard.borrow.form.origination_fee_value", {
+                      t("borrow.form.origination_fee_value", {
                         value: formatRoundedPercent(feeBps / 10_000, locale),
                       }),
                     ]

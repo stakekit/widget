@@ -1,9 +1,14 @@
 import { useTrackPage } from "../../../../tracking/index";
+import type { YieldFlowReviewVariant } from "../../../state/review-page";
 import { useExitReview } from "../hooks/use-exit-review.hook";
 import { getPositionActionReviewProps, ReviewPage } from "./common.page.tsx";
 
-export const ExitReviewPage = () => {
-  const review = useExitReview();
+export const ExitReviewPage = ({
+  review: model,
+}: {
+  readonly review: YieldFlowReviewVariant<"Exit">;
+}) => {
+  const review = useExitReview(model);
 
   useTrackPage("unstakeReview");
 

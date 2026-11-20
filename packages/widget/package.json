@@ -76,12 +76,13 @@
     "check:host-bundlers": "tsx scripts/host-bundlers/check-esbuild-consumption.ts",
     "check:stylex-css": "tsx scripts/styles/check-stylex-css.ts",
     "check:bundle-size": "tsx scripts/bundle-size/check-entry-size.ts",
-    "check-hygiene": "pnpm check-hygiene:architecture && pnpm check-hygiene:unused && pnpm check-hygiene:production && pnpm check-hygiene:duplication && pnpm check-hygiene:test-duplication",
+    "check-hygiene": "pnpm check-hygiene:architecture && pnpm check-hygiene:unused && pnpm check-hygiene:production && pnpm check-hygiene:duplication && pnpm check-hygiene:test-duplication && pnpm check-hygiene:translations",
     "check-hygiene:architecture": "tsx scripts/architecture/check-architecture.ts",
     "check-hygiene:unused": "knip --include files,dependencies,unlisted,exports,nsExports,types,nsTypes --no-progress --treat-config-hints-as-errors",
     "check-hygiene:production": "knip --production --include files,dependencies,unlisted --no-progress --treat-config-hints-as-errors",
     "check-hygiene:duplication": "jscpd",
-    "check-hygiene:test-duplication": "jscpd --config .jscpd-tests.json"
+    "check-hygiene:test-duplication": "jscpd --config .jscpd-tests.json",
+    "check-hygiene:translations": "tsx scripts/translations/check-translations.ts"
   },
   "peerDependencies": {
     "react": ">=19",

@@ -5,17 +5,11 @@ import { useTranslation } from "react-i18next";
 
 import { getActionInputToken } from "../../../../../domain/action/rules";
 import { getConfidentialActionKind } from "../../../../../domain/earn/confidential";
-import {
-  getYieldOutputAmount,
-  getYieldTypeLabels,
-} from "../../../../../domain/earn/yield";
+import { getYieldOutputAmount } from "../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
 import { exactDecimal } from "../../../../../domain/finance/exact";
 import type { Token } from "../../../../../domain/token/token";
-import {
-  formatTokenAmountInUSD,
-  getGasFeeInUSD,
-} from "../../../../../shared/lib/formatters";
+import { formatTokenAmountInUSD } from "../../../../../shared/lib/formatters";
 import {
   formatTokenAmount,
   formatUsd,
@@ -23,18 +17,18 @@ import {
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { TransactionStepsDetail } from "../../../../transaction-steps/views";
+import { getYieldTypeLabels } from "../../../../yield-presentation/index";
 import {
   getExitActionTitle,
   getManageActionTitle,
   getPendingActionTitle,
 } from "../../../model/action-title";
 import { getYieldFlowAttribution } from "../../../model/attribution";
+import { formatFeeWithUsd } from "../../../model/fee";
 import type { YieldTransactionFlowIntake } from "../../../model/intake";
+import type { YieldFlowExecutionPage } from "../../../state/execution-page";
 import { formatReviewDestination } from "../../review/hooks/review-facts";
-import {
-  useYieldFlowExecution,
-  useYieldFlowSession,
-} from "../../yield-flow-session";
+import { useYieldFlowSession } from "../../yield-flow-session";
 
 type ContinuationIntake = Extract<
   YieldTransactionFlowIntake,
@@ -173,12 +167,14 @@ export const useStepsSummary = () => {
  * fiat value, the yield and its provider, the estimated gas, and what an
  * entry returns. A part not known here is left out.
  */
-export const useStepsDetails = (): ReadonlyArray<TransactionStepsDetail> => {
+export const useStepsDetails = (
+  execution: YieldFlowExecutionPage
+): ReadonlyArray<TransactionStepsDetail> => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
   const { intake } = useYieldFlowSession();
   const { amountUsd, gasAmount, prices } = useAtomValue(
-    useYieldFlowExecution().pricingViewAtom
+    execution.pricingViewAtom
   );
   const subject = getStepsSubject(t, intake);
   if (!subject) return [];
@@ -191,7 +187,12 @@ export const useStepsDetails = (): ReadonlyArray<TransactionStepsDetail> => {
     (amountUsd?.isGreaterThan(0)
       ? formatUsd(amountUsd, locale)
       : formatTokenAmountInUSD({ amount: shown, locale, prices, token }));
-  const gas = getGasFeeInUSD({ gas: gasAmount, locale, prices, yieldDto });
+  const gas = formatFeeWithUsd({
+    amount: gasAmount,
+    locale,
+    prices,
+    token: yieldDto.mechanics.gasFeeToken,
+  });
   const received =
     intake._tag === "Enter" && shown
       ? getYieldOutputAmount(yieldDto, shown)

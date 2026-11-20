@@ -11,28 +11,15 @@ import {
 import { yieldApiYieldFixture } from "../../fixtures";
 
 describe("position details hub model", () => {
-  it("orders the amount actions exit first, then entering where offered", () => {
+  it("orders the amount actions exit first, then entering", () => {
     expect(
-      resolvePositionDetailsAmountActions({
-        canEnter: true,
-        canExit: true,
-        offersEnter: true,
-      })
+      resolvePositionDetailsAmountActions({ canEnter: true, canExit: true })
     ).toEqual(["exit", "enter"]);
-    // The compact Layout has no enter flow.
     expect(
-      resolvePositionDetailsAmountActions({
-        canEnter: true,
-        canExit: true,
-        offersEnter: false,
-      })
-    ).toEqual(["exit"]);
+      resolvePositionDetailsAmountActions({ canEnter: true, canExit: false })
+    ).toEqual(["enter"]);
     expect(
-      resolvePositionDetailsAmountActions({
-        canEnter: false,
-        canExit: false,
-        offersEnter: true,
-      })
+      resolvePositionDetailsAmountActions({ canEnter: false, canExit: false })
     ).toEqual([]);
   });
 
@@ -99,12 +86,9 @@ describe("position details hub model", () => {
     const capabilities = resolvePositionDetailsActionCapabilities(lockedOnly);
 
     expect(capabilities).toEqual({ canEnter: true, canExit: false });
-    expect(
-      resolvePositionDetailsAmountActions({
-        ...capabilities,
-        offersEnter: true,
-      })
-    ).toEqual(["enter"]);
+    expect(resolvePositionDetailsAmountActions(capabilities)).toEqual([
+      "enter",
+    ]);
   });
 
   it("treats the hub as actionable when exit is supported even without form readiness", () => {

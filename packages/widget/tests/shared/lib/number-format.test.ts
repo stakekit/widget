@@ -6,8 +6,6 @@ import {
   formatAmountAxis,
   formatCompactNumber,
   formatFigureChange,
-  formatHealthFactor,
-  formatLtv,
   formatNumber,
   formatPairedTokenAmounts,
   formatPercent,
@@ -18,7 +16,6 @@ import {
   formatTokenAmount,
   formatTokenAmountWithSymbol,
   formatUsd,
-  formatUsdAxis,
   getRoundedPercentParts,
   getValueAxisTicks,
   unavailableFigure,
@@ -354,44 +351,6 @@ describe("formatRewardRatePercent", () => {
   });
 });
 
-describe("formatLtv", () => {
-  it.each([
-    ["en", null, "—"],
-    ["en", 0.4132, "41.32%"],
-    ["en", 1, "100%"],
-    ["en", 1.0001, ">100%"],
-    ["en", 4116.7807, ">100%"],
-    ["fr", 0.4132, `41,32${nbsp}%`],
-    ["fr", 1.0001, `>100${nbsp}%`],
-  ] as const)("formats %s LTV %s as %s", (locale, value, expected) => {
-    expect(formatLtv(value, locale)).toBe(expected);
-  });
-});
-
-describe("formatHealthFactor", () => {
-  it.each([
-    ["en", 0, "0"],
-    ["en", 0.0001, "<0.01"],
-    ["en", 0.0099, "<0.01"],
-    ["en", 0.01, "0.01"],
-    ["en", 0.9996, "0.99"],
-    ["en", 4.0828, "4.08"],
-    ["en", 999.99999, "999.99"],
-    ["en", 1000, "1K"],
-    ["en", 2_228_355.9814, "2.22M"],
-    ["en", "999999.999999999999", "999.99K"],
-    ["en", null, "—"],
-    ["fr", 0.0001, "<0,01"],
-    ["fr", 4.0828, "4,08"],
-    ["fr", 1234.5, `1,23${nbsp}k`],
-  ] as const)(
-    "formats %s health factor %s as %s",
-    (locale, value, expected) => {
-      expect(formatHealthFactor(value, locale)).toBe(expected);
-    }
-  );
-});
-
 describe("withFigureUnit", () => {
   it("follows a figure with its unit", () => {
     expect(withFigureUnit("1.5", "ETH")).toBe("1.5 ETH");
@@ -524,59 +483,8 @@ describe("formatPercentAxis", () => {
   });
 });
 
-describe("formatUsdAxis", () => {
-  it("compacts ticks from 1K in the largest tick's unit", () => {
-    expect(formatUsdAxis([500, 1000, 1500, 2000], "en")).toEqual([
-      "$500",
-      "$1.0K",
-      "$1.5K",
-      "$2.0K",
-    ]);
-    expect(formatUsdAxis([1e9, 1.5e9, 2e9, 2.5e9], "en")).toEqual([
-      "$1.0B",
-      "$1.5B",
-      "$2.0B",
-      "$2.5B",
-    ]);
-    expect(formatUsdAxis([0, 500_000, 1_000_000, 1_500_000], "en")).toEqual([
-      "$0",
-      "$0.5M",
-      "$1.0M",
-      "$1.5M",
-    ]);
-  });
-
-  it("shows ticks under 1K as plain USD, zero as $0", () => {
-    expect(formatUsdAxis([0, 25, 50, 75], "en")).toEqual([
-      "$0",
-      "$25",
-      "$50",
-      "$75",
-    ]);
-    expect(formatUsdAxis([0.1, 0.15, 0.2], "en")).toEqual([
-      "$0.10",
-      "$0.15",
-      "$0.20",
-    ]);
-    expect(formatUsdAxis([0, 0.2, 0.4, 0.6], "en")).toEqual([
-      "$0",
-      "$0.20",
-      "$0.40",
-      "$0.60",
-    ]);
-  });
-
-  it("uses the language's currency and compact affixes", () => {
-    expect(formatUsdAxis([500, 1000, 1500], "fr")).toEqual([
-      `500${nbsp}$`,
-      `1,0${nbsp}k${nbsp}$`,
-      `1,5${nbsp}k${nbsp}$`,
-    ]);
-  });
-});
-
 describe("formatAmountAxis", () => {
-  it("labels token-unit ticks like USD ticks, without the currency", () => {
+  it("compacts ticks from 1K in the largest tick's unit", () => {
     expect(formatAmountAxis([500, 1000, 1500, 2000], "en")).toEqual([
       "500",
       "1.0K",
@@ -595,6 +503,11 @@ describe("formatAmountAxis", () => {
       "1.0",
       "1.5",
       "2.0",
+    ]);
+    expect(formatAmountAxis([1e9, 1.5e9, 2e9], "en")).toEqual([
+      "1.0B",
+      "1.5B",
+      "2.0B",
     ]);
   });
 

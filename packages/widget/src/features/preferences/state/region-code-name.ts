@@ -15,13 +15,16 @@ const regionCodeNameResultAtom = Atom.family((key: RegionCodeKey) =>
     Effect.gen(function* () {
       if (!key.regionCode) return null;
 
-      const regions = yield* Effect.tryPromise({
-        try: () => import("../../../shared/data/region-iso-3166-codes"),
+      const { countries } = yield* Effect.tryPromise({
+        try: () => import("../model/region-iso-3166-codes"),
         catch: (cause) => new RegionCodeError({ cause }),
       });
-      const region = Object.entries(regions.countries).find(
-        ([code]) => code === key.regionCode
-      )?.[1];
+      const regions: Readonly<
+        Record<string, { readonly subdivisionName: string }>
+      > = countries;
+      const region = Object.hasOwn(regions, key.regionCode)
+        ? regions[key.regionCode]
+        : undefined;
 
       if (!region?.subdivisionName) {
         return yield* new RegionCodeError({

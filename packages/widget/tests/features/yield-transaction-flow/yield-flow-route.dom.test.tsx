@@ -141,7 +141,11 @@ const renderFlow = async (
             }}
           />
           <Routes>
-            <Route element={<YieldFlowRoute expected="Enter" mount="Earn" />}>
+            <Route
+              element={
+                <YieldFlowRoute expected="Enter" mount="Earn" trail={null} />
+              }
+            >
               <Route
                 path="/review"
                 element={<SessionPage name="Review" sessions={sessions} />}

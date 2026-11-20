@@ -4,15 +4,16 @@ import * as Atom from "effect/reactivity/Atom";
 
 import type { PendingAction } from "../../../../domain/earn/action-models";
 import type { EarnBalance } from "../../../../domain/earn/balance";
-import { getPendingActionDecryptHandle } from "../../../../domain/earn/confidential-balance";
-import { getPendingActionReturn } from "../../../../domain/earn/denomination";
 import type { EarnValidator } from "../../../../domain/earn/validator";
 import type { YieldId } from "../../../../domain/identity/identifiers";
 import type { BalanceDataKey } from "../../../../domain/portfolio/positions";
 import { walletScopeOwnerKey } from "../../../../domain/wallet/wallet-scope";
 import { appRuntime } from "../../../../runtime/app-runtime";
 import { TrackingService } from "../../../../services/tracking/tracking-service";
-import { startYieldTransactionFlowAtom } from "../../../yield-transaction-flow/index";
+import {
+  makeManageIntake,
+  startYieldTransactionFlowAtom,
+} from "../../../yield-transaction-flow/index";
 import {
   closedPendingActionModalState,
   closePendingActionModal,
@@ -252,36 +253,15 @@ const runPositionPendingActionAtom = Atom.family(
           );
         }
 
-        const value = decision.prepared;
-        const confidentialHandle = getPendingActionDecryptHandle(
-          decision.selection.yieldBalance,
-          decision.selection.pendingAction.type
-        );
-        const cancelReturn = getPendingActionReturn(
-          decision.selection.pendingAction.type,
-          decision.selection.yieldBalance
-        );
         const start = context
           .setResult(startYieldTransactionFlowAtom, {
-            intake: {
-              _tag: "Manage",
-              amount: value.amount,
-              balanceType: decision.selection.yieldBalance.type,
-              ...(decision.selection.yieldBalance.isEncrypted
-                ? { balanceHidden: true }
-                : {}),
-              ...(confidentialHandle ? { confidentialHandle } : {}),
-              ...(cancelReturn
-                ? { cancelReturnToken: cancelReturn.token }
-                : {}),
-              gasFeeToken: value.gasFeeToken,
-              integration: value.integrationData,
-              interactedToken: decision.selection.yieldBalance.token,
+            intake: makeManageIntake({
+              balance: decision.selection.yieldBalance,
               pendingActionType: decision.selection.pendingAction.type,
+              prepared: decision.prepared,
               providersDetails: facts.providers,
-              request: value.command,
               walletScope: key.scope,
-            },
+            }),
             mount: {
               _tag: "PositionManage",
               balanceId: key.balanceId,

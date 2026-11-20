@@ -23,12 +23,13 @@ import { applicationRoutes } from "../../../src/app/routes/application-routes";
 import { applicationRouterAtom } from "../../../src/app/runtime/application-router";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { makeTransactionFlowWorkflowAtoms } from "../../../src/features/transaction-flow/state/execution";
 import type { YieldTransactionFlowIntake } from "../../../src/features/yield-transaction-flow/model/intake";
 import {
   makeYieldActionContinuationSession,
   YieldFlowHandoff,
 } from "../../../src/features/yield-transaction-flow/model/session";
-import { makeYieldFlowExecutionPage } from "../../../src/features/yield-transaction-flow/state/execution-page";
+import { startYieldFlowExecution } from "../../../src/features/yield-transaction-flow/state/execution-page";
 import { appRuntime } from "../../../src/runtime/app-runtime";
 import { walletRuntime } from "../../../src/runtime/wallet-runtime";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
@@ -388,7 +389,11 @@ describe("dynamic Widget Configuration", () => {
       action: continuationIntake.action,
     });
     MutableRef.set(session.handoff.ref, { _tag: "Waiting", handoff });
-    const { executionAtom } = makeYieldFlowExecutionPage(session, handoff);
+    // The workflow's raw result is private machinery, built as the page does.
+    const { workflowAtom: executionAtom } = makeTransactionFlowWorkflowAtoms(
+      startYieldFlowExecution(session, handoff),
+      { isFinished: () => false, label: "yieldFlowExecution" }
+    );
     const app = await render(
       <SKAtomRegistryProvider
         routes={applicationRoutes}

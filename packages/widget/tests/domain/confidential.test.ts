@@ -2,10 +2,7 @@ import { describe, expect, it } from "@effect/vitest";
 import BigNumber from "bignumber.js";
 import { DateTime, Schema } from "effect";
 
-import {
-  ConfidentialHandle,
-  type EarnBalance,
-} from "../../src/domain/earn/balance";
+import { ConfidentialHandle } from "../../src/domain/earn/balance";
 import {
   type ConfidentialEncryption,
   getConfidentialConversion,
@@ -20,7 +17,6 @@ import {
 import {
   fillConfidentialBalance,
   getCancellingHandles,
-  getPendingActionDecryptHandle,
   isCancellingBalance,
   isUserRevealableBalance,
 } from "../../src/domain/earn/confidential-balance";
@@ -54,31 +50,6 @@ describe("confidential vault rules", () => {
   it("recognises a yield by its router legs and leaves plain yields alone", () => {
     expect(isConfidentialYield(confidentialYield())).toBe(true);
     expect(isConfidentialYield(yieldApiYieldFixture())).toBe(false);
-  });
-
-  it("publicly decrypts only an unwrap's WITHDRAW, never a batch cancel", () => {
-    const requestId = toHandle(`0x${"cd".repeat(32)}`);
-    const hidden = (type: EarnBalance["type"]) => ({
-      isEncrypted: true,
-      shares: { _tag: "Encrypted", handle: requestId } as const,
-      type,
-    });
-
-    expect(
-      getPendingActionDecryptHandle(hidden("withdrawable"), "WITHDRAW")
-    ).toBe(requestId);
-    expect(
-      getPendingActionDecryptHandle(hidden("entering"), "CANCEL_PENDING")
-    ).toBeNull();
-    expect(
-      getPendingActionDecryptHandle(hidden("exiting"), "CANCEL_PENDING")
-    ).toBeNull();
-    expect(
-      getPendingActionDecryptHandle(
-        { shares: { _tag: "Plain", amountRaw: 5n }, type: "withdrawable" },
-        "WITHDRAW"
-      )
-    ).toBeNull();
   });
 
   it("needs the API to list the router among the enter execution contracts", () => {

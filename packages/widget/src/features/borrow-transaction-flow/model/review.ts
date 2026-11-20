@@ -110,8 +110,8 @@ export const getBorrowTransactionFlowAmountLabelKey = (
   action: BorrowTransactionFlowSummary["action"]
 ) =>
   action === "repay"
-    ? ("dashboard.borrow.review_page.repay_amount" as const)
-    : ("dashboard.borrow.review_page.borrow_amount" as const);
+    ? ("borrow.review_page.repay_amount" as const)
+    : ("borrow.review_page.borrow_amount" as const);
 
 /** The asset an action is about: the loan for debt actions, else collateral. */
 export const getBorrowTransactionFlowTitle = (
@@ -122,7 +122,7 @@ export const getBorrowTransactionFlowTitle = (
     case "borrowAndSupply":
     case "repay":
       return {
-        key: `dashboard.borrow.review_page.titles.${summary.action}`,
+        key: `borrow.review_page.titles.${summary.action}`,
         symbol: summary.loanTokenSymbol,
       } as const;
     case "supply":
@@ -130,7 +130,7 @@ export const getBorrowTransactionFlowTitle = (
     case "disableCollateral":
     case "enableCollateral":
       return {
-        key: `dashboard.borrow.review_page.titles.${summary.action}`,
+        key: `borrow.review_page.titles.${summary.action}`,
         symbol: summary.collateralTokenSymbol,
       } as const;
   }

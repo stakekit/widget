@@ -5,7 +5,7 @@ import { userEvent } from "vitest/browser";
 
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
 import { ProviderOption } from "../../../src/domain/identity/identifiers";
-import type { EarnProviderOption } from "../../../src/features/earn/state/earn-selection/types";
+import type { EarnProviderOption } from "../../../src/features/earn/model/earn-selection/types";
 import { SelectYieldRewardDetails } from "../../../src/features/earn/ui/components/select-yield-section/select-yield-reward-details";
 import {
   ProviderSelectionCard,

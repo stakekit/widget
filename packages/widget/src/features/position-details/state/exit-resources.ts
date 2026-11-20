@@ -7,8 +7,8 @@ import { isYieldValidatorSelectionRequired } from "../../../domain/earn/yield";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../resources/yield-opportunity/optional-yield-opportunity";
 import {
   presentedValue,
   toPresentable,
@@ -38,7 +38,7 @@ const selectedYieldAtom = Atom.family((key: PositionDetailsExitResourcesKey) =>
     presentedValue(
       toPresentable(
         get(
-          yieldOpportunityAtom.foreground(
+          optionalYieldOpportunityAtom.foreground(
             new YieldOpportunityKey({ yieldId: key.yieldId })
           )
         )

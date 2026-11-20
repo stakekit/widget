@@ -3,12 +3,11 @@ import type { TFunction } from "i18next";
 import type { BorrowPositionActionFormWarning } from "../../model/action-form";
 
 const warningTranslationKeys = {
-  repayDebt: "dashboard.borrow.position_details.validation.repay_debt",
-  repayMinimum: "dashboard.borrow.position_details.validation.repay_minimum",
-  walletBalance: "dashboard.borrow.position_details.validation.wallet_balance",
-  withdrawBalance:
-    "dashboard.borrow.position_details.validation.withdraw_balance",
-  withdrawLtv: "dashboard.borrow.position_details.validation.withdraw_ltv",
+  repayDebt: "borrow.position_details.validation.repay_debt",
+  repayMinimum: "borrow.position_details.validation.repay_minimum",
+  walletBalance: "borrow.position_details.validation.wallet_balance",
+  withdrawBalance: "borrow.position_details.validation.withdraw_balance",
+  withdrawLtv: "borrow.position_details.validation.withdraw_ltv",
 } as const satisfies Record<BorrowPositionActionFormWarning, string>;
 
 export const getBorrowPositionFormWarningMessage = ({

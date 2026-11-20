@@ -1,9 +1,8 @@
 import { useAtomValue } from "@effect/atom-react";
 
-import type { Nullable } from "../../../shared/types/utils";
 import { RegionCodeKey, regionCodeNameAtom } from "../state/region-code-name";
 
-export const useRegionCodeName = (regionCode: Nullable<string>) =>
+export const useRegionCodeName = (regionCode: string | null | undefined) =>
   useAtomValue(
     regionCodeNameAtom(new RegionCodeKey({ regionCode: regionCode ?? null }))
   );

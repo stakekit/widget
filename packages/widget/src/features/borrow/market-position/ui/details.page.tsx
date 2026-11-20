@@ -5,14 +5,16 @@ import { Outlet } from "react-router";
 
 import { widgetRoutes } from "../../../../services/navigation/widget-routes";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
-import { EmptyState, Notice, SplitView, Stack } from "../../../../ui/index";
+import { EmptyState, ErrorState, SplitView, Stack } from "../../../../ui/index";
 import {
   useWidgetNavigate,
   useWidgetRouteMatch,
   useWidgetRoutePrefixMatch,
 } from "../../../navigation/index";
 import { WidgetNavigate } from "../../../navigation/views";
+import { PositionPageHeader } from "../../../portfolio/views";
 import { useTrackPage } from "../../../tracking/index";
+import { TransactionFlowFailureNotice } from "../../../transaction-flow/views";
 import { AnimationPage } from "../../../widget-shell/views";
 import { useBorrowPosition } from "../../positions/index";
 import {
@@ -24,7 +26,6 @@ import {
   makeBorrowPositionActionRouteKey,
   startBorrowPositionActionReviewAtom,
 } from "../state/action-form";
-import { BorrowPositionBreadcrumb } from "./components/breadcrumb";
 import { BorrowPositionDetailsDisclosure } from "./components/position-details-disclosure";
 import { BorrowPositionHeader } from "./components/position-header";
 import { BorrowPositionSummary } from "./components/position-summary";
@@ -78,7 +79,8 @@ export const BorrowPositionDetailsPage = () => {
   const { locale } = useWidgetPresentation();
   const startPositionReview = useAtomSet(startBorrowPositionActionReviewAtom);
   // A failed or in-flight refetch keeps the last known position on screen.
-  const presentablePosition = useBorrowPosition(marketId);
+  const { onRetry, position: presentablePosition } =
+    useBorrowPosition(marketId);
   const position =
     presentablePosition._tag === "Ready" ? presentablePosition.value : null;
   const model = position
@@ -136,16 +138,24 @@ export const BorrowPositionDetailsPage = () => {
         position={position}
       />
     ) : (
-      <EmptyState title={t("dashboard.borrow.position_details.empty")} />
+      <EmptyState title={t("borrow.position_details.empty")} />
     );
+
+  const loadFailed = (
+    <ErrorState
+      fill
+      testId="borrow-position-load-failed"
+      title={t("position_details.load_failed_title")}
+      body={t("shared.load_failed_description")}
+      action={{ label: t("shared.retry"), onClick: onRetry }}
+    />
+  );
 
   const info = (() => {
     if (presentablePosition._tag === "Loading") {
       return <BorrowPositionInfoSkeleton />;
     }
-    if (presentablePosition._tag === "Failed") {
-      return <Notice tone="danger">{t("shared.something_went_wrong")}</Notice>;
-    }
+    if (presentablePosition._tag === "Failed") return loadFailed;
     if (!model) return details;
     return (
       <>
@@ -157,7 +167,7 @@ export const BorrowPositionDetailsPage = () => {
   })();
 
   // Off a flow the header names the position under the trail, then its
-  // actions; a flow's own page takes their place and the trail names it.
+  // actions; a flow's own page takes their place under the flow's trail.
   const actionsColumn = (() => {
     if (!showsActions) return <Outlet context={context} />;
     if (presentablePosition._tag === "Loading") {
@@ -172,19 +182,42 @@ export const BorrowPositionDetailsPage = () => {
     );
   })();
 
+  // A flow heads its pages itself, its back leaving through the flow.
+  const header = (
+    <>
+      {showsActions ? (
+        <PositionPageHeader back="PositionsList" title={null} />
+      ) : null}
+      <TransactionFlowFailureNotice route={widgetRoutes.borrowPosition} />
+    </>
+  );
+
+  // A position that failed to load with no flow running has no actions to
+  // offer: one error, with its retry, takes the whole page under the trail.
+  const failedOffFlow = showsActions && presentablePosition._tag === "Failed";
+
   return (
     <AnimationPage>
       <SplitView
-        secondaryLabel={t("dashboard.split_view.details")}
+        secondaryLabel={t("split_view.details")}
         primary={
-          <Stack gap={16}>
-            <BorrowPositionBreadcrumb
-              positionName={showsActions ? null : (model?.title ?? null)}
-            />
-            {actionsColumn}
-          </Stack>
+          failedOffFlow ? null : (
+            <Stack gap={16}>
+              {header}
+              {actionsColumn}
+            </Stack>
+          )
         }
-        secondary={<Stack gap={24}>{info}</Stack>}
+        secondary={
+          failedOffFlow ? (
+            <Stack grow gap={16}>
+              {header}
+              {loadFailed}
+            </Stack>
+          ) : (
+            <Stack gap={24}>{info}</Stack>
+          )
+        }
       />
     </AnimationPage>
   );

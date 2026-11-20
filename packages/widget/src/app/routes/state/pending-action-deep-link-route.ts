@@ -2,11 +2,11 @@ import { Option } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-import { getPendingActionReturn } from "../../../domain/earn/denomination";
 import { pendingActionDeepLinkViewAtom } from "../../../features/earn/index";
 import { initParamsAtom } from "../../../features/init-params/index";
 import { mountAnimationStateAtom } from "../../../features/mount-animation/index";
 import { walletConnectionStateAtom } from "../../../features/wallet/index";
+import { makeManageIntake } from "../../../features/yield-transaction-flow/index";
 import { underMaintenanceAtom } from "../../../resources/widget-health/widget-health";
 import {
   atomToStream,
@@ -19,6 +19,49 @@ import {
 } from "../../runtime/deep-link-coordinator";
 import { deepLinkRuntime } from "../../runtime/deep-link-runtime";
 
+type PendingActionDeepLinkView =
+  Atom.Type<
+    typeof pendingActionDeepLinkViewAtom
+  > extends AsyncResult.AsyncResult<infer Value, infer _Error>
+    ? NonNullable<Value>
+    : never;
+
+/** What a resolved pending-action deep link asks the coordinator to do. */
+export const toPendingActionDeepLinkObservation = (
+  value: PendingActionDeepLinkView
+): PendingActionDeepLinkObservation => {
+  if (value.type === "positionDetails") {
+    return {
+      _tag: "OpenValidatorSelection",
+      balanceId: value.balanceId,
+      intent: value.intentId,
+      pendingActionType: value.pendingAction.type,
+      walletScope: value.walletScope,
+      yieldId: value.yieldOp.id,
+    };
+  }
+
+  return {
+    _tag: "StartYieldFlow",
+    input: {
+      intake: makeManageIntake({
+        balance: value.balance,
+        pendingActionType: value.pendingAction.command.action,
+        prepared: value.pendingAction,
+        providersDetails: value.providersDetails,
+        walletScope: value.walletScope,
+      }),
+      mount: {
+        _tag: "PositionManage",
+        balanceId: value.balanceId,
+        integrationId: value.yieldOp.id,
+      },
+    },
+    intent: value.intentId,
+    walletScope: value.walletScope,
+  };
+};
+
 const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
   (get) => {
     const animation = get(mountAnimationStateAtom);
@@ -29,49 +72,9 @@ const deepLinkRouteObservationAtom = Atom.make<DeepLinkRouteObservation>(
       AsyncResult.value,
       Option.getOrNull
     );
-    const pendingAction = ((): PendingActionDeepLinkObservation | null => {
-      if (!pendingActionValue) return null;
-      if (pendingActionValue.type === "positionDetails") {
-        return {
-          _tag: "OpenValidatorSelection",
-          balanceId: pendingActionValue.balanceId,
-          intent: pendingActionValue.intentId,
-          pendingActionType: pendingActionValue.pendingAction.type,
-          walletScope: pendingActionValue.walletScope,
-          yieldId: pendingActionValue.yieldOp.id,
-        };
-      }
-
-      const cancelReturn = getPendingActionReturn(
-        pendingActionValue.pendingAction.command.action,
-        pendingActionValue.balance
-      );
-      return {
-        _tag: "StartYieldFlow",
-        input: {
-          intake: {
-            _tag: "Manage",
-            amount: pendingActionValue.pendingAction.amount,
-            balanceType: pendingActionValue.balance.type,
-            ...(cancelReturn ? { cancelReturnToken: cancelReturn.token } : {}),
-            request: pendingActionValue.pendingAction.command,
-            gasFeeToken: pendingActionValue.pendingAction.gasFeeToken,
-            integration: pendingActionValue.pendingAction.integrationData,
-            interactedToken: pendingActionValue.balance.token,
-            pendingActionType: pendingActionValue.pendingAction.command.action,
-            providersDetails: pendingActionValue.providersDetails,
-            walletScope: pendingActionValue.walletScope,
-          },
-          mount: {
-            _tag: "PositionManage",
-            balanceId: pendingActionValue.balanceId,
-            integrationId: pendingActionValue.yieldOp.id,
-          },
-        },
-        intent: pendingActionValue.intentId,
-        walletScope: pendingActionValue.walletScope,
-      };
-    })();
+    const pendingAction = pendingActionValue
+      ? toPendingActionDeepLinkObservation(pendingActionValue)
+      : null;
     const position =
       wallet.status === "connected" &&
       initParams?.yieldId &&

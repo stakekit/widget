@@ -17,9 +17,8 @@ import { usePositionDetails } from "../use-position-details";
 
 /**
  * A position's page in the compact Layout, in the Dashboard's order: the
- * header, the summary card, the actions, then the Details and the
- * yield's facts.
- * Entering further is a wide-Layout flow, so only the exit takes an amount.
+ * header, the summary card, the actions (exiting, entering further and the
+ * one-click actions), then the Details and the yield's facts.
  */
 const PositionDetails = () => {
   const { integrationData, onRetry, page } = usePositionDetails();

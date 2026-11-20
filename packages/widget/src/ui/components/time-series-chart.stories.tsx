@@ -3,11 +3,8 @@ import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 
 import { ContainerFrame } from "../storybook/container-frame";
 import { Button } from "./button";
-import {
-  type TimeSeriesAxis,
-  TimeSeriesChart,
-  type TimeSeriesPoint,
-} from "./time-series-chart";
+import { TimeSeriesChart } from "./time-series-chart";
+import type { TimeSeriesAxis, TimeSeriesPoint } from "./time-series-plot";
 
 const day = 24 * 60 * 60 * 1000;
 /** 2026-01-01T00:00:00Z. */
@@ -114,6 +111,9 @@ const meta = {
     latestLabel: formatPercent(rewardRate.at(-1)?.value ?? 0),
     emptyLabel: "No chart data",
   },
+  // The chart loads its Recharts plot on demand; loading it before the story
+  // renders keeps a cold dev server's first transform out of the plays' waits.
+  loaders: [() => import("./time-series-plot")],
   render: (args) => (
     <ContainerFrame width={520}>
       <TimeSeriesChart {...args} />
@@ -136,8 +136,8 @@ const chartSurface = (frame: HTMLElement) =>
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
-    const svg = chart(canvasElement).querySelector("svg");
-    await waitFor(() => expect(svg?.querySelector("path")).not.toBeNull());
+    const svg = await chartSurface(chart(canvasElement));
+    await waitFor(() => expect(svg.querySelector("path")).not.toBeNull());
     await waitFor(() =>
       expect(within(chart(canvasElement)).getByText("Jan 1")).toBeVisible()
     );
@@ -197,7 +197,7 @@ export const RoundValueTicks: Story = {
 export const LatestPoint: Story = {
   play: async ({ canvasElement }) => {
     const frame = chart(canvasElement);
-    const latest = within(frame).getByText("5.07%");
+    const latest = await within(frame).findByText("5.07%");
     await expect(latest).toBeVisible();
     const box = latest.getBoundingClientRect();
     const bounds = frame.getBoundingClientRect();
@@ -218,7 +218,7 @@ export const EndsEarly: Story = {
   play: async ({ canvasElement }) => {
     const frame = chart(canvasElement);
     await expect(within(frame).getByText("Data to Jan 30")).toBeVisible();
-    await expect(within(frame).getByText("Mar 1")).toBeVisible();
+    await expect(await within(frame).findByText("Mar 1")).toBeVisible();
     await expect(frame.getBoundingClientRect().height).toBe(160);
   },
 };

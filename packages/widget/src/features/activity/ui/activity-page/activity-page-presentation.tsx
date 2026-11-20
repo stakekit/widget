@@ -263,7 +263,7 @@ export const ActivityPagePresentation = ({
     Match.when({ status: "connect-wallet" }, () => (
       <ConnectWalletState
         testId="activity-connect-wallet"
-        title={t("dashboard.details.activity_connect_wallet")}
+        title={t("activity.connect_wallet")}
       />
     )),
     Match.when({ status: "connecting" }, () => <ActivityPageSkeleton />),

@@ -1,20 +1,15 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
 
-import {
-  formatTokenAmountInUSD,
-  getGasFeeInUSD,
-} from "../../../../../shared/lib/formatters";
+import { formatTokenAmountInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
 import { getManageActionTitle } from "../../../model/action-title";
 import { getYieldFlowAttribution } from "../../../model/attribution";
-import {
-  useYieldFlowIntake,
-  useYieldFlowReview,
-} from "../../yield-flow-session";
+import { formatFeeWithUsd } from "../../../model/fee";
+import type { YieldFlowReviewVariant } from "../../../state/review-page";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
 import type { ReviewFact } from "../pages/review-overview";
 import {
@@ -24,9 +19,10 @@ import {
   getSignaturesFact,
 } from "./review-facts";
 
-export const usePendingActionReview = () => {
-  const manageFlow = useYieldFlowIntake("Manage");
-  const facade = useYieldFlowReview();
+export const usePendingActionReview = (
+  facade: YieldFlowReviewVariant<"Manage">
+) => {
+  const manageFlow = facade.intake;
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const review = useAtomValue(facade.reviewViewAtom);
   const pendingTxGas = review.gasAmount;
@@ -49,11 +45,11 @@ export const usePendingActionReview = () => {
     yieldDto: integrationData,
   });
 
-  const fee = getGasFeeInUSD({
-    gas: pendingTxGas,
+  const fee = formatFeeWithUsd({
+    amount: pendingTxGas,
     locale,
     prices,
-    yieldDto: integrationData,
+    token: integrationData.mechanics.gasFeeToken,
   });
 
   const onClick = () => confirmFlow(undefined);

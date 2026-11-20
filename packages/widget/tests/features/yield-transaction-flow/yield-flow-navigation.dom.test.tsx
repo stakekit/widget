@@ -32,7 +32,7 @@ import {
   YieldFlowRoute,
 } from "../../../src/features/yield-transaction-flow/ui/yield-flow-route";
 import {
-  useYieldFlowExecution,
+  useProvidedYieldFlowExecution,
   useYieldFlowReview,
   useYieldFlowSession,
 } from "../../../src/features/yield-transaction-flow/ui/yield-flow-session";
@@ -244,7 +244,7 @@ const ReviewPage = () => {
 
 const StepsPage = () => {
   useYieldFlowSession();
-  const execution = useYieldFlowExecution();
+  const execution = useProvidedYieldFlowExecution();
   const back = useAtomSet(execution.backAtom);
   const navigate = useNavigate();
   // Moving within this Execution keeps its navigation state.
@@ -274,7 +274,7 @@ const StepsPage = () => {
 };
 
 const CompletePage = () => {
-  useYieldFlowExecution();
+  useProvidedYieldFlowExecution();
   const navigate = useNavigate();
 
   return (
@@ -316,7 +316,11 @@ const FlowRoutes = ({
             />
           }
         >
-          <Route element={<YieldFlowRoute expected="Enter" mount="Earn" />}>
+          <Route
+            element={
+              <YieldFlowRoute expected="Enter" mount="Earn" trail={null} />
+            }
+          >
             <Route path="review" element={<ReviewPage />} />
             <Route element={<YieldFlowExecutionRoute />}>
               <Route

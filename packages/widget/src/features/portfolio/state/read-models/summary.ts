@@ -3,6 +3,10 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
 import type { YieldCampaign } from "../../../../domain/earn/campaign";
+import {
+  hasEncryptedBalance,
+  isEncryptedBalance,
+} from "../../../../domain/earn/confidential-vault";
 import type { EarnYieldWithProvider } from "../../../../domain/earn/yield-schema";
 import { exactZero } from "../../../../domain/finance/exact";
 import type { YieldId } from "../../../../domain/identity/identifiers";
@@ -46,7 +50,7 @@ export const positionYieldsResultAtom = Atom.make((get) => {
 
 /** A position still showing an encrypted balance, whose amount is unknown. */
 const isHiddenPosition = (position: PositionItem) =>
-  position.balancesWithAmount.some((balance) => balance.isEncrypted);
+  hasEncryptedBalance(position.balancesWithAmount);
 
 export const hasHiddenPositions = (positions: ReadonlyArray<PositionItem>) =>
   positions.some(isHiddenPosition);
@@ -178,7 +182,7 @@ export const getClaimableRewardsUsd = (
     .reduce(
       (sum, balance) =>
         balance.type === "claimable" &&
-        balance.isEncrypted !== true &&
+        !isEncryptedBalance(balance) &&
         balance.token.isPoints !== true
           ? sum.plus(balance.amountUsd ?? 0)
           : sum,

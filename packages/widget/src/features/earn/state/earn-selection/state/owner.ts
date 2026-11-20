@@ -3,7 +3,10 @@ import { Equal } from "effect";
 import type { WalletScopeOwnerKey } from "../../../../../domain/wallet/wallet-scope";
 import { sameWalletScopeOwner } from "../../../../../domain/wallet/wallet-scope";
 import type { InitParams } from "../../../../../services/wallet/init-params";
-import { type EarnEntryIntent, makeDefaultEarnIntent } from "../types";
+import {
+  type EarnEntryIntent,
+  makeDefaultEarnIntent,
+} from "../../../model/earn-selection/types";
 
 type EarnInitializationPhase =
   | "waiting-for-wallet"

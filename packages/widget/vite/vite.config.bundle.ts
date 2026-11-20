@@ -19,6 +19,12 @@ export default defineConfig(
       manifest: true,
       outDir: "dist/bundle",
       sourcemap: false,
+      // Library builds in ES format print minified code with its whitespace
+      // (`codegen: false`) to keep `/*#__PURE__*/` annotations for hosts that
+      // tree-shake. The printer keeps those annotations and the bundler
+      // directives (`webpackIgnore`, `turbopackIgnore`, `@vite-ignore`) anyway,
+      // and this self-contained renderer leaves hosts nothing to tree-shake.
+      rolldownOptions: { output: { minify: { codegen: true } } },
     },
   })
 );

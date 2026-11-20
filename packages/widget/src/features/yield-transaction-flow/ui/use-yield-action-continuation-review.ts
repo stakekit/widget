@@ -4,7 +4,7 @@ import { useYieldFlowReview } from "./yield-flow-session";
 
 export const useYieldActionContinuationReview = () => {
   const review = useYieldFlowReview();
-  const view = useAtomValue(review.activityReviewViewAtom);
+  const view = useAtomValue(review.confirmViewAtom);
   const confirm = useAtomSet(review.confirmAtom);
 
   return {

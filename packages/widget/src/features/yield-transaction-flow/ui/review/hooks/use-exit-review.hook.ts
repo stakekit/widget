@@ -4,20 +4,15 @@ import { useTranslation } from "react-i18next";
 import { findYieldToken } from "../../../../../domain/action/rules";
 import { getKycProviderName } from "../../../../../domain/earn/kyc";
 import { exactDecimal } from "../../../../../domain/finance/exact";
-import {
-  formatTokenAmountInUSD,
-  getGasFeeInUSD,
-} from "../../../../../shared/lib/formatters";
+import { formatTokenAmountInUSD } from "../../../../../shared/lib/formatters";
 import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useTokenLogoResolver } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import type { PageCta } from "../../../../widget-shell/views";
 import { getExitActionTitle } from "../../../model/action-title";
 import { getYieldFlowAttribution } from "../../../model/attribution";
-import {
-  useYieldFlowIntake,
-  useYieldFlowReview,
-} from "../../yield-flow-session";
+import { formatFeeWithUsd } from "../../../model/fee";
+import type { YieldFlowReviewVariant } from "../../../state/review-page";
 import type { MetaInfoProps } from "../pages/common.page.tsx";
 import type { ReviewFact } from "../pages/review-overview";
 import {
@@ -29,9 +24,8 @@ import {
   localizeReviewFee,
 } from "./review-facts";
 
-export const useExitReview = () => {
-  const exitFlow = useYieldFlowIntake("Exit");
-  const facade = useYieldFlowReview();
+export const useExitReview = (facade: YieldFlowReviewVariant<"Exit">) => {
+  const exitFlow = facade.intake;
   const confirmFlow = useAtomSet(facade.confirmAtom);
   const refreshKyc = useAtomSet(facade.refreshKycAtom);
   const review = useAtomValue(facade.reviewViewAtom);
@@ -62,11 +56,11 @@ export const useExitReview = () => {
 
   const title = getExitActionTitle(t, integrationData);
 
-  const fee = getGasFeeInUSD({
-    gas: stakeExitTxGas,
+  const fee = formatFeeWithUsd({
+    amount: stakeExitTxGas,
     locale,
     prices,
-    yieldDto: integrationData,
+    token: integrationData.mechanics.gasFeeToken,
   });
 
   const metaInfo: MetaInfoProps = { showMetaInfo: false };
@@ -110,7 +104,7 @@ export const useExitReview = () => {
     valueUsd: getReviewUsdValue({ amount, prices, token: interactedToken }),
   });
   const withdrawalFee = localizeReviewFee({
-    fee: review.withdrawalFee,
+    fee: facade.withdrawalFee,
     locale,
     prices,
     t,

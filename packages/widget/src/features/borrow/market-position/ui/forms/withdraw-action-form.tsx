@@ -64,9 +64,9 @@ const WithdrawTokenSelect = ({
         container: "select-modal__container",
         title: "select-modal__title",
       }}
-      title={t("dashboard.borrow.position_details.select_withdraw_token")}
+      title={t("borrow.position_details.select_withdraw_token")}
       closeLabel={t("shared.close")}
-      listLabel={t("dashboard.borrow.form.collateral_assets")}
+      listLabel={t("borrow.form.collateral_assets")}
       trigger={
         <PickerTrigger
           testId="borrow-withdraw-token-select"
@@ -132,7 +132,7 @@ export const WithdrawActionForm = ({
     <Stack gap={16}>
       <AmountInputCard
         amount={view.amount}
-        balanceLabel={t("dashboard.borrow.position_details.withdrawable", {
+        balanceLabel={t("borrow.position_details.withdrawable", {
           amount: formatTokenAmount(
             selectedToken.availableAmount,
             locale,
@@ -175,7 +175,7 @@ export const WithdrawActionForm = ({
             projectedRisk={view.projectedRisk}
           />
           <DetailRow
-            label={t("dashboard.borrow.form.collateral_value")}
+            label={t("borrow.form.collateral_value")}
             value={
               formatFigureChange(
                 formatUsd,
@@ -191,8 +191,8 @@ export const WithdrawActionForm = ({
       </Card>
 
       {view.riskBlock ? (
-        <Notice tone="danger" title={t("dashboard.borrow.risk_block.title")}>
-          {t(`dashboard.borrow.risk_block.${view.riskBlock}`)}
+        <Notice tone="danger" title={t("borrow.risk_block.title")}>
+          {t(`borrow.risk_block.${view.riskBlock}`)}
         </Notice>
       ) : null}
 
@@ -200,7 +200,7 @@ export const WithdrawActionForm = ({
         cta={{
           disabled: !view.canSubmit,
           isLoading: false,
-          label: t("dashboard.borrow.review_actions.withdraw"),
+          label: t("borrow.review_actions.withdraw"),
           onClick: startReview,
         }}
       />

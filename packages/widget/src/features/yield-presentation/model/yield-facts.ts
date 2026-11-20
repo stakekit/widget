@@ -7,8 +7,6 @@ import {
   getYieldCooldownPeriod,
   getYieldLockupPeriod,
   getYieldRiskDisplay,
-  getYieldRiskSourceLabel,
-  getYieldTypeLabels,
   getYieldWarmupPeriod,
   isMakinaYield,
   type YieldRiskDisplay,
@@ -28,6 +26,7 @@ import {
   formatNextBatchLabel,
   formatNextBatchTiming,
 } from "./next-batch";
+import { getYieldRiskSourceLabel } from "./risk-rating";
 import {
   formatCooldownDays,
   formatMeaningfulCompactUsd,
@@ -42,6 +41,7 @@ import {
   formatRewardTokenLabel,
 } from "./yield-details-formatters";
 import { getYieldFigures } from "./yield-figures";
+import { getYieldTypeLabels } from "./yield-type-labels";
 
 export type YieldFactId =
   | "reward-rate"
@@ -147,7 +147,7 @@ export const getYieldFacts = ({
     },
     {
       id: "reward-token",
-      label: t("dashboard.earn_details.reward_token"),
+      label: t("earn_details.reward_token"),
       notable: false,
       token: yieldDto.outputToken ?? yieldDto.token,
       value: formatRewardTokenLabel(yieldDto, t),
@@ -155,7 +155,7 @@ export const getYieldFacts = ({
     pricePerShare
       ? {
           id: "price-per-share",
-          label: t("dashboard.earn_details.price_per_share"),
+          label: t("earn_details.price_per_share"),
           notable: false,
           value: pricePerShare,
         }
@@ -164,7 +164,7 @@ export const getYieldFacts = ({
     risk
       ? {
           id: "risk",
-          label: t("dashboard.earn_details.risk"),
+          label: t("earn_details.risk"),
           notable: true,
           subValue: getYieldRiskSourceLabel(risk.source, t).toUpperCase(),
           value: { _tag: "Risk", risk },
@@ -183,22 +183,22 @@ export const getYieldFacts = ({
     lockup
       ? {
           id: "lockup",
-          label: t("dashboard.earn_details.lockup"),
+          label: t("earn_details.lockup"),
           notable: true,
           value: lockup,
         }
       : null,
     {
       id: "withdrawal",
-      label: t("dashboard.earn_details.withdrawal"),
+      label: t("earn_details.withdrawal"),
       notable: true,
       value: yieldDto.status.exit
-        ? t("dashboard.earn_details.available")
-        : t("dashboard.earn_details.unavailable"),
+        ? t("earn_details.available")
+        : t("earn_details.unavailable"),
     },
     figures.tvl && {
       id: "tvl",
-      label: t("dashboard.earn_details.tvl"),
+      label: t("earn_details.tvl"),
       notable: true,
       ...(figures.tvl.token === null ? {} : { subValue: figures.tvl.token }),
       value: figures.tvl.usd,
@@ -206,7 +206,7 @@ export const getYieldFacts = ({
     ...getFeeFacts({ locale, t, yieldDto }),
     {
       id: "status",
-      label: t("dashboard.earn_details.status"),
+      label: t("earn_details.status"),
       notable: true,
       subValue:
         yieldDto.provider?.name ??
@@ -216,26 +216,26 @@ export const getYieldFacts = ({
     averagePosition
       ? {
           id: "average-position",
-          label: t("dashboard.earn_details.average_position"),
+          label: t("earn_details.average_position"),
           notable: true,
           value: averagePosition,
         }
       : null,
     {
       id: "type",
-      label: t("dashboard.earn_details.type"),
+      label: t("earn_details.type"),
       notable: false,
       value: getYieldTypeLabels(yieldDto, t).title,
     },
     {
       id: "reward-schedule",
-      label: t("dashboard.earn_details.reward_schedule"),
+      label: t("earn_details.reward_schedule"),
       notable: false,
       value: humanizeEnumValue(yieldDto.mechanics.rewardSchedule),
     },
     {
       id: "reward-claiming",
-      label: t("dashboard.earn_details.reward_claiming"),
+      label: t("earn_details.reward_claiming"),
       notable: false,
       value: formatRewardClaiming(yieldDto, t),
     },
@@ -273,18 +273,18 @@ const getCapacityFact = ({
       { amount: value, token: yieldDto.token },
       locale
     );
-  const used = t("dashboard.earn_details.capacity_used", {
+  const used = t("earn_details.capacity_used", {
     amount: amount(capacity.current),
   });
   const fact = {
     id: "capacity",
-    label: t("dashboard.earn_details.capacity"),
+    label: t("earn_details.capacity"),
     notable: false,
   } as const;
   if (capacity.max === null && capacity.remaining === null) {
     return {
       ...fact,
-      value: t("dashboard.earn_details.capacity_unlimited"),
+      value: t("earn_details.capacity_unlimited"),
       caption: used,
     };
   }
@@ -292,8 +292,8 @@ const getCapacityFact = ({
   const getAvailability = (): string | undefined => {
     if (remaining == null) return undefined;
     return remaining.isZero()
-      ? t("dashboard.earn_details.capacity_full")
-      : t("dashboard.earn_details.capacity_remaining", {
+      ? t("earn_details.capacity_full")
+      : t("earn_details.capacity_remaining", {
           amount: amount(remaining),
         });
   };
@@ -307,7 +307,7 @@ const getCapacityFact = ({
   }
   return {
     ...fact,
-    value: availability ?? t("dashboard.earn_details.capacity_unknown"),
+    value: availability ?? t("earn_details.capacity_unknown"),
     caption: used,
   };
 };
@@ -316,8 +316,8 @@ const getCapacityFact = ({
 const feeBases = {
   deposit: null,
   withdrawal: null,
-  management: "dashboard.earn_details.fee_per_year",
-  performance: "dashboard.earn_details.fee_of_earnings",
+  management: "earn_details.fee_per_year",
+  performance: "earn_details.fee_of_earnings",
 } as const;
 
 const feeTypes = [
@@ -377,7 +377,7 @@ const getCooldownFact = ({
   readonly t: TFunction;
   readonly yieldDto: EarnYieldWithProvider;
 }): YieldFact | null => {
-  const label = t("dashboard.earn_details.cooldown");
+  const label = t("earn_details.cooldown");
   const nextBatch = formatNextBatchTiming({
     now,
     side: "redemption",
@@ -419,7 +419,7 @@ const getWarmupFact = ({
   return value
     ? {
         id: "warmup",
-        label: t("dashboard.earn_details.warmup"),
+        label: t("earn_details.warmup"),
         notable: true,
         value,
       }
@@ -434,7 +434,7 @@ export const getYieldContracts = (
   ...(yieldDto.outputToken?.address
     ? [
         {
-          label: t("dashboard.earn_details.vault"),
+          label: t("earn_details.vault"),
           address: yieldDto.outputToken.address,
         },
       ]
@@ -442,7 +442,7 @@ export const getYieldContracts = (
   ...(yieldDto.token.address
     ? [
         {
-          label: t("dashboard.earn_details.asset", {
+          label: t("earn_details.asset", {
             symbol: yieldDto.token.symbol,
           }),
           address: yieldDto.token.address,

@@ -6,6 +6,7 @@ import {
   widgetRoutes,
   widgetYieldFlowRoutes,
 } from "../../../services/navigation/widget-routes";
+import type { TransactionFlowTrail } from "../../transaction-flow/index";
 import {
   YieldActionContinuationCompletePage,
   YieldActionContinuationExecution,
@@ -39,6 +40,7 @@ export const createActivityActionRoutes = ({
   ActionScopeGuard,
   receiptPlacement,
   selectsDefaultAction,
+  trail = null,
 }: {
   readonly ActionScopeGuard?: ComponentType<{
     readonly fallbackPath: WidgetPath;
@@ -47,12 +49,18 @@ export const createActivityActionRoutes = ({
   readonly receiptPlacement: ActivityReceiptPlacement;
   /** Whether the bare Activity route selects a default action. */
   readonly selectsDefaultAction: boolean;
+  /**
+   * Where a continuation's Steps and Complete sit, in a Layout that heads
+   * them with a trail back.
+   */
+  readonly trail?: TransactionFlowTrail | null;
 }) => {
   const actionRoute = (source: "borrow" | "yield") => (
     <ActivityActionRoute
       receiptPlacement={receiptPlacement}
       selectsDefaultAction={selectsDefaultAction}
       source={source}
+      trail={trail}
     />
   );
   const actionIdRoutes = (

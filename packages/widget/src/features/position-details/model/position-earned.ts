@@ -1,5 +1,6 @@
 import type BigNumber from "bignumber.js";
 
+import { isEncryptedBalance } from "../../../domain/earn/confidential-vault";
 import { exactDecimal } from "../../../domain/finance/exact";
 import type { YieldRewardsSummary } from "../../../domain/portfolio/models";
 import type { PositionBalancesByType } from "../../../domain/portfolio/positions";
@@ -53,7 +54,7 @@ const findTokenPriceUsd = (
     for (const balance of balances) {
       const amount = exactDecimal(balance.amount);
       if (
-        !balance.isEncrypted &&
+        !isEncryptedBalance(balance) &&
         amount.isGreaterThan(0) &&
         balance.tokenPriceInUsd.isGreaterThan(0) &&
         (equalTokens(balance.token, token) ||

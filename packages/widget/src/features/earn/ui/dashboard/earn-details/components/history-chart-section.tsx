@@ -28,10 +28,10 @@ export const HistoryChartSection = ({
   const { t } = useTranslation();
   const refreshing = useDelayedBusy(view.isRefreshing, view.period);
   const periods = [
-    { value: "30d", label: t("dashboard.earn_details.period_1m") },
-    { value: "90d", label: t("dashboard.earn_details.period_3m") },
-    { value: "1y", label: t("dashboard.earn_details.period_1y") },
-    { value: "all", label: t("dashboard.earn_details.period_all") },
+    { value: "30d", label: t("earn_details.period_1m") },
+    { value: "90d", label: t("earn_details.period_3m") },
+    { value: "1y", label: t("earn_details.period_1y") },
+    { value: "all", label: t("earn_details.period_all") },
   ] as const satisfies ReadonlyArray<ToggleOption<HistoryPeriod>>;
 
   return (
@@ -55,7 +55,7 @@ export const HistoryChartSection = ({
         </Stack>
 
         <SegmentedControl
-          label={t("dashboard.earn_details.chart_period", {
+          label={t("earn_details.chart_period", {
             chart: chart.title,
           })}
           options={periods}
@@ -65,7 +65,7 @@ export const HistoryChartSection = ({
       </Stack>
 
       <TimeSeriesChart
-        label={t("dashboard.earn_details.chart_history", {
+        label={t("earn_details.chart_history", {
           chart: chart.title,
         })}
         data={chart.data}
@@ -78,7 +78,7 @@ export const HistoryChartSection = ({
           : { latestLabel: chart.latestLabel })}
         {...(chart.caption === null ? {} : { caption: chart.caption })}
         loading={view.isLoading || refreshing}
-        emptyLabel={t("dashboard.earn_details.no_chart_data")}
+        emptyLabel={t("earn_details.no_chart_data")}
       />
     </Stack>
   );

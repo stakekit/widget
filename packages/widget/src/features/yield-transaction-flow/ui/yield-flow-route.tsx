@@ -1,31 +1,37 @@
 import { useAtomValue } from "@effect/atom-react";
 import type { PropsWithChildren } from "react";
-import { Outlet } from "react-router";
 
 import { widgetRoutes } from "../../../services/navigation/widget-routes";
 import { useWidgetRouteState } from "../../navigation/index";
-import { WidgetNavigate } from "../../navigation/views";
+import {
+  executionUnavailableState,
+  TransactionFlowFailureState,
+  type TransactionFlowTrail,
+} from "../../transaction-flow/index";
 import {
   TransactionFlowExecutionPage,
+  TransactionFlowExecutionRoute,
   TransactionFlowSessionMount,
+  TransactionFlowSessionRoute,
 } from "../../transaction-flow/views";
-import { walletScopeAtom } from "../../wallet/index";
-import {
-  getYieldTransactionFlowIntakeVariant,
-  isYieldTransactionFlowWalletScopeValid,
-  type YieldTransactionFlowIntake,
-} from "../model/intake";
+import type { YieldPreviewIntake } from "../model/intake";
 import {
   type YieldFlowMountTag,
   type YieldFlowSession,
   yieldFlowRoutes,
 } from "../model/session";
 import {
-  useYieldFlowExecution,
+  useNavigatedYieldFlowExecution,
   useYieldFlowExecutionHandoff,
+  useProvidedYieldFlowExecution,
   useYieldFlowSession,
+  YieldFlowEnterIntakeContext,
+  YieldFlowExecutionContext,
   YieldFlowSessionContext,
 } from "./yield-flow-session";
+
+/** Every Yield flow leaves for Earn when it has nothing to show. */
+const earnPath = widgetRoutes.earn.build();
 
 /**
  * Holds the Flow Session it was navigated to while this route stays mounted.
@@ -34,24 +40,21 @@ import {
 export const YieldFlowRoute = ({
   expected,
   mount,
+  trail,
 }: {
-  readonly expected: Exclude<
-    YieldTransactionFlowIntake["_tag"],
-    "YieldActionContinuation"
-  >;
+  readonly expected: YieldPreviewIntake["_tag"];
   readonly mount: Exclude<YieldFlowMountTag, "YieldActionContinuation">;
+  readonly trail: TransactionFlowTrail | null;
 }) => {
   const navigated =
     useWidgetRouteState(yieldFlowRoutes[mount])?.yieldFlowSession ?? null;
   return (
     <TransactionFlowSessionMount
-      accepts={(session) =>
-        getYieldTransactionFlowIntakeVariant(session.intake, expected) !== null
-      }
-      fallback={widgetRoutes.earn.build()}
+      accepts={(session) => session.intake._tag === expected}
+      fallback={earnPath}
       navigated={navigated}
     >
-      {(session) => <YieldFlowSessionRoute session={session} />}
+      {(session) => <YieldFlowSessionRoute session={session} trail={trail} />}
     </TransactionFlowSessionMount>
   );
 };
@@ -59,42 +62,42 @@ export const YieldFlowRoute = ({
 /** Provides `session` to its pages while the connected wallet owns it. */
 export const YieldFlowSessionRoute = ({
   session,
+  trail,
 }: {
   readonly session: YieldFlowSession;
-}) => {
-  const walletScope = useAtomValue(walletScopeAtom);
-  if (!isYieldTransactionFlowWalletScopeValid(session.intake, walletScope)) {
-    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
-  }
-  return (
-    <YieldFlowSessionContext.Provider value={session}>
-      <Outlet />
-    </YieldFlowSessionContext.Provider>
-  );
-};
+  readonly trail: TransactionFlowTrail | null;
+}) => (
+  <YieldFlowEnterIntakeContext.Provider
+    value={session.intake._tag === "Enter" ? session.intake : null}
+  >
+    <TransactionFlowSessionRoute
+      context={YieldFlowSessionContext}
+      fallback={earnPath}
+      owner={session.intake.walletScope}
+      session={session}
+      trail={trail}
+    />
+  </YieldFlowEnterIntakeContext.Provider>
+);
 
 /**
  * Shows Steps and Complete while their Execution runs. Leaving both ends its
- * workflow; without an action handed off by Review, it leaves the flow.
+ * workflow; without an action handed off by Review, it leaves the flow. A
+ * handoff that cannot start, or whose workflow input proves invalid after
+ * its confidential steps, leaves for Earn, which says so.
  */
-export const YieldFlowExecutionRoute = ({ children }: PropsWithChildren) => {
-  const handoff = useYieldFlowExecutionHandoff();
-  if (!handoff) {
-    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
-  }
-  return <ExecutionStarted>{children}</ExecutionStarted>;
-};
-
-// A handoff that cannot start, or whose workflow input proves invalid after
-// its confidential steps, leaves the flow.
-const ExecutionStarted = ({ children }: PropsWithChildren) => {
-  const status = useAtomValue(useYieldFlowExecution().executionStatusAtom);
-  if (status === "Failed") {
-    return <WidgetNavigate replace to={widgetRoutes.earn.build()} />;
-  }
-  if (status === "Starting") return null;
-  return children ?? <Outlet />;
-};
+export const YieldFlowExecutionRoute = ({ children }: PropsWithChildren) => (
+  <TransactionFlowExecutionRoute
+    context={YieldFlowExecutionContext}
+    execution={useNavigatedYieldFlowExecution()}
+    failed={widgetRoutes.earn
+      .withState(TransactionFlowFailureState)
+      .build(executionUnavailableState)}
+    fallback={earnPath}
+  >
+    {children}
+  </TransactionFlowExecutionRoute>
+);
 
 /** Steps until the workflow finishes, then Complete, on the same Execution. */
 export const YieldFlowExecutionPage = ({
@@ -103,7 +106,9 @@ export const YieldFlowExecutionPage = ({
 }: PropsWithChildren<{ readonly page: "Complete" | "Steps" }>) => {
   const session = useYieldFlowSession();
   const handoff = useYieldFlowExecutionHandoff();
-  const completed = useAtomValue(useYieldFlowExecution().completedAtom);
+  const completed = useAtomValue(
+    useProvidedYieldFlowExecution().completionAtom
+  );
   return (
     <TransactionFlowExecutionPage
       completed={completed}

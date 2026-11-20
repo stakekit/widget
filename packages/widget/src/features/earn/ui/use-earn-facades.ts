@@ -2,6 +2,7 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type { YieldId } from "../../../domain/identity/identifiers";
+import type { EarnProviderOption } from "../model/earn-selection/types";
 import { earnCampaignOfferAtom } from "../state/campaign-offer";
 import {
   hideEarnTokenBalanceAtom,
@@ -9,7 +10,6 @@ import {
   revealEarnTokenBalanceStatusAtom,
 } from "../state/confidential";
 import { selectEarnSelectionCatalogYieldAtom } from "../state/earn-selection";
-import type { EarnProviderOption } from "../state/earn-selection/types";
 import {
   earnDetailsViewAtom,
   earnEntryViewAtom,
@@ -48,6 +48,7 @@ import {
   earnTvlHistoryChart,
 } from "../state/yield-history-charts";
 import {
+  earnTabCategoryAtom,
   earnYieldSelectionViewAtom,
   selectEarnCategoryAtom,
   selectEarnYieldAtom,
@@ -69,6 +70,9 @@ export const useEarnYieldSelection = () => ({
 
 /** Selects a dashboard yield category without subscribing to the selection. */
 export const useSelectEarnCategory = () => useAtomSet(selectEarnCategoryAtom);
+
+/** The yield category the Dashboard's Earn tab stands for; null without grouping. */
+export const useEarnTabCategory = () => useAtomValue(earnTabCategoryAtom);
 
 /** The earning campaign Earn offers beside a yield without one. */
 export const useEarnCampaignOffer = () => ({

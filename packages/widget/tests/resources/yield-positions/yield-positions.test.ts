@@ -6,8 +6,8 @@ import { EarnPosition } from "../../../src/domain/earn/balance";
 import type { YieldBalancesCommand } from "../../../src/domain/finance/models";
 import { WalletAddress } from "../../../src/domain/identity/identifiers";
 import { WalletScopeKey } from "../../../src/domain/wallet/wallet-scope";
+import { PositionsDataKey } from "../../../src/features/earn/model/earn-selection/keys";
 import { positionsDataAtom as earnPositionsDataAtom } from "../../../src/features/earn/state/earn-selection/catalog/catalog";
-import { PositionsDataKey } from "../../../src/features/earn/state/earn-selection/catalog/keys";
 import {
   PositionBalancesKey,
   PositionDataKey,

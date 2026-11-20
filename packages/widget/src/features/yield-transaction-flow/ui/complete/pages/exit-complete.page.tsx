@@ -4,13 +4,17 @@ import { formatTokenAmount } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
 import { getYieldFlowExitCompletion } from "../../../model/completion";
-import { useYieldFlowIntake } from "../../yield-flow-session";
+import type { YieldFlowExecutionVariant } from "../../../state/execution-page";
 import { useExitSummary } from "../hooks/use-exit-summary.hook";
 import { CompletePage } from "./common.page.tsx";
 
-export const ExitCompletePage = () => {
+export const ExitCompletePage = ({
+  execution,
+}: {
+  readonly execution: YieldFlowExecutionVariant<"Exit">;
+}) => {
   const { locale } = useWidgetPresentation();
-  const exitFlow = useYieldFlowIntake("Exit");
+  const exitFlow = execution.intake;
   const integrationData = exitFlow.integration;
   const completion = getYieldFlowExitCompletion(exitFlow);
   const amount = formatTokenAmount(completion.amount, locale, "down");
@@ -21,6 +25,7 @@ export const ExitCompletePage = () => {
   // them from the position. A batched exit says when its batch runs instead.
   const { note, rows } = useExitSummary({
     amount,
+    unlockDateAtom: execution.exitUnlockDateAtom,
     batched: completion.batched,
     receiveSymbol: completion.receiveToken?.symbol ?? null,
     symbol: completion.token.symbol,
@@ -32,6 +37,7 @@ export const ExitCompletePage = () => {
 
   return (
     <CompletePage
+      execution={execution}
       amount={amount}
       batched={
         completion.batched

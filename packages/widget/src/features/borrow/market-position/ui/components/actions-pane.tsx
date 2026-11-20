@@ -63,7 +63,7 @@ export const BorrowPositionActionsPane = () => {
   if (action === undefined) {
     return (
       <Text as="p" tone="muted">
-        {t("dashboard.borrow.position_details.no_actions")}
+        {t("borrow.position_details.no_actions")}
       </Text>
     );
   }

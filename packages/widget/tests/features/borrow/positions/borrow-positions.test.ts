@@ -246,10 +246,10 @@ describe("borrow position items", () => {
 
       expect(row("ltv")).toEqual({
         id: "ltv",
-        label: t("dashboard.borrow.form.ltv_ratio"),
+        label: t("borrow.form.ltv_ratio"),
         value: "—",
         ...(explains
-          ? { caption: t("dashboard.borrow.form.projection_unavailable") }
+          ? { caption: t("borrow.form.projection_unavailable") }
           : {}),
       });
       expect(row("health-factor")?.value).toBe("—");
@@ -348,7 +348,7 @@ describe("borrow position items", () => {
     expect(model.formRows.find((row) => row.id === "ltv")?.meter).toEqual({
       value: 50,
       valueText: "50%",
-      marker: { value: 75, label: "dashboard.borrow.risk.max_ltv_marker" },
+      marker: { value: 75, label: "borrow.risk.max_ltv_marker" },
     });
   });
   it("keeps same-token collateral isolated by market and preserves API risk state", () => {

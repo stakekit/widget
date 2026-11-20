@@ -111,9 +111,9 @@ const CollateralSelect = ({
         title: "select-modal__title",
         search: "select-modal__search-input",
       }}
-      title={t("dashboard.borrow.form.select_collateral")}
+      title={t("borrow.form.select_collateral")}
       closeLabel={t("shared.close")}
-      listLabel={t("dashboard.borrow.form.collateral_assets")}
+      listLabel={t("borrow.form.collateral_assets")}
       trigger={
         <PickerTrigger
           testId="borrow-collateral-select"
@@ -135,16 +135,16 @@ const CollateralSelect = ({
         value: search,
         onValueChange: setSearch,
         label: t("shared.search"),
-        placeholder: t("dashboard.borrow.form.search_assets"),
+        placeholder: t("borrow.form.search_assets"),
         clearLabel: t("shared.clear_search"),
       }}
-      empty={{ title: t("dashboard.borrow.form.no_assets") }}
+      empty={{ title: t("borrow.form.no_assets") }}
       options={filteredOptions.map(
         ({ collateralToken, walletAmount, walletUsd }) => ({
           id: optionId(collateralToken),
           testId: `borrow-collateral-select__item_${optionId(collateralToken)}`,
           title: collateralToken.token.symbol,
-          subtitle: t("dashboard.borrow.form.collateral_terms", {
+          subtitle: t("borrow.form.collateral_terms", {
             liquidationThreshold: formatPercent(
               collateralToken.liquidationThreshold,
               locale
@@ -155,7 +155,7 @@ const CollateralSelect = ({
             ? {
                 badges: [
                   {
-                    label: t("dashboard.borrow.form.collateral_earns", {
+                    label: t("borrow.form.collateral_earns", {
                       rate: formatRoundedPercent(
                         collateralToken.supplyRate,
                         locale

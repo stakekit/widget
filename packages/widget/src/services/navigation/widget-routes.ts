@@ -42,7 +42,7 @@ const allLayouts = [
   "Compact",
   "Dashboard",
 ] as const satisfies ReadonlyArray<WidgetLayout>;
-/** Layouts wide enough for Borrow and position staking. */
+/** Layouts wide enough for Borrow. */
 const wideLayouts = [
   "Dashboard",
 ] as const satisfies ReadonlyArray<WidgetLayout>;
@@ -355,7 +355,7 @@ export const widgetRoutes = {
     allLayouts,
     { ...positionParams, pendingActionType: YieldPendingActionType }
   ),
-  /** Base of the stake flow; Compact redirects its paths to the hub. */
+  /** Base of the flow that stakes further into a position. */
   positionStake: route(
     "/positions/:integrationId/:balanceId/stake",
     allLayouts,
@@ -394,7 +394,7 @@ export const widgetRoutes = {
 /** Yield Transaction Flow pages, by the mount that starts them. */
 export const widgetYieldFlowRoutes = {
   Earn: flowRoutes(widgetRoutes.earn, allLayouts),
-  PositionStake: flowRoutes(widgetRoutes.positionStake, wideLayouts),
+  PositionStake: flowRoutes(widgetRoutes.positionStake, allLayouts),
   PositionExit: flowRoutes(widgetRoutes.positionUnstake, allLayouts),
   PositionManage: flowRoutes(widgetRoutes.positionPendingAction, allLayouts),
   /** A continuation's Review is the action's own details route. */

@@ -19,7 +19,7 @@ import {
   type BorrowTransactionFlowEntry,
 } from "../../../src/features/borrow-transaction-flow/model/session";
 import { BorrowTransactionFlowRoute } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-route";
-import { useBorrowTransactionFlow } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-session";
+import { useBorrowFlowSession } from "../../../src/features/borrow-transaction-flow/ui/borrow-flow-session";
 import { walletScopeAtom } from "../../../src/features/wallet/index";
 import {
   borrowEntryFlowEntry,
@@ -88,7 +88,7 @@ const SessionPage = ({
   readonly name: string;
   readonly sessions: Array<BorrowFlowSession>;
 }) => {
-  const session = useBorrowTransactionFlow();
+  const session = useBorrowFlowSession();
   if (!sessions.includes(session)) sessions.push(session);
   return (
     <output data-testid="page">
@@ -123,7 +123,11 @@ const renderFlow = async ({
             }}
           />
           <Routes>
-            <Route element={<BorrowTransactionFlowRoute expected={expected} />}>
+            <Route
+              element={
+                <BorrowTransactionFlowRoute expected={expected} trail={null} />
+              }
+            >
               <Route
                 path="/borrow/review"
                 element={<SessionPage name="Review" sessions={sessions} />}

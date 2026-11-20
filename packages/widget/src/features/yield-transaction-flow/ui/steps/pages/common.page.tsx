@@ -1,37 +1,39 @@
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
+import type { YieldAction } from "../../../../../domain/earn/action-models";
+import { getConfidentialPreparationStep } from "../../../../../domain/earn/confidential-vault";
 import { isEthenaUsdeStaking } from "../../../../../domain/earn/yield";
-import { Button, Notice, Stack, Text } from "../../../../../ui/index";
-import { LeaveConfirmationDialog } from "../../../../leave-confirmation/views";
+import type { YieldId } from "../../../../../domain/identity/identifiers";
+import { Notice, Text } from "../../../../../ui/index";
+import { useTrackEvent, useTrackPage } from "../../../../tracking/index";
 import {
-  describeTransactionFailure,
-  getTransactionStepState,
-  useSlowTransactionStep,
-} from "../../../../transaction-steps/index";
-import {
-  type TransactionStep,
-  TransactionSteps,
-} from "../../../../transaction-steps/views";
+  type TransactionFlowStepsRow,
+  TransactionFlowStepsPage,
+} from "../../../../transaction-flow/views";
+import { useConnectedWallet } from "../../../../wallet/index";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
-import {
-  AnimationPage,
-  PageContainer,
-  PageCtaButton,
-  PageCtaSlot,
-} from "../../../../widget-shell/views";
+import type { YieldPreviewIntake } from "../../../model/intake";
 import {
   formatTransactionTypeLabel,
   type YieldStepRow,
 } from "../../../model/yield-transaction-workflow";
-import { useSteps } from "../hooks/use-steps.hook";
+import {
+  useProvidedYieldFlowExecution,
+  useYieldFlowSession,
+} from "../../yield-flow-session";
+import {
+  useStepsDetails,
+  useStepsSummary,
+} from "../hooks/use-steps-summary.hook";
 
 /** A preparation runs in the browser: one phase, with its own messages. */
 const getPreparationStep = (
   t: TFunction,
   row: YieldStepRow,
   kind: "encrypt" | "decrypt"
-): Pick<TransactionStep, "state" | "message"> => {
+): NonNullable<TransactionFlowStepsRow["placed"]> => {
   switch (row.done ? "done" : row.phases.sign) {
     case "done":
       return { state: "done" };
@@ -49,125 +51,100 @@ const getPreparationStep = (
   }
 };
 
-export const StepsPage = () => {
-  const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
-
-  const {
-    error,
-    numbered,
-    retry,
+/** The Yield workflow's rows as the Steps page frame lists them. */
+export const getYieldStepsRows = (
+  t: TFunction,
+  {
     txStates,
-    cta,
-    ctaNote,
-    leaveConfirmationDialog,
-    summary,
-    details,
-    wallet,
     yieldId,
-  } = useSteps();
-
-  const { t } = useTranslation();
-  const slowStepId = useSlowTransactionStep(txStates);
-  // One surface for what failed: its step, with the wallet's or API's own
-  // words after the plain message.
-  const failure = describeTransactionFailure(t, error);
-  const failureDetail = failure?.detail
-    ? ` ${t("steps.failure.detail", { detail: failure.detail })}`
-    : "";
-  const stepFailure = failure
-    ? {
-        cancelled: failure.cancelled,
-        message: `${failure.message}${failureDetail}`,
-      }
-    : null;
-
-  const steps = txStates.map((row, index): TransactionStep => {
-    const type = formatTransactionTypeLabel(row.type, t, {
-      context: isEthenaUsdeStaking(yieldId) ? "ETHENA_USDE" : undefined,
-    });
-
+  }: {
+    readonly txStates: ReadonlyArray<YieldStepRow>;
+    readonly yieldId: YieldId;
+  }
+): ReadonlyArray<TransactionFlowStepsRow> => {
+  const context = isEthenaUsdeStaking(yieldId) ? "ETHENA_USDE" : undefined;
+  return txStates.map((row) => {
+    const preparation = getConfidentialPreparationStep(row.type);
     return {
+      done: row.done,
       explorerUrl: row.explorerUrl,
       hash: row.hash,
       id: row.id,
-      // Unnumbered: the singular form shows no index.
-      label: t("steps.tx_of", {
-        count: numbered ? txStates.length : 1,
-        current: numbered ? index + 1 : undefined,
-        type,
-      }),
-      type,
-      ...(row.type === "ENCRYPT" || row.type === "DECRYPT"
-        ? getPreparationStep(
-            t,
-            row,
-            row.type === "ENCRYPT" ? "encrypt" : "decrypt"
-          )
-        : getTransactionStepState(t, {
-            done: row.done,
-            failure: stepFailure,
-            phases: row.phases,
-            slow: row.id === slowStepId,
-          })),
+      phases: row.phases,
+      type: formatTransactionTypeLabel(row.type, t, { context }),
+      ...(preparation
+        ? { placed: getPreparationStep(t, row, preparation) }
+        : {}),
     };
   });
+};
+
+/** The intake a continued action's intent would have started. */
+const intakeTagByIntent = {
+  enter: "Enter",
+  exit: "Exit",
+  manage: "Manage",
+} as const satisfies Record<YieldAction["intent"], YieldPreviewIntake["_tag"]>;
+
+/** What Steps is tracked as: the journey the Execution runs. */
+const stepsTrackPages = {
+  Enter: "stakingSteps",
+  Exit: "unstakeSteps",
+  Manage: "pendingActionSteps",
+} as const satisfies Record<YieldPreviewIntake["_tag"], string>;
+
+/** The Yield flow's Steps: its transactions and what Review showed. */
+export const StepsPage = () => {
+  const { t } = useTranslation();
+  const { destination } = useYieldFlowSession();
+  const execution = useProvidedYieldFlowExecution();
+  useTrackPage(
+    stepsTrackPages[
+      execution._tag === "YieldActionContinuation"
+        ? intakeTagByIntent[execution.intake.action.intent]
+        : execution._tag
+    ]
+  );
+  const { steps } = useAtomValue(execution.workflow.viewAtom);
+  const dispatch = useAtomSet(execution.workflow.dispatchAtom);
+  const returnToReview = useAtomSet(execution.backAtom);
+  const leaveFlow = useAtomSet(execution.finishAtom);
+  const trackEvent = useTrackEvent();
+  const summary = useStepsSummary();
+  const details = useStepsDetails(execution);
+  const wallet = useConnectedWallet();
+  const { showsPendingApprovalsNotice } = useWidgetConfig("hostProfile");
 
   return (
-    <AnimationPage>
-      <PageContainer>
-        <Stack gap={16}>
-          <Text variant="title" as="h1">
-            {t("steps.title")}
-          </Text>
-
-          {showsPendingApprovalsNotice && (
-            <Notice tone="warning" title={t("steps.pending_approvals")}>
-              {t("steps.pending_approvals_desc")}
-            </Notice>
-          )}
-
-          <TransactionSteps
-            {...(summary ? { summary } : {})}
-            details={details}
-            steps={steps}
-            wallet={wallet}
-          />
-        </Stack>
-
-        <PageCtaSlot>
-          <Stack gap={12}>
-            {retry && (
-              <Button
-                hostHook="footer-button-primary"
-                onClick={retry}
-                size="cta"
-                variant="primary"
-              >
-                {t("shared.retry")}
-              </Button>
-            )}
-            <PageCtaButton
-              cta={cta}
-              {...(ctaNote
-                ? {
-                    notice: (
-                      <Text
-                        as="p"
-                        variant="caption"
-                        tone="muted"
-                        align="center"
-                      >
-                        {ctaNote}
-                      </Text>
-                    ),
-                  }
-                : {})}
-            />
-          </Stack>
-        </PageCtaSlot>
-
-        <LeaveConfirmationDialog {...leaveConfirmationDialog} />
-      </PageContainer>
-    </AnimationPage>
+    <TransactionFlowStepsPage
+      title={
+        <Text variant="title" as="h1">
+          {t("steps.title")}
+        </Text>
+      }
+      notice={
+        showsPendingApprovalsNotice ? (
+          <Notice tone="warning" title={t("steps.pending_approvals")}>
+            {t("steps.pending_approvals_desc")}
+          </Notice>
+        ) : null
+      }
+      rows={getYieldStepsRows(t, steps)}
+      numbered={steps.numbered}
+      error={steps.error}
+      retry={steps.retryable ? () => dispatch({ _tag: "Retry" }) : null}
+      retryHostHook="footer-button-primary"
+      sent={steps.sent}
+      resumable={steps.resumable}
+      completePath={destination.completePath}
+      onCancel={() => {
+        returnToReview(undefined);
+        trackEvent("actionStepsCancelled");
+      }}
+      onLeave={() => leaveFlow(undefined)}
+      {...(summary ? { summary } : {})}
+      details={details}
+      wallet={wallet}
+    />
   );
 };

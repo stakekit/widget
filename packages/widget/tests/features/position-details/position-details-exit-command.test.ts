@@ -32,8 +32,8 @@ import type { YieldTransactionFlowIntake } from "../../../src/features/yield-tra
 import { yieldFlowRoutes } from "../../../src/features/yield-transaction-flow/model/session";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../src/resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../src/resources/yield-opportunity/optional-yield-opportunity";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
@@ -346,7 +346,7 @@ const makeRegistry = ({
       ),
       Atom.initialValue(walletConnectionStateAtom, wallet),
       Atom.initialValue(
-        yieldOpportunityAtom(
+        optionalYieldOpportunityAtom(
           new YieldOpportunityKey({ yieldId: selectedYield.id })
         ),
         AsyncResult.success(yieldOpportunity)

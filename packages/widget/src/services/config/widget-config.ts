@@ -22,9 +22,11 @@ import type { SKHostConfiguration } from "../../public-api/react-types";
 import { config } from "../../shared/config/widget-defaults";
 import type { ExternalProviderSnapshot } from "./external-provider-snapshot";
 import { type HostProfile, variantHostProfiles } from "./host-profile";
+import type { RenamedTranslationKey } from "./legacy-translation-keys";
 import {
   type DecodedHostConfiguration,
   decodeHostConfiguration,
+  type HostConfigurationDeprecations,
   type HostConfigurationWarning,
   hostLayout,
   type InvalidHostConfiguration,
@@ -170,8 +172,7 @@ type WidgetConfigServiceValue = {
 
 type NormalizedWidgetConfiguration = Readonly<{
   config: WidgetConfig;
-  droppedLegacyThemeKeys: ReadonlyArray<string>;
-  deprecatedOptions: ReadonlyArray<"dashboardVariant">;
+  deprecations: HostConfigurationDeprecations;
   warnings: ReadonlyArray<HostConfigurationWarning>;
 }>;
 
@@ -323,8 +324,7 @@ const prepareWidgetConfig = (
 
   return Result.succeed({
     config: normalizeWidgetConfig(decoded.success.configuration, environment),
-    droppedLegacyThemeKeys: decoded.success.droppedLegacyThemeKeys,
-    deprecatedOptions: decoded.success.deprecatedOptions,
+    deprecations: decoded.success.deprecations,
     warnings: decoded.success.warnings,
   });
 };
@@ -340,6 +340,27 @@ const logHostConfigurationWarnings = (
           warnings,
         })
       );
+
+/**
+ * A warning a host sees once per value and Widget, in every build: setting
+ * the same deprecated value again, or updating the configuration with it,
+ * does not repeat it.
+ */
+const makeOnceReporter = <A>(
+  name: string,
+  identify: (value: A) => string,
+  warn: (fresh: ReadonlyArray<A>) => Effect.Effect<void>
+) =>
+  Effect.map(Ref.make<ReadonlySet<string>>(new Set()), (reported) =>
+    Effect.fn(name)(function* (values: ReadonlyArray<A>) {
+      const seen = yield* Ref.get(reported);
+      const fresh = values.filter((value) => !seen.has(identify(value)));
+      if (fresh.length === 0) return;
+
+      yield* Ref.set(reported, new Set([...seen, ...fresh.map(identify)]));
+      yield* warn(fresh);
+    })
+  );
 
 export class WidgetConfigService extends Context.Service<
   WidgetConfigService,
@@ -377,50 +398,44 @@ export class WidgetConfigService extends Context.Service<
         }
 
         yield* logHostConfigurationWarnings(initialResult.success.warnings);
-        const reportedLegacyThemeKeys = yield* Ref.make<ReadonlyArray<string>>(
-          []
+        const reportLegacyThemeKeys = yield* makeOnceReporter(
+          "WidgetConfigService.reportDroppedLegacyThemeKeys",
+          (key: string) => key,
+          (keys) =>
+            Effect.logWarning(
+              "Legacy theme values no longer apply; set them through `appearance`"
+            ).pipe(
+              Effect.annotateLogs({ event: "legacy_theme_keys_dropped", keys })
+            )
         );
-        // Once per key, in every build, like invalid `appearance` warnings.
-        const reportDroppedLegacyThemeKeys = Effect.fn(
-          "WidgetConfigService.reportDroppedLegacyThemeKeys"
-        )(function* (keys: ReadonlyArray<string>) {
-          const reported = yield* Ref.get(reportedLegacyThemeKeys);
-          const fresh = keys.filter((key) => !reported.includes(key));
-          if (fresh.length === 0) return;
-
-          yield* Ref.set(reportedLegacyThemeKeys, [...reported, ...fresh]);
-          yield* Effect.logWarning(
-            "Legacy theme values no longer apply; set them through `appearance`"
-          ).pipe(
-            Effect.annotateLogs({
-              event: "legacy_theme_keys_dropped",
-              keys: fresh,
-            })
-          );
-        });
-        yield* reportDroppedLegacyThemeKeys(
-          initialResult.success.droppedLegacyThemeKeys
+        const reportDeprecatedOptions = yield* makeOnceReporter(
+          "WidgetConfigService.reportDeprecatedOptions",
+          (option: "dashboardVariant") => option,
+          () =>
+            Effect.logWarning(
+              '`dashboardVariant` is deprecated; set `layout: "dashboard"` or `layout: "compact"` instead'
+            ).pipe(
+              Effect.annotateLogs({ event: "deprecated_dashboard_variant" })
+            )
         );
-        const reportedDeprecatedOptions = yield* Ref.make<
-          ReadonlyArray<"dashboardVariant">
-        >([]);
-        // Once per option and Widget, in every build, like dropped legacy
-        // theme keys.
-        const reportDeprecatedOptions = Effect.fn(
-          "WidgetConfigService.reportDeprecatedOptions"
-        )(function* (options: ReadonlyArray<"dashboardVariant">) {
-          const reported = yield* Ref.get(reportedDeprecatedOptions);
-          const fresh = options.filter((option) => !reported.includes(option));
-          if (fresh.length === 0) return;
-
-          yield* Ref.set(reportedDeprecatedOptions, [...reported, ...fresh]);
-          yield* Effect.logWarning(
-            '`dashboardVariant` is deprecated; set `layout: "dashboard"` or `layout: "compact"` instead'
-          ).pipe(
-            Effect.annotateLogs({ event: "deprecated_dashboard_variant" })
-          );
+        const reportRenamedTranslationKeys = yield* makeOnceReporter(
+          "WidgetConfigService.reportRenamedTranslationKeys",
+          (key: RenamedTranslationKey) => key.from,
+          (keys) =>
+            Effect.logWarning(
+              "`customTranslations` keys were renamed; set the new keys instead"
+            ).pipe(
+              Effect.annotateLogs({ event: "renamed_translation_keys", keys })
+            )
+        );
+        const reportDeprecations = Effect.fn(
+          "WidgetConfigService.reportDeprecations"
+        )(function* (deprecations: HostConfigurationDeprecations) {
+          yield* reportLegacyThemeKeys(deprecations.legacyThemeKeys);
+          yield* reportDeprecatedOptions(deprecations.options);
+          yield* reportRenamedTranslationKeys(deprecations.translationKeys);
         });
-        yield* reportDeprecatedOptions(initialResult.success.deprecatedOptions);
+        yield* reportDeprecations(initialResult.success.deprecations);
         const initial = initialResult.success.config;
         const state = yield* SubscriptionRef.make(initial);
         const updatePermit = yield* Semaphore.make(1);
@@ -430,26 +445,19 @@ export class WidgetConfigService extends Context.Service<
           SubscriptionRef.changes(state).pipe(
             Stream.changesWith((previous, next) => Equal.equals(previous, next))
           );
-        const reportedMountFixedKeys = yield* Ref.make<
-          ReadonlyArray<MountFixedKey>
-        >([]);
-        const reportIgnoredMountFixedKeys = Effect.fn(
-          "WidgetConfigService.reportIgnoredMountFixedKeys"
-        )(function* (keys: ReadonlyArray<MountFixedKey>) {
-          const reported = yield* Ref.get(reportedMountFixedKeys);
-          const fresh = keys.filter((key) => !reported.includes(key));
-          if (fresh.length === 0) return;
-
-          yield* Ref.set(reportedMountFixedKeys, [...reported, ...fresh]);
-          yield* Effect.logWarning(
-            "Mount-fixed Widget Configuration changed after mount and was ignored"
-          ).pipe(
-            Effect.annotateLogs({
-              event: "mount_fixed_configuration_changed",
-              keys: fresh,
-            })
-          );
-        });
+        const reportIgnoredMountFixedKeys = yield* makeOnceReporter(
+          "WidgetConfigService.reportIgnoredMountFixedKeys",
+          (key: MountFixedKey) => key,
+          (keys) =>
+            Effect.logWarning(
+              "Mount-fixed Widget Configuration changed after mount and was ignored"
+            ).pipe(
+              Effect.annotateLogs({
+                event: "mount_fixed_configuration_changed",
+                keys,
+              })
+            )
+        );
         const rejectInvalid = Effect.fn("WidgetConfigService.rejectInvalid")(
           function* (error: InvalidHostConfiguration) {
             yield* Effect.logWarning(
@@ -493,10 +501,7 @@ export class WidgetConfigService extends Context.Service<
 
           yield* reportIgnoredMountFixedKeys(changed);
           yield* logHostConfigurationWarnings(nextResult.success.warnings);
-          yield* reportDroppedLegacyThemeKeys(
-            nextResult.success.droppedLegacyThemeKeys
-          );
-          yield* reportDeprecatedOptions(nextResult.success.deprecatedOptions);
+          yield* reportDeprecations(nextResult.success.deprecations);
           yield* SubscriptionRef.set(state, nextResult.success.config);
           return { _tag: "Updated" } as const;
         }, updatePermit.withPermits(1));

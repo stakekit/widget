@@ -165,6 +165,7 @@ const renderActivity = async (
                     receiptPlacement="pane"
                     selectsDefaultAction
                     source="yield"
+                    trail={null}
                   />
                 }
               >
@@ -180,6 +181,7 @@ const renderActivity = async (
                   receiptPlacement="pane"
                   selectsDefaultAction={selectsDefaultAction}
                   source="yield"
+                  trail={null}
                 />
               }
             >

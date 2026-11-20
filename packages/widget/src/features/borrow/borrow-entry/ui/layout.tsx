@@ -7,7 +7,7 @@ import { exactDecimal } from "../../../../domain/finance/exact";
 import { EmptyState, SplitView, Stack } from "../../../../ui/index";
 import {
   type BorrowEntryFlowDetails,
-  useBorrowTransactionFlow,
+  useBorrowFlowSession,
 } from "../../../borrow-transaction-flow/index";
 import { AnimationPage } from "../../../widget-shell/views";
 import { useBorrowWalletView } from "../../wallet/index";
@@ -34,7 +34,7 @@ const BorrowSplitView = ({ details }: { readonly details: ReactNode }) => {
 
   return (
     <SplitView
-      secondaryLabel={t("dashboard.split_view.details")}
+      secondaryLabel={t("split_view.details")}
       primary={
         <Stack gap={8} grow>
           <Outlet />
@@ -61,8 +61,8 @@ export const BorrowEntryLayout = () => {
     }
     return (
       <EmptyState
-        title={t("dashboard.borrow.details.empty_title")}
-        body={t("dashboard.borrow.details.empty_description")}
+        title={t("borrow.details.empty_title")}
+        body={t("borrow.details.empty_description")}
       />
     );
   };
@@ -97,7 +97,7 @@ const BorrowFlowDetails = ({
  * card reads the same limit as Review's LTV meter.
  */
 export const BorrowFlowLayout = () => {
-  const { entry, summary } = useBorrowTransactionFlow().intake;
+  const { entry, summary } = useBorrowFlowSession().intake;
   const projectedMaxLtv =
     summary.riskStatus === "available" ? summary.maxLtv : undefined;
 

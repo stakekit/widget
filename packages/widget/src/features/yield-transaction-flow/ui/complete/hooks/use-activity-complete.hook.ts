@@ -10,7 +10,6 @@ import {
   yieldSummaryAtom,
 } from "../../../../yield-summary/index";
 import type { YieldTransactionFlowIntake } from "../../../model/intake";
-import { useYieldFlowExecution } from "../../yield-flow-session";
 
 type ActivityIntake = Extract<
   YieldTransactionFlowIntake,
@@ -54,9 +53,4 @@ export const useActivityCompleteView = <
     selectedAction,
     yieldType: yieldSummary.yieldType,
   };
-};
-
-export const useActivityComplete = () => {
-  const execution = useYieldFlowExecution();
-  return useAtomValue(execution.activityCompleteViewAtom);
 };

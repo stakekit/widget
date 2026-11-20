@@ -7,28 +7,26 @@ import {
 } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { useTrackPage } from "../../../../tracking/index";
-import {
-  useYieldFlowExecution,
-  useYieldFlowIntake,
-} from "../../yield-flow-session";
+import type { YieldFlowExecutionVariant } from "../../../state/execution-page";
 import { CompletePage } from "./common.page.tsx";
 
-export const EnterCompletePage = () => {
+export const EnterCompletePage = ({
+  execution,
+}: {
+  readonly execution: YieldFlowExecutionVariant<"Enter">;
+}) => {
   useTrackPage("stakeComplete");
 
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const { selectedStake, selectedToken } = useYieldFlowIntake("Enter");
-  const { enterCompleteViewAtom } = useYieldFlowExecution();
-  if (!enterCompleteViewAtom) {
-    throw new Error("Expected Yield Flow Enter intake.");
-  }
+  const { selectedStake, selectedToken } = execution.intake;
   const { amount, batched, received, yearlyEarnings, yieldType } = useAtomValue(
-    enterCompleteViewAtom
+    execution.enterCompleteViewAtom
   );
 
   return (
     <CompletePage
+      execution={execution}
       amount={formatTokenAmount(amount, locale, "down")}
       batched={
         batched ? { side: "subscription", yieldDto: selectedStake } : null

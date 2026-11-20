@@ -1,4 +1,5 @@
 import { Data, Duration, Effect } from "effect";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
 import { type PriceRequest, Prices } from "../../domain/finance/prices";
@@ -54,3 +55,20 @@ const tokenPricesCanonicalAtom = Atom.family((key: TokenPricesKey) =>
 export const tokenPricesResourceAtom = makePresentableResourceFamily(
   tokenPricesCanonicalAtom
 );
+
+/** A prices request that may not be known yet. */
+export class PricesKey extends Data.Class<{
+  readonly request: PriceRequest | null;
+}> {}
+
+const pricesCanonicalAtom = Atom.family((key: PricesKey) =>
+  Atom.make((get) =>
+    key.request
+      ? get(tokenPricesResourceAtom.local(new TokenPricesKey(key.request)))
+      : AsyncResult.success(null)
+  ).pipe(Atom.withLabel("optionalTokenPricesAtom"))
+);
+
+/** The prices of a `PricesKey` request, or null without one. */
+export const optionalTokenPricesAtom =
+  makePresentableResourceFamily(pricesCanonicalAtom);

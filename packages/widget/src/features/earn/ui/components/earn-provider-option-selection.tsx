@@ -2,7 +2,7 @@ import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SelectSheet } from "../../../../ui/index";
-import type { EarnProviderOption } from "../../state/earn-selection/types";
+import type { EarnProviderOption } from "../../model/earn-selection/types";
 import { useEarnProviderOptions } from "../use-earn-facades";
 
 export type EarnProviderOptionTriggerState = {

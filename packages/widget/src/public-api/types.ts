@@ -663,7 +663,12 @@ type SettingsPropsBase = {
   };
   /** Filters, orders and groups the wallet list by wallet ID. Read at mount. */
   walletPolicy?: SKWalletPolicy;
-  /** Translation overrides per language. */
+  /**
+   * Translation overrides per language. Keys formerly under `dashboard.*`
+   * moved to their Feature's namespace (such as `borrow.*`, `portfolio.*`,
+   * `positions.*` and `tabs.*`); overrides under an old key still apply,
+   * with a warning, until the next major version.
+   */
   customTranslations?: SKCustomTranslations;
   /** Validator rules per network ID, or `"*"` for every network without its own entry. */
   validatorsConfig?: Partial<

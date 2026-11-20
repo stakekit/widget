@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Route } from "react-router";
 
 import { widgetBorrowFlowRoutes } from "../../../services/navigation/widget-routes";
+import type { TransactionFlowTrail } from "../../transaction-flow/index";
 import type { BorrowTransactionFlowEntry } from "../model/session";
 import {
   BorrowTransactionFlowExecutionPage,
@@ -19,6 +20,11 @@ type BorrowTransactionFlowRouteMount = Readonly<{
    * render panes that describe the Session's own intake.
    */
   readonly layout?: ReactElement;
+  /**
+   * Where the flow sits, for the breadcrumb and back button its pages show;
+   * without one, the page around the flow offers back.
+   */
+  readonly trail?: TransactionFlowTrail | null;
 }>;
 
 const flowPages = (entry: BorrowTransactionFlowEntry["_tag"]) => {
@@ -51,8 +57,11 @@ const flowPages = (entry: BorrowTransactionFlowEntry["_tag"]) => {
 export const createBorrowTransactionFlowRoutes = ({
   entry,
   layout,
+  trail = null,
 }: BorrowTransactionFlowRouteMount) => (
-  <Route element={<BorrowTransactionFlowRoute expected={entry} />}>
+  <Route
+    element={<BorrowTransactionFlowRoute expected={entry} trail={trail} />}
+  >
     {layout ? (
       <Route element={layout}>{flowPages(entry)}</Route>
     ) : (

@@ -26,8 +26,7 @@ export const formatDisplayTokenSymbol = (yieldDto: EarnYieldWithProvider) =>
 
 /** A rate type's name, such as "APY" or "APR". */
 export const formatRateTypeLabel = (rateType: string, t: TFunction): string =>
-  getRewardTypeFormatted(rateType.toLowerCase()) ||
-  t("dashboard.earn_details.apy");
+  getRewardTypeFormatted(rateType.toLowerCase()) || t("earn_details.apy");
 
 /** The yield's own rate type, such as "APY" or "APR". */
 export const formatRewardRateLabel = (
@@ -70,8 +69,8 @@ export const formatMinStakeLabel = (
   t: TFunction
 ): string =>
   getYieldCategory(yieldDto) === "rwa"
-    ? t("dashboard.earn_details.minimum_subscription")
-    : t("dashboard.earn_details.min_stake");
+    ? t("earn_details.minimum_subscription")
+    : t("earn_details.min_stake");
 
 export const formatMinStake = (
   yieldDto: EarnYieldWithProvider,
@@ -87,7 +86,7 @@ export const formatMinStake = (
   if (amount.isZero()) {
     return {
       kpiPrimaryEligible: false,
-      value: t("dashboard.earn_details.no_minimum"),
+      value: t("earn_details.no_minimum"),
     };
   }
 
@@ -102,12 +101,12 @@ export const formatRequirementStatus = (
   t: TFunction
 ): string => {
   if (!yieldDto.status.enter) {
-    return t("dashboard.earn_details.unavailable");
+    return t("earn_details.unavailable");
   }
   if (yieldDto.mechanics.requirements?.kycRequired) {
-    return t("dashboard.earn_details.kyc_required");
+    return t("earn_details.kyc_required");
   }
-  return t("dashboard.earn_details.active");
+  return t("earn_details.active");
 };
 
 export const formatCommission = (
@@ -170,7 +169,7 @@ export const formatRewardTokenLabel = (
   const symbol = yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
 
   return hasYieldBearingOutputToken(yieldDto)
-    ? t("dashboard.earn_details.yield_bearing_reward_token", { symbol })
+    ? t("earn_details.yield_bearing_reward_token", { symbol })
     : symbol;
 };
 
@@ -186,16 +185,16 @@ export const formatPricePerShare = (
 
 export const formatCooldownDays = (days: number, t: TFunction): string =>
   days > 0
-    ? t("dashboard.earn_details.cooldown_days", { count: days })
-    : t("dashboard.earn_details.instant");
+    ? t("earn_details.cooldown_days", { count: days })
+    : t("earn_details.instant");
 
 export const formatRewardClaiming = (
   yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): string =>
   yieldDto.mechanics.rewardClaiming === "auto"
-    ? t("dashboard.earn_details.auto_compounding")
-    : t("dashboard.earn_details.manual");
+    ? t("earn_details.auto_compounding")
+    : t("earn_details.manual");
 
 export const formatOptionalDays = (
   days: number | undefined,
@@ -203,7 +202,7 @@ export const formatOptionalDays = (
 ): string | null => {
   if (!days || days <= 0) return null;
 
-  return t("dashboard.earn_details.cooldown_days", {
+  return t("earn_details.cooldown_days", {
     count: days,
   });
 };

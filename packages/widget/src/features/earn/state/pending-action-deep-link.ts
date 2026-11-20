@@ -15,8 +15,8 @@ import {
 } from "../../../resources/single-yield-balances/single-yield-balances";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../resources/yield-opportunity/optional-yield-opportunity";
 import { appRuntime } from "../../../runtime/app-runtime";
 import type { YieldTransactionWorkflowProviderDetail } from "../../../services/transaction-workflow/transaction-workflow-model";
 import type { InitParams } from "../../../services/wallet/init-params";
@@ -71,7 +71,7 @@ const pendingActionDeepLinkResourceAtom = Atom.family(
         const { balance, pendingAction } = target;
 
         const yieldData = yield* get.result(
-          yieldOpportunityAtom.foreground(
+          optionalYieldOpportunityAtom.foreground(
             new YieldOpportunityKey({ yieldId: key.yieldId })
           )
         );

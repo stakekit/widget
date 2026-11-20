@@ -199,9 +199,13 @@ const noSourceLessTypeExport: Rule = nodeRule(
   })
 );
 
-/** `.toNumber()` stays in the representation modules. */
+/**
+ * `.toNumber()` stays in the representation modules and in
+ * `toRepresentationNumber`, the one conversion everything else uses.
+ */
 const noTonumberOutsideRepresentation: Rule = nodeRule(
   excluding(sourceFiles, [
+    "src/domain/finance/exact.ts",
     "src/shared/lib/formatters.ts",
     "src/shared/lib/number-format.ts",
   ]),

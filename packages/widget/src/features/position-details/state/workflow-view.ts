@@ -18,11 +18,14 @@ import {
   type PositionBalancesByType,
   type PositionTokenSum,
 } from "../../../domain/portfolio/positions";
-import { PricesKey, pricesAtom } from "../../../resources/token-prices/prices";
+import {
+  PricesKey,
+  optionalTokenPricesAtom,
+} from "../../../resources/token-prices/token-prices";
 import {
   YieldOpportunityKey,
-  yieldOpportunityAtom,
-} from "../../../resources/yield-opportunity/provider";
+  optionalYieldOpportunityAtom,
+} from "../../../resources/yield-opportunity/optional-yield-opportunity";
 import {
   PositionBalancesKey,
   positionBalancesAtom,
@@ -120,7 +123,9 @@ export const positionDetailsWorkflowViewAtom = Atom.family(
       const yieldId = key.integrationId;
       const yieldResult = toPresentable(
         get(
-          yieldOpportunityAtom.foreground(new YieldOpportunityKey({ yieldId }))
+          optionalYieldOpportunityAtom.foreground(
+            new YieldOpportunityKey({ yieldId })
+          )
         )
       );
       const integrationData = presentedValue(yieldResult);
@@ -282,7 +287,7 @@ export const positionDetailsPricesAtom = Atom.family(
         positionDetailsWorkflowViewAtom(key)
       );
       return get(
-        pricesAtom.foreground(
+        optionalTokenPricesAtom.foreground(
           new PricesKey({
             request:
               positionBalances && integrationData

@@ -24,7 +24,7 @@ export const ManageSummary = () => {
           <SummaryMetric
             kind="usd"
             size="lead"
-            label={t("dashboard.overview.summary.total_value")}
+            label={t("portfolio.summary.total_value")}
             figure={summary.totalValue}
             isPartial={summary.isPartial}
           />
@@ -32,7 +32,7 @@ export const ManageSummary = () => {
             <SummaryMetric
               kind="percent"
               label={t(
-                "dashboard.overview.summary.average_apy",
+                "portfolio.summary.average_apy",
                 summary.averageRateType === "apy"
                   ? {}
                   : { context: summary.averageRateType }
@@ -43,7 +43,7 @@ export const ManageSummary = () => {
             <SummaryMetric
               claimable
               kind="usd"
-              label={t("dashboard.overview.summary.claimable_rewards")}
+              label={t("portfolio.summary.claimable_rewards")}
               figure={summary.claimableRewards}
               isPartial={summary.isPartial}
             />
@@ -51,13 +51,13 @@ export const ManageSummary = () => {
               <>
                 <SummaryMetric
                   kind="usd"
-                  label={t("dashboard.overview.summary.debt")}
+                  label={t("portfolio.summary.debt")}
                   figure={summary.borrow.debt}
                   isPartial={summary.isPartial}
                 />
                 <SummaryMetric
                   kind="usd"
-                  label={t("dashboard.overview.summary.net_worth")}
+                  label={t("portfolio.summary.net_worth")}
                   figure={summary.borrow.netWorth}
                   isPartial={summary.isPartial}
                 />
@@ -68,7 +68,7 @@ export const ManageSummary = () => {
       </Card>
       {summary.excludesHidden ? (
         <Text variant="caption" tone="muted">
-          {t("dashboard.overview.summary.excludes_confidential")}
+          {t("portfolio.summary.excludes_confidential")}
         </Text>
       ) : null}
     </Stack>

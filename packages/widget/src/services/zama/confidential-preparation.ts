@@ -5,49 +5,16 @@ import type {
   ManageActionCommand,
 } from "../../domain/earn/action-models";
 import type { ConfidentialHandle } from "../../domain/earn/balance";
+import type { ConfidentialChainId } from "../../domain/earn/confidential";
 import type {
-  ConfidentialChainId,
-  ConfidentialConversion,
-} from "../../domain/earn/confidential";
-import type { EarnYieldWithProvider } from "../../domain/earn/yield-schema";
+  ConfidentialDecryptPreparation,
+  ConfidentialEncryptPreparation,
+  ConfidentialPreparation,
+} from "../../domain/earn/confidential-vault";
 import type {
   TransactionHash,
   WalletAddress,
 } from "../../domain/identity/identifiers";
-import type { Token } from "../../domain/token/token";
-
-/**
- * How a confidential vault's action command gets its hidden amount: the
- * amount encrypted for the signing wallet, or a withdrawal decrypted publicly.
- */
-export type ConfidentialPreparation =
-  | ConfidentialEncryptPreparation
-  | ConfidentialDecryptPreparation;
-
-export type ConfidentialEncryptPreparation = Readonly<{
-  readonly _tag: "Encrypt";
-  readonly amount: bigint;
-  readonly assetAddress: string | null;
-  /** The hidden balance `amount` must not exceed, if it is not wrapped first. */
-  readonly balance: Readonly<{
-    readonly chainId: ConfidentialChainId;
-    readonly token: Token;
-  }> | null;
-  readonly command: ActionCommand;
-  readonly conversion: ConfidentialConversion | null;
-  readonly instant: boolean;
-  readonly intent: "enter" | "exit";
-  /** A deposit whose balance the wallet could never reveal to withdraw. */
-  readonly requiresPermitSigner: boolean;
-  readonly yieldDto: EarnYieldWithProvider;
-}>;
-
-type ConfidentialDecryptPreparation = Readonly<{
-  readonly _tag: "Decrypt";
-  readonly chainId: ConfidentialChainId;
-  readonly command: ManageActionCommand;
-  readonly handle: ConfidentialHandle;
-}>;
 
 export class ConfidentialPreparationError extends Data.TaggedError(
   "ConfidentialPreparationError"

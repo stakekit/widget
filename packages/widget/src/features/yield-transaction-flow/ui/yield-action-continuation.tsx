@@ -1,16 +1,14 @@
 import { useState } from "react";
 
+import type { TransactionFlowTrail } from "../../transaction-flow/index";
 import { makeYieldActionContinuationSession } from "../model/session";
-import { ActivityCompletePage } from "./complete/pages/activity-complete.page";
-import { EnterStepsPage } from "./steps/pages/enter-steps.page";
-import { ExitStepsPage } from "./steps/pages/exit-steps.page";
-import { PendingStepsPage } from "./steps/pages/pending-steps.page";
+import { YieldFlowCompletePage } from "./complete/pages/yield-flow-complete.page";
+import { StepsPage } from "./steps/pages/common.page";
 import {
   YieldFlowExecutionPage,
   YieldFlowExecutionRoute,
   YieldFlowSessionRoute,
 } from "./yield-flow-route";
-import { useYieldFlowIntake } from "./yield-flow-session";
 
 type YieldActionContinuationInput = Omit<
   Parameters<typeof makeYieldActionContinuationSession>[0],
@@ -20,12 +18,15 @@ type YieldActionContinuationInput = Omit<
 /**
  * Owns one Yield Action Continuation Session for as long as it stays mounted,
  * built from the input it first mounted with. Activity remounts it (by key)
- * for another action.
+ * for another action. `trail`, when the composition gives one, puts a
+ * breadcrumb with a back button on Steps and Complete.
  */
 export const YieldActionContinuationSessionRoute = ({
   continuation,
+  trail,
 }: {
   readonly continuation: YieldActionContinuationInput;
+  readonly trail: TransactionFlowTrail | null;
 }) => {
   const [session] = useState(() =>
     makeYieldActionContinuationSession({
@@ -33,7 +34,7 @@ export const YieldActionContinuationSessionRoute = ({
       ...continuation,
     })
   );
-  return <YieldFlowSessionRoute session={session} />;
+  return <YieldFlowSessionRoute session={session} trail={trail} />;
 };
 
 /** The continuation's Steps and Complete, which share one Execution. */
@@ -41,27 +42,14 @@ export const YieldActionContinuationExecution = () => (
   <YieldFlowExecutionRoute />
 );
 
-const ContinuationStepsPage = () => {
-  const { action } = useYieldFlowIntake("YieldActionContinuation");
-
-  switch (action.intent) {
-    case "enter":
-      return <EnterStepsPage />;
-    case "exit":
-      return <ExitStepsPage />;
-    case "manage":
-      return <PendingStepsPage />;
-  }
-};
-
 export const YieldActionContinuationStepsPage = () => (
   <YieldFlowExecutionPage page="Steps">
-    <ContinuationStepsPage />
+    <StepsPage />
   </YieldFlowExecutionPage>
 );
 
 export const YieldActionContinuationCompletePage = () => (
   <YieldFlowExecutionPage page="Complete">
-    <ActivityCompletePage />
+    <YieldFlowCompletePage />
   </YieldFlowExecutionPage>
 );

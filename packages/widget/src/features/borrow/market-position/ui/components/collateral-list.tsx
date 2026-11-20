@@ -57,7 +57,7 @@ const ToggleableCollateralRow = ({
         riskBlock
           ? {
               text: t(
-                `dashboard.borrow.position_details.validation.collateral_toggle_risk.${riskBlock}`
+                `borrow.position_details.validation.collateral_toggle_risk.${riskBlock}`
               ),
               tone: "danger",
             }
@@ -96,7 +96,7 @@ export const CollateralList = ({
   return (
     <Stack gap={8}>
       <Text variant="label" tone="muted">
-        {t("dashboard.borrow.position_details.collateral_list")}
+        {t("borrow.position_details.collateral_list")}
       </Text>
       {items.map((item) => {
         const toggleAction = findBorrowCollateralToggleAction({

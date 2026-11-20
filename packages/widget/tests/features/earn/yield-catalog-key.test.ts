@@ -2,7 +2,7 @@ import { Equal, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { YieldId } from "../../../src/domain/identity/identifiers";
-import { YieldCatalogKey } from "../../../src/features/earn/state/earn-selection/catalog/keys";
+import { YieldCatalogKey } from "../../../src/features/earn/model/earn-selection/keys";
 
 const firstYieldId = Schema.decodeSync(YieldId)("yield-a");
 const secondYieldId = Schema.decodeSync(YieldId)("yield-b");

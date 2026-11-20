@@ -2,7 +2,7 @@ import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { EarnValidator } from "../../../src/domain/earn/validator";
-import { resolveValidators } from "../../../src/features/earn/state/earn-selection/model/validators";
+import { resolveValidators } from "../../../src/features/earn/model/earn-selection/validators";
 import { yieldApiValidatorFixture } from "../../fixtures";
 
 const noRequest = { requestedMatch: null, requestedValidator: null };

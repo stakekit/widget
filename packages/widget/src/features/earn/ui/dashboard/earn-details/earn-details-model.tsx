@@ -161,14 +161,14 @@ const getHeaderBadges = (
 
   if (yieldType === "native_staking") {
     badges.push({
-      label: t("dashboard.earn_details.native"),
+      label: t("earn_details.native"),
       tone: "default",
     });
   }
 
   if (yieldType === "pooled_staking") {
     badges.push({
-      label: t("dashboard.earn_details.pooled"),
+      label: t("earn_details.pooled"),
       tone: "default",
     });
   }
@@ -182,7 +182,7 @@ const getHeaderBadges = (
 
   if (yieldDto.mechanics.requirements?.kycRequired) {
     badges.push({
-      label: t("dashboard.earn_details.kyc"),
+      label: t("earn_details.kyc"),
       tone: "default",
     });
   }
@@ -192,7 +192,7 @@ const getHeaderBadges = (
     yieldDto.mechanics.rewardClaiming === "auto"
   ) {
     badges.push({
-      label: t("dashboard.earn_details.auto_compound"),
+      label: t("earn_details.auto_compound"),
       tone: "auto",
     });
   }

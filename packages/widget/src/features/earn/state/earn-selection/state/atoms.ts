@@ -12,8 +12,12 @@ import { walletScopeFromState } from "../../../../../services/wallet/wallet-scop
 import { disconnectedNormalizedWalletState } from "../../../../../services/wallet/wallet-state";
 import { initParamsAtom } from "../../../../init-params/index";
 import { walletStateResultAtom } from "../../../../wallet/index";
-import { makeResolvingWalletView } from "../model/view-model";
-import type { EarnEntry, EarnEntryIntent, EarnSelectionView } from "../types";
+import type {
+  EarnEntry,
+  EarnEntryIntent,
+  EarnSelectionView,
+} from "../../../model/earn-selection/types";
+import { makeResolvingWalletView } from "../../../model/earn-selection/view-model";
 import {
   clearEarnEntryAmounts,
   type EarnEntryState,

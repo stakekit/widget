@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  formatPositionCallout,
   getPositionCallout,
   type InactiveValidatorStatus,
   type PositionAttention,
 } from "../../../src/domain/portfolio/position-callout";
+import { formatPositionCallout } from "../../../src/features/portfolio/model/position-callout";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 
 const t = createWidgetI18nInstance().getFixedT("en");

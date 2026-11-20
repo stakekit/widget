@@ -314,7 +314,7 @@ export const yieldsAtom = makePresentableResource(
 );`,
     `import { LegacyResourceSource } from "../../services/api/resource-sources";
 import { makePresentableResourceFamily } from "../resource-failure-presentation";
-export const pricesAtom = makePresentableResourceFamily(
+export const optionalTokenPricesAtom = makePresentableResourceFamily(
   (key) => LegacyResourceSource.use((source) => source.prices(key))
 );`,
     'import { exactDecimal } from "../../domain/finance/exact";',

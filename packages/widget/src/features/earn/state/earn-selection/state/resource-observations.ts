@@ -8,36 +8,39 @@ import { tokenString } from "../../../../../domain/token/token";
 import { EarnTokenCatalogKey } from "../../../../../resources/earn-token-catalog/earn-token-catalog";
 import { widgetConfigAtom } from "../../../../../runtime/widget-config";
 import {
-  earnTokenCatalogAtom,
-  earnYieldCatalogAtom,
-  mergedTokenOptionsAtom,
-  positionsDataAtom,
-  yieldValidatorsAtom,
-} from "../catalog/catalog";
-import {
   PositionsDataKey,
   TokenOptionsKey,
   YieldCatalogKey,
   YieldValidatorsKey,
   YieldValidatorsPullKey,
-} from "../catalog/keys";
-import { defaultTokenCandidates, isDefaultTokenChoice } from "../model/token";
-import { matchesRequestedValidator } from "../model/validators";
-import { resolveEarnView } from "../model/view";
+} from "../../../model/earn-selection/keys";
+import {
+  defaultTokenCandidates,
+  isDefaultTokenChoice,
+} from "../../../model/earn-selection/token";
+import type {
+  EarnEntry,
+  EarnEntryIntent,
+  EarnSelectionView,
+  EarnTokenOption,
+} from "../../../model/earn-selection/types";
+import { matchesRequestedValidator } from "../../../model/earn-selection/validators";
+import { resolveEarnView } from "../../../model/earn-selection/view";
 import type {
   CategoryObservation,
   EarnResourceResult,
   EarnViewObservations,
   InitialViewObservations,
   ValidatorObservation,
-} from "../model/view-inputs";
-import { isReachableDefaultYield } from "../model/yield";
-import type {
-  EarnEntry,
-  EarnEntryIntent,
-  EarnSelectionView,
-  EarnTokenOption,
-} from "../types";
+} from "../../../model/earn-selection/view-inputs";
+import { isReachableDefaultYield } from "../../../model/earn-selection/yield";
+import {
+  earnTokenCatalogAtom,
+  earnYieldCatalogAtom,
+  mergedTokenOptionsAtom,
+  positionsDataAtom,
+  yieldValidatorsAtom,
+} from "../catalog/catalog";
 
 type EarnViewResolutionInput = Omit<
   Parameters<typeof resolveEarnView>[0],

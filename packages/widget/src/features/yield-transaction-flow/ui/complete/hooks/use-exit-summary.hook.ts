@@ -1,11 +1,11 @@
 import { useAtomValue } from "@effect/atom-react";
 import { DateTime, Duration } from "effect";
+import type * as Atom from "effect/reactivity/Atom";
 import { useTranslation } from "react-i18next";
 
 import { presentationClockAtom } from "../../../../../shared/effect/presentation-clock";
 import { formatDateTime } from "../../../../../shared/lib/date";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { useYieldFlowExecution } from "../../yield-flow-session";
 
 /**
  * What a finished exit, from a position or continued from Activity, adds to
@@ -17,6 +17,7 @@ export const useExitSummary = ({
   batched,
   receiveSymbol,
   symbol,
+  unlockDateAtom,
 }: {
   /** The formatted exited amount. */
   readonly amount: string;
@@ -26,11 +27,12 @@ export const useExitSummary = ({
   readonly receiveSymbol: string | null;
   /** The exited token's symbol. */
   readonly symbol: string;
+  /** When the exit's funds unlock; null while unknown or for no exit. */
+  readonly unlockDateAtom: Atom.Atom<DateTime.Utc | null>;
 }) => {
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
-  const execution = useYieldFlowExecution();
-  const unlockDate = useAtomValue(execution.exitUnlockDateAtom);
+  const unlockDate = useAtomValue(unlockDateAtom);
   const presentationTime = useAtomValue(presentationClockAtom);
 
   const unlocksAt =

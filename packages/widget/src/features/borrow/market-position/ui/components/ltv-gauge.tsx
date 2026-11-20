@@ -2,13 +2,11 @@ import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 
 import type { RiskBand } from "../../../../../domain/borrow/risk-band";
-import {
-  formatLtv,
-  formatPercent,
-  toChartNumber,
-} from "../../../../../shared/lib/number-format";
+import { toRepresentationNumber } from "../../../../../domain/finance/exact";
+import { formatPercent } from "../../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
 import { Meter } from "../../../../../ui/index";
+import { formatLtv } from "../../../../borrow-presentation/index";
 import { riskBandMeterTone } from "../../../../borrow-transaction-flow/index";
 
 /**
@@ -34,25 +32,30 @@ export const LtvGauge = ({
   const liquidationLabel =
     liquidationThreshold == null
       ? undefined
-      : t("dashboard.borrow.position_details.liquidation_at", {
+      : t("borrow.position_details.liquidation_at", {
           value: formatPercent(liquidationThreshold, locale),
         });
 
   return (
     <Meter
-      label={t("dashboard.borrow.position_details.loan_to_value")}
-      value={Math.min(100, toChartNumber(currentLtv.multipliedBy(100)))}
+      label={t("borrow.position_details.loan_to_value")}
+      value={Math.min(
+        100,
+        toRepresentationNumber(currentLtv.multipliedBy(100))
+      )}
       valueText={formatLtv(currentLtv, locale)}
       tone={riskBand === null ? "accent" : riskBandMeterTone[riskBand]}
       scale={{
-        start: t("dashboard.borrow.position_details.low_risk"),
+        start: t("borrow.position_details.low_risk"),
         end: liquidationLabel,
       }}
       marker={
         liquidationThreshold == null || liquidationLabel === undefined
           ? undefined
           : {
-              value: toChartNumber(liquidationThreshold.multipliedBy(100)),
+              value: toRepresentationNumber(
+                liquidationThreshold.multipliedBy(100)
+              ),
               label: liquidationLabel,
             }
       }
