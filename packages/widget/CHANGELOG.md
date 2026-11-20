@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.300](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.299...@stakekit/widget@0.0.300) (2026-11-20)
+
+
+### Features
+
+* **widget:** shared flow frame, Dashboard back navigation, Feature translation keys, leaner bundle ([#632](https://github.com/stakekit/widget/issues/632)) ([52fe31a](https://github.com/stakekit/widget/commit/52fe31add6f4cbb85038c2a870f6e08aea066268))
+
 ## [0.0.299](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.298...@stakekit/widget@0.0.299) (2026-11-18)
 
 
