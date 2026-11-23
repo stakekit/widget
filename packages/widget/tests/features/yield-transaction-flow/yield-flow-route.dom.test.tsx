@@ -40,6 +40,7 @@ const makeEnterSession = () => {
     {
       intake: {
         _tag: "Enter",
+        campaignStanding: { _tag: "Unknown" },
         gasFeeToken: selectedStake.mechanics.gasFeeToken,
         providersDetails: [],
         request: {

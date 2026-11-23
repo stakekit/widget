@@ -563,7 +563,9 @@ only shapes their display:
   full below 1,000,000 ("1,762.3456") and compact from 1,000,000 ("1.2M"); a
   non-zero amount below 0.0001 reads `<0.0001`, never 0. Amounts shown as a
   pair, such as yearly and monthly rewards, share one decimal count
-  (`formatPairedTokenAmounts`: "0.0834" and "0.0070").
+  (`formatPairedTokenAmounts`: "0.0834" and "0.0070"). An amount the user
+  must reach, such as a minimum or what more meets it, rounds up and reads at
+  least 0.0001 (`formatRequiredTokenAmount`), so it names an amount that does.
 - counts and market sizes (users, a TVL in token units, a validator's
   stake): at most two decimals, grouped in full below 1,000,000 ("883.29")
   and compact from 1,000,000 ("76.12M") (`formatCompactNumber`). A card and

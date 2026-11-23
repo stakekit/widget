@@ -604,10 +604,10 @@ describe("Campaign Minimum notice", () => {
     ),
     now: DateTime.makeUnsafe("2026-12-14T00:00:00.000Z"),
   };
-  const counted = (qualifyingBalance: number) =>
+  const counted = (held: number) =>
     ({
       _tag: "Counted",
-      qualifyingBalance: new BigNumber(qualifyingBalance),
+      held: new BigNumber(held),
     }) as const;
   const notice = ({
     amount,

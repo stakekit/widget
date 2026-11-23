@@ -1,20 +1,25 @@
 import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
+import { EarnBalance } from "../../../src/domain/earn/balance";
 import {
   CampaignPayout,
   getCampaignPayoutAmount,
   getCampaignQualificationState,
   getCampaignRewardsAmounts,
   getCampaignRewardsStage,
+  getLiveCampaignBalance,
+  getWalletCampaignStanding,
   getYieldCampaignRewards,
   WalletCampaignRewards,
 } from "../../../src/domain/earn/campaign-rewards";
 import { exactDecimal } from "../../../src/domain/finance/exact";
+import { tokenString } from "../../../src/domain/token/token";
 import {
   yieldApiCampaignPayoutDtoFixture,
   yieldApiCampaignRewardsDtoFixture,
   yieldApiYieldFixture,
+  yieldBalanceFixture,
 } from "../../fixtures";
 
 const rewards = (overrides?: Readonly<Record<string, unknown>>) =>
@@ -192,5 +197,75 @@ describe("getYieldCampaignRewards", () => {
     expect(
       getYieldCampaignRewards([rewards()], "other-yield" as never)
     ).toBeNull();
+  });
+});
+
+describe("getLiveCampaignBalance", () => {
+  const balance = (overrides: Parameters<typeof yieldBalanceFixture>[0]) =>
+    Schema.decodeSync(EarnBalance)(yieldBalanceFixture(overrides));
+
+  it("sums the active balances in the yield's token", () => {
+    expect(
+      getLiveCampaignBalance(
+        [balance({ amount: "4" }), balance({ amount: "2.5" })],
+        tokenString(yieldToken)
+      ).toString()
+    ).toBe("6.5");
+  });
+
+  it("leaves out balances that don't earn: exiting, campaign rewards, another token", () => {
+    expect(
+      getLiveCampaignBalance(
+        [
+          balance({ amount: "4" }),
+          balance({ amount: "3", type: "exiting" }),
+          balance({
+            amount: "2.52",
+            type: "locked",
+            campaignId: "8f4f5c3a-1d2b-4c3e-9f00-2a7b6c5d4e01",
+          }),
+          balance({
+            amount: "9",
+            token: { ...yieldToken, symbol: "OTHER", address: "0x1" },
+          }),
+        ],
+        tokenString(yieldToken)
+      ).toString()
+    ).toBe("4");
+  });
+});
+
+describe("getWalletCampaignStanding", () => {
+  const standing = (
+    rewarded: WalletCampaignRewards | null,
+    liveBalance: number
+  ) =>
+    getWalletCampaignStanding({
+      liveBalance: exactDecimal(liveBalance),
+      rewards: rewarded,
+    });
+
+  it("counts a deposit the rewards don't reflect yet", () => {
+    // First deposit: no rewards in the campaign yet.
+    expect(standing(null, 6)).toEqual({
+      _tag: "Counted",
+      held: exactDecimal(6),
+    });
+    // Top-up: the Qualifying Balance trails until the next accrual.
+    expect(
+      standing(rewards(qualification("below_threshold", "2", "0")), 6)
+    ).toEqual({ _tag: "Counted", held: exactDecimal(6) });
+  });
+
+  it("keeps the Qualifying Balance when it counts more than the live balance", () => {
+    expect(
+      standing(rewards(qualification("qualified", "25000", "25000")), 6)
+    ).toEqual({ _tag: "Counted", held: exactDecimal(25000) });
+  });
+
+  it("keeps an excluded wallet excluded, whatever it holds", () => {
+    expect(
+      standing(rewards(qualification("not_eligible", "25000", "0")), 6)
+    ).toEqual({ _tag: "NotEligible" });
   });
 });

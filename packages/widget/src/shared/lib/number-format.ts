@@ -307,6 +307,25 @@ export const formatTokenAmountWithSymbol = (
   `${formatTokenAmount(tokenAmount.amount, locale, "down")} ${tokenAmount.token.symbol}`;
 
 /**
+ * A token amount the user must reach, such as a minimum or what more meets
+ * it: rounded up, so it never reads short, and never `<0.0001`, which names
+ * no amount to enter; anything smaller reads 0.0001, which reaches it.
+ */
+export const formatRequiredTokenAmount = (
+  number: NumericValue,
+  locale: string
+) => {
+  const value = exactDecimal(number);
+  return formatTokenAmount(
+    value.isGreaterThan(0) && value.isLessThan(tokenAmountFloor)
+      ? tokenAmountFloor
+      : value,
+    locale,
+    "up"
+  );
+};
+
+/**
  * Token amounts shown as a pair, such as yearly and monthly rewards, by the
  * `formatTokenAmount` rule but at one decimal count, the most either needs
  * ("0.0834" and "0.0070"), so the pair reads alike. An amount below 0.0001,

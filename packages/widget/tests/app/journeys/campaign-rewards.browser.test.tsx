@@ -380,7 +380,7 @@ describe("Campaign rewards on positions", () => {
 
     const notice = app.getByTestId("campaign-rewards__notice-not-eligible");
     await expect
-      .element(notice.getByText("Not earning campaign rewards"))
+      .element(notice.getByText("Not eligible for campaign rewards"))
       .toBeVisible();
     await expect
       .element(
@@ -556,6 +556,38 @@ describe("Campaign rewards on positions", () => {
         app.getByTestId("campaign-rewards__earned").getByText("80.39 USDA")
       )
       .toBeVisible();
+
+    await app.unmount();
+  });
+});
+
+describe("Campaign Minimum on Earn", () => {
+  it("counts a deposit the rewards don't reflect yet", async ({ worker }) => {
+    // The wallet holds 25,000 USDA, but the rewards still count 2.
+    const { base } = await campaignSetup(worker, {
+      rewards: qualification("below_threshold", "2", "0"),
+      campaign: {
+        qualificationConfig: {
+          type: "min_token_amount",
+          threshold: "30000",
+          maxIncentivizedTvlToken: null,
+        },
+      },
+    });
+    const app = await renderApp({
+      walletListFactory: base.customConnectors,
+      skProps: { apiKey: import.meta.env.VITE_API_KEY },
+    });
+
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard("4");
+
+    // 30,000 − 25,000 held − 4 typed, not 30,000 − 2 − 4.
+    await expect
+      .element(app.getByTestId("earn-campaign-notice"))
+      .toHaveTextContent(
+        "Deposit 4,996 USDA more to earn campaign rewards. The campaign minimum is 30,000 USDA in this yield."
+      );
 
     await app.unmount();
   });

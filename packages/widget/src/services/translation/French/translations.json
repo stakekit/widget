@@ -528,13 +528,14 @@
       "reward_token": "Token de récompense",
       "funded_by": "Financée par {{sponsor}}",
       "terms": "Lire les conditions de la campagne",
-      "minimum": "Minimum pour gagner",
-      "minimum_caption": "Compté sur l'ensemble de votre position dans ce placement",
-      "cap": "Maximum rémunéré",
-      "cap_caption": "Au-delà, vous gagnez le rendement propre de ce placement"
+      "minimum": "Minimum de la campagne",
+      "minimum_caption": "Compte toute votre position dans ce placement",
+      "cap": "Plafond de récompenses par portefeuille",
+      "cap_caption": "Au-delà du plafond, le rendement propre du placement s'applique"
     },
     "entry": {
-      "below_minimum": "Ajoutez encore {{shortfall}} pour gagner le taux de la campagne. Il faut au moins {{minimum}} dans cette position."
+      "below_minimum": "Stakez encore {{shortfall}} pour gagner des récompenses de campagne. Le minimum de la campagne est de {{minimum}} dans ce placement.",
+      "below_minimum_deposit": "Déposez encore {{shortfall}} pour gagner des récompenses de campagne. Le minimum de la campagne est de {{minimum}} dans ce placement."
     },
     "rewards": {
       "title": "Récompenses de campagne",
@@ -552,8 +553,9 @@
         "below_minimum_title": "Pas encore de récompenses de campagne",
         "below_minimum": "Déposez encore {{shortfall}} pour commencer à gagner. Les récompenses de campagne demandent au moins {{minimum}} dans cette position.",
         "below_minimum_unknown": "Cette position détient moins que le minimum de la campagne : elle ne rapporte pas encore de récompenses de campagne.",
-        "not_eligible_title": "Pas de récompenses de campagne",
+        "not_eligible_title": "Non éligible aux récompenses de campagne",
         "not_eligible": "Ce portefeuille ne gagne pas de récompenses de campagne. Si vous pensez qu'il s'agit d'une erreur, contactez le support.",
+        "not_eligible_earn": "Ce portefeuille ne peut pas gagner de récompenses de campagne. Votre dépôt rapportera tout de même le rendement propre de ce placement.",
         "unavailable": "Les récompenses de campagne ne peuvent pas être chargées pour le moment. Vos récompenses sont en sécurité et continuent de s'accumuler.",
         "retry": "Réessayer"
       },

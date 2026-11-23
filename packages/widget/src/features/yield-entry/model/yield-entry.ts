@@ -619,7 +619,7 @@ const getYieldEntryCampaignNotice = (
   const minimum = getCampaignMinimum(campaign.campaign);
   const shortfall = getCampaignMinimumShortfall({
     campaign: campaign.campaign,
-    qualifyingBalance: standing.qualifyingBalance.plus(amount),
+    balance: standing.held.plus(amount),
   });
   return minimum && shortfall?.isGreaterThan(0)
     ? {

@@ -2,7 +2,10 @@ import type { TFunction } from "i18next";
 
 import { getCampaignMinimum } from "../../../domain/earn/campaign";
 import type { Token } from "../../../domain/token/token";
-import { formatTokenAmount } from "../../../shared/lib/number-format";
+import {
+  formatRequiredTokenAmount,
+  formatTokenAmount,
+} from "../../../shared/lib/number-format";
 import type { YieldCampaignView } from "./yield-campaign-view";
 
 /** Who funds the campaign, and its terms; null without either. */
@@ -41,8 +44,8 @@ export const getCampaignBalanceRules = (
           {
             id: "minimum",
             label: t("campaign.details.minimum"),
-            // Rounded up, so the shown minimum is never short of the rule.
-            value: `${formatTokenAmount(minimum, locale, "up")} ${yieldToken.symbol}`,
+            // Never short of the rule, so entering it reaches the minimum.
+            value: `${formatRequiredTokenAmount(minimum, locale)} ${yieldToken.symbol}`,
             caption: t("campaign.details.minimum_caption"),
           },
         ]

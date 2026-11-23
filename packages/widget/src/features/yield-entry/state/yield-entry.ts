@@ -176,7 +176,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
           ? get(yieldCampaignAtom(input.entry.yield.id))
           : null,
         campaignStanding: input.entry.yield
-          ? get(yieldCampaignStandingAtom(input.entry.yield.id))
+          ? get(yieldCampaignStandingAtom(input.entry.yield))
           : { _tag: "Unknown" },
         connected,
         entry: input.entry,
@@ -356,6 +356,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
                 {
                   intake: {
                     _tag: "Enter",
+                    campaignStanding: input.projection.campaignStanding,
                     request: view.preparation.command,
                     selectedToken: view.preparation.selectedToken,
                     gasFeeToken: view.preparation.gasFeeToken,

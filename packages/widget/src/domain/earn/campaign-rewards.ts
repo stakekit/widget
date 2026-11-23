@@ -9,7 +9,7 @@ import {
   TolerantNullableUtcDateTimeFromString,
 } from "../finance/scalars";
 import { CampaignId, TransactionHash, YieldId } from "../identity/identifiers";
-import { Token } from "../token/token";
+import { Token, type TokenString, tokenString } from "../token/token";
 import type { EarnBalance } from "./balance";
 
 const rewardsOperation = "campaign-rewards";
@@ -191,28 +191,60 @@ export const getCampaignQualificationState = (
 };
 
 /**
- * What a wallet counts toward a Campaign before it adds more: its Qualifying
- * Balance, or that the campaign excludes it; unknown while its rewards load
- * or fail, or when they don't say.
+ * What a wallet counts toward a Campaign before it adds more: what it holds
+ * there, or that the campaign excludes it; unknown while its rewards load or
+ * fail.
  */
 export type WalletCampaignStanding =
-  | { readonly _tag: "Counted"; readonly qualifyingBalance: BigNumber }
+  | {
+      readonly _tag: "Counted";
+      /**
+       * The higher of the Qualifying Balance and the live balance, since the
+       * Qualifying Balance trails a deposit until the backend's next accrual.
+       */
+      readonly held: BigNumber;
+    }
   | { readonly _tag: "NotEligible" }
   | { readonly _tag: "Unknown" };
 
 /**
- * The wallet's standing in a Campaign from its rewards there; a wallet with
- * none there counts nothing yet.
+ * The live balance a Campaign would count: the active balances in the
+ * yield's token. Balances on their way out, and the locked balance holding a
+ * campaign's unpaid rewards, earn no campaign rate.
  */
-export const getWalletCampaignStanding = (
-  rewards: WalletCampaignRewards | null
-): WalletCampaignStanding => {
-  if (!rewards) return { _tag: "Counted", qualifyingBalance: exactZero() };
-  const { qualification } = rewards;
-  if (!qualification) return { _tag: "Unknown" };
-  return qualification.status === "not_eligible"
-    ? { _tag: "NotEligible" }
-    : { _tag: "Counted", qualifyingBalance: qualification.qualifyingBalance };
+export const getLiveCampaignBalance = (
+  balances: ReadonlyArray<EarnBalance>,
+  yieldToken: TokenString
+) =>
+  balances
+    .filter(
+      (balance) =>
+        balance.type === "active" &&
+        !balance.isEncrypted &&
+        balance.campaignId === undefined &&
+        tokenString(balance.token) === yieldToken
+    )
+    .reduce((sum, balance) => sum.plus(balance.amount), exactZero());
+
+/**
+ * The wallet's standing in a Campaign from its rewards there and its live
+ * balance in the yield: a wallet the rewards don't list yet, or whose
+ * Qualifying Balance doesn't count a recent deposit, holds its live balance.
+ */
+export const getWalletCampaignStanding = ({
+  liveBalance,
+  rewards,
+}: {
+  readonly liveBalance: BigNumber;
+  readonly rewards: WalletCampaignRewards | null;
+}): WalletCampaignStanding => {
+  const qualification = rewards?.qualification ?? null;
+  if (qualification?.status === "not_eligible") return { _tag: "NotEligible" };
+  const counted = qualification?.qualifyingBalance ?? exactZero();
+  return {
+    _tag: "Counted",
+    held: counted.isGreaterThan(liveBalance) ? counted : liveBalance,
+  };
 };
 
 export type CampaignRewardsStage =

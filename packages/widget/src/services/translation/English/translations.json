@@ -528,13 +528,14 @@
       "reward_token": "Reward token",
       "funded_by": "Funded by {{sponsor}}",
       "terms": "Read the campaign terms",
-      "minimum": "Minimum to earn",
-      "minimum_caption": "Counted across your position in this yield",
-      "cap": "Max that earns",
-      "cap_caption": "Anything above it earns this yield's own rate"
+      "minimum": "Campaign minimum",
+      "minimum_caption": "Counts your whole position in this yield",
+      "cap": "Reward cap per wallet",
+      "cap_caption": "Above the cap, the yield's own rate applies"
     },
     "entry": {
-      "below_minimum": "Add {{shortfall}} more to earn the campaign rate. It needs at least {{minimum}} in this position."
+      "below_minimum": "Stake {{shortfall}} more to earn campaign rewards. The campaign minimum is {{minimum}} in this yield.",
+      "below_minimum_deposit": "Deposit {{shortfall}} more to earn campaign rewards. The campaign minimum is {{minimum}} in this yield."
     },
     "rewards": {
       "title": "Campaign rewards",
@@ -552,8 +553,9 @@
         "below_minimum_title": "Not earning campaign rewards yet",
         "below_minimum": "Deposit {{shortfall}} more to start earning. Campaign rewards need at least {{minimum}} in this position.",
         "below_minimum_unknown": "This position holds less than the campaign's minimum, so it isn't earning campaign rewards yet.",
-        "not_eligible_title": "Not earning campaign rewards",
+        "not_eligible_title": "Not eligible for campaign rewards",
         "not_eligible": "This wallet isn't earning campaign rewards. If you think this is a mistake, contact support.",
+        "not_eligible_earn": "This wallet can't earn campaign rewards. Your deposit will still earn this yield's own rate.",
         "unavailable": "Campaign rewards can't be loaded right now. Your rewards are safe and keep building up.",
         "retry": "Try again"
       },

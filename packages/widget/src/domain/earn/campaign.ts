@@ -224,25 +224,26 @@ export const getCampaignMinimum = (campaign: YieldCampaign) => {
 };
 
 /**
- * How much more the wallet must add for its Qualifying Balance to reach the
- * Campaign Minimum: none once it does, null for a campaign without one.
+ * How much more `balance` needs to reach the Campaign Minimum: none once it
+ * does, null for a campaign without one.
  */
 export const getCampaignMinimumShortfall = ({
+  balance,
   campaign,
-  qualifyingBalance,
 }: {
+  /** What counts toward the minimum, an amount about to be added included. */
+  readonly balance: BigNumber;
   readonly campaign: YieldCampaign;
-  readonly qualifyingBalance: BigNumber;
 }) => {
   const minimum = getCampaignMinimum(campaign);
   if (!minimum) return null;
-  const shortfall = minimum.minus(qualifyingBalance);
+  const shortfall = minimum.minus(balance);
   return shortfall.isNegative() ? exactZero() : shortfall;
 };
 
 /**
- * Yearly and monthly earnings on `amount` added to the wallet's Qualifying
- * Balance while a campaign is earning. The Campaign Incentive Rate applies
+ * Yearly and monthly earnings on `amount` added to what the wallet holds in
+ * the campaign while it is earning. The Campaign Incentive Rate applies
  * only once both reach the Campaign Minimum, only to the part of `amount`
  * under the per-wallet cap, only for the time the campaign has left, and
  * never for a wallet it excludes. A standing still unknown counts nothing
@@ -276,12 +277,11 @@ export const getCampaignRewardsEstimate = ({
   const walletCap = campaign.qualificationConfig?.maxIncentivizedTvlToken;
   const capped = (balance: BigNumber) =>
     walletCap && balance.isGreaterThan(walletCap) ? walletCap : balance;
-  const held =
-    standing._tag === "Counted" ? standing.qualifyingBalance : exactZero();
+  const held = standing._tag === "Counted" ? standing.held : exactZero();
   const total = held.plus(amount);
   const shortfall = getCampaignMinimumShortfall({
     campaign,
-    qualifyingBalance: total,
+    balance: total,
   });
   const incentivizedAmount =
     standing._tag === "NotEligible" || shortfall?.isGreaterThan(0)

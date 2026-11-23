@@ -132,9 +132,9 @@ describe("getDisplayedCampaign", () => {
 describe("getCampaignRewardsEstimate", () => {
   const now = at("2026-12-14T00:00:00.000Z");
   // 5.80% native plus a 4.20% campaign incentive, minimum 10, cap 50,000.
-  const counted = (qualifyingBalance: number): WalletCampaignStanding => ({
+  const counted = (held: number): WalletCampaignStanding => ({
     _tag: "Counted",
-    qualifyingBalance: exactDecimal(qualifyingBalance),
+    held: exactDecimal(held),
   });
   const estimate = (
     amount: number,
