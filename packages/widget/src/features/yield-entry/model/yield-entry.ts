@@ -589,7 +589,7 @@ export type YieldEntryCampaignNotice =
   | Readonly<{
       readonly _tag: "BelowCampaignMinimum";
       readonly minimum: BigNumber;
-      readonly needed: BigNumber;
+      readonly shortfall: BigNumber;
       readonly token: Token;
     }>
   | Readonly<{ readonly _tag: "NotEligible" }>;
@@ -617,15 +617,15 @@ const getYieldEntryCampaignNotice = (
   }
 
   const minimum = getCampaignMinimum(campaign.campaign);
-  const needed = getCampaignMinimumShortfall({
+  const shortfall = getCampaignMinimumShortfall({
     campaign: campaign.campaign,
     qualifyingBalance: standing.qualifyingBalance.plus(amount),
   });
-  return minimum && needed?.isGreaterThan(0)
+  return minimum && shortfall?.isGreaterThan(0)
     ? {
         _tag: "BelowCampaignMinimum",
         minimum,
-        needed,
+        shortfall,
         token: selectedYield.token,
       }
     : null;

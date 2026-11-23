@@ -32,8 +32,8 @@ export const EarnCampaignMinimumNotice = () => {
   return (
     <Notice tone="info" testId="earn-campaign-notice">
       {t("campaign.entry.below_minimum", {
-        needed: formatTokenAmountWithSymbol(
-          { amount: notice.needed, token: notice.token },
+        shortfall: formatTokenAmountWithSymbol(
+          { amount: notice.shortfall, token: notice.token },
           locale
         ),
         minimum: formatTokenAmountWithSymbol(

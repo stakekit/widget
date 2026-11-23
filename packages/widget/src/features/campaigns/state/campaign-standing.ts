@@ -4,7 +4,6 @@ import {
   getWalletCampaignStanding,
   type WalletCampaignStanding,
 } from "../../../domain/earn/campaign-rewards";
-import { exactZero } from "../../../domain/finance/exact";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { walletCampaignRewardsResourceAtom } from "../../../resources/campaign-rewards/campaign-rewards";
 import { toPresentable } from "../../../shared/effect/async-result";
@@ -20,9 +19,8 @@ export const yieldCampaignStandingAtom = Atom.family((yieldId: YieldId) =>
   Atom.make((get): WalletCampaignStanding => {
     const shown = get(yieldCampaignAtom(yieldId));
     const scope = get(walletScopeAtom);
-    if (!shown || !scope) {
-      return { _tag: "Counted", qualifyingBalance: exactZero() };
-    }
+    // No wallet, or no campaign to count toward: nothing held yet.
+    if (!shown || !scope) return getWalletCampaignStanding(null);
 
     const result = toPresentable(
       get(walletCampaignRewardsResourceAtom.local(scope))

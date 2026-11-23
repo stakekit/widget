@@ -534,7 +534,7 @@
       "cap_caption": "Au-delà, vous gagnez le rendement propre de ce placement"
     },
     "entry": {
-      "below_minimum": "Ajoutez encore {{needed}} pour gagner le taux de la campagne. Il faut au moins {{minimum}} dans cette position."
+      "below_minimum": "Ajoutez encore {{shortfall}} pour gagner le taux de la campagne. Il faut au moins {{minimum}} dans cette position."
     },
     "rewards": {
       "title": "Récompenses de campagne",

@@ -534,7 +534,7 @@
       "cap_caption": "Anything above it earns this yield's own rate"
     },
     "entry": {
-      "below_minimum": "Add {{needed}} more to earn the campaign rate. It needs at least {{minimum}} in this position."
+      "below_minimum": "Add {{shortfall}} more to earn the campaign rate. It needs at least {{minimum}} in this position."
     },
     "rewards": {
       "title": "Campaign rewards",

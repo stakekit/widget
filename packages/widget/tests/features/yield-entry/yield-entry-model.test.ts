@@ -633,14 +633,14 @@ describe("Campaign Minimum notice", () => {
     expect(notice({ amount: "4" })).toEqual({
       _tag: "BelowCampaignMinimum",
       minimum: new BigNumber(10),
-      needed: new BigNumber(6),
+      shortfall: new BigNumber(6),
       token: eth,
     });
   });
 
   it("counts what the wallet already holds toward the Campaign Minimum", () => {
     expect(notice({ amount: "4", standing: counted(3.5) })).toMatchObject({
-      needed: new BigNumber(2.5),
+      shortfall: new BigNumber(2.5),
     });
     expect(notice({ amount: "4", standing: counted(6) })).toBeNull();
   });
