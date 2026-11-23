@@ -156,6 +156,8 @@ export const earnEntryViewAtom = Atom.make((get) => {
     maxFillsNothing: entry.maxAmount?.isZero() ?? false,
     /** Min fills in a minimum the balance can fund. */
     canFillMin: entry.canFillMin,
+    /** What the amount means for the yield's earning Campaign. */
+    campaignNotice: entry.campaignNotice,
     connected: entry.connected,
     cta: entry.cta,
     estimatedRewards: entry.estimatedRewards,

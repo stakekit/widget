@@ -143,7 +143,7 @@ export type CampaignQualificationState =
       readonly uncapped: BigNumber;
     }
   | {
-      readonly _tag: "BelowMinimum";
+      readonly _tag: "BelowCampaignMinimum";
       /** The campaign's minimum balance, when known. */
       readonly minimum: BigNumber | null;
       readonly shortfall: BigNumber | null;
@@ -170,7 +170,7 @@ export const getCampaignQualificationState = (
     case "below_threshold": {
       const shortfall = minimum?.minus(qualification.qualifyingBalance);
       return {
-        _tag: "BelowMinimum",
+        _tag: "BelowCampaignMinimum",
         minimum,
         shortfall: shortfall?.isNegative() ? exactZero() : (shortfall ?? null),
       };
@@ -188,6 +188,31 @@ export const getCampaignQualificationState = (
           }
         : { _tag: "Earning" };
   }
+};
+
+/**
+ * What a wallet counts toward a Campaign before it adds more: its Qualifying
+ * Balance, or that the campaign excludes it; unknown while its rewards load
+ * or fail, or when they don't say.
+ */
+export type WalletCampaignStanding =
+  | { readonly _tag: "Counted"; readonly qualifyingBalance: BigNumber }
+  | { readonly _tag: "NotEligible" }
+  | { readonly _tag: "Unknown" };
+
+/**
+ * The wallet's standing in a Campaign from its rewards there; a wallet with
+ * none there counts nothing yet.
+ */
+export const getWalletCampaignStanding = (
+  rewards: WalletCampaignRewards | null
+): WalletCampaignStanding => {
+  if (!rewards) return { _tag: "Counted", qualifyingBalance: exactZero() };
+  const { qualification } = rewards;
+  if (!qualification) return { _tag: "Unknown" };
+  return qualification.status === "not_eligible"
+    ? { _tag: "NotEligible" }
+    : { _tag: "Counted", qualifyingBalance: qualification.qualifyingBalance };
 };
 
 export type CampaignRewardsStage =

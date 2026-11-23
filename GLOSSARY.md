@@ -250,7 +250,7 @@ Campaign's per-wallet cap: not while Campaigns load, nor after it ends.
 snapshots, not validator or Effective Reward Rates.
 
 **Campaign**: A project-scoped, sponsor-funded incentive on one yield, with a
-budget, schedule, minimum-balance rule, per-wallet cap, and payout cadence.
+budget, schedule, Campaign Minimum, per-wallet cap, and payout cadence.
 Only the newest live Campaign of a yield adds to its Yield Reward Rate.
 _Avoid_: boost, promotion
 
@@ -263,6 +263,11 @@ rate lists none yet for its earning Campaign takes the Campaign's own rate.
 paused, or ended, derived from the API status, the start and end times, and the
 presentation clock. An ended Campaign is never shown on Earn.
 
+**Campaign Minimum**: The least Qualifying Balance a wallet needs before it
+earns the Campaign Incentive Rate; below it, a position earns only the yield's
+own rate. Not the yield's entry minimum, which limits a single deposit.
+_Avoid_: threshold, minimum (alone)
+
 **Campaign Offer**: The banner at the top of Earn offering, while the selected
 yield has no earning Campaign, the first earning Campaign the API lists whose
 yield the user can select on the same network; switching selects its token and
@@ -273,6 +278,11 @@ the campaign rate alone (`incentive` mode) or the yield's own rate plus it
 (`combined`). Milestones step it, so reaching one replaces it. Not the
 per-wallet cap, which limits the balance that earns.
 _Avoid_: APY cap (in code)
+
+**Qualifying Balance**: A wallet's balance in a Campaign's yield as the backend
+counts it against the Campaign Minimum, as of its last accrual; it can trail
+the live position balance.
+_Avoid_: counted balance, position balance (for this)
 
 ### Confidential vaults
 

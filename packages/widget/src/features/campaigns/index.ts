@@ -8,6 +8,7 @@ export {
   type CampaignRowBadgeTone,
   getCampaignRowModel,
 } from "./model/campaign-rewards-copy";
+export { yieldCampaignStandingAtom } from "./state/campaign-standing";
 export {
   PositionCampaignRewardsKey,
   positionCanEarnCampaignAtom,

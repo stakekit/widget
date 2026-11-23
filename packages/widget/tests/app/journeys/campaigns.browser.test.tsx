@@ -175,9 +175,11 @@ describe("Campaigns on Earn", () => {
     await expect
       .element(section.getByText("Daily, added to your position"))
       .toBeVisible();
-    await expect
-      .element(section.getByText("Minimum balance"))
-      .not.toBeInTheDocument();
+    // The balance rules, before a deposit shows whether it reaches them.
+    await expect.element(section.getByText("Minimum to earn")).toBeVisible();
+    await expect.element(section.getByText("10 ETH")).toBeVisible();
+    await expect.element(section.getByText("Max that earns")).toBeVisible();
+    await expect.element(section.getByText("50,000 ETH")).toBeVisible();
     await expect.element(toggle).toHaveFocus();
     await expect.element(app.getByRole("dialog")).not.toBeInTheDocument();
 

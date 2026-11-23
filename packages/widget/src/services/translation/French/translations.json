@@ -527,7 +527,14 @@
       "payouts_resume": "Les versements reprennent à la reprise de la campagne",
       "reward_token": "Token de récompense",
       "funded_by": "Financée par {{sponsor}}",
-      "terms": "Lire les conditions de la campagne"
+      "terms": "Lire les conditions de la campagne",
+      "minimum": "Minimum pour gagner",
+      "minimum_caption": "Compté sur l'ensemble de votre position dans ce placement",
+      "cap": "Maximum rémunéré",
+      "cap_caption": "Au-delà, vous gagnez le rendement propre de ce placement"
+    },
+    "entry": {
+      "below_minimum": "Ajoutez encore {{needed}} pour gagner le taux de la campagne. Il faut au moins {{minimum}} dans cette position."
     },
     "rewards": {
       "title": "Récompenses de campagne",

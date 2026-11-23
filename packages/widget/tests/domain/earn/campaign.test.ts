@@ -10,6 +10,7 @@ import {
   pinCampaignYields,
   YieldCampaign,
 } from "../../../src/domain/earn/campaign";
+import type { WalletCampaignStanding } from "../../../src/domain/earn/campaign-rewards";
 import { exactDecimal } from "../../../src/domain/finance/exact";
 import { YieldId } from "../../../src/domain/identity/identifiers";
 import {
@@ -131,12 +132,21 @@ describe("getDisplayedCampaign", () => {
 describe("getCampaignRewardsEstimate", () => {
   const now = at("2026-12-14T00:00:00.000Z");
   // 5.80% native plus a 4.20% campaign incentive, minimum 10, cap 50,000.
-  const estimate = (amount: number, endTime = "2028-12-14T00:00:00.000Z") =>
+  const counted = (qualifyingBalance: number): WalletCampaignStanding => ({
+    _tag: "Counted",
+    qualifyingBalance: exactDecimal(qualifyingBalance),
+  });
+  const estimate = (
+    amount: number,
+    endTime = "2028-12-14T00:00:00.000Z",
+    standing = counted(0)
+  ) =>
     getCampaignRewardsEstimate({
       amount: exactDecimal(amount),
       campaign: campaign({ startTime: "2026-11-16T12:00:00.000Z", endTime }),
       campaignIncentiveRate: exactDecimal(0.042),
       now,
+      standing,
       rewardRate: exactDecimal(0.1),
     });
 
@@ -147,6 +157,41 @@ describe("getCampaignRewardsEstimate", () => {
 
   it("earns only the native rate below the minimum", () => {
     expect(estimate(6.5)?.yearly.toString()).toBe("0.377");
+  });
+
+  it("earns the campaign rate on a top-up that lifts the Qualifying Balance to the minimum", () => {
+    // 6.5 + 3.5 reaches the minimum of 10: 6.5 × 10%.
+    expect(
+      estimate(6.5, "2028-12-14T00:00:00.000Z", counted(3.5))?.yearly.toString()
+    ).toBe("0.65");
+  });
+
+  it("earns the campaign rate only on the part of a top-up under the cap", () => {
+    // 49,000 already counted leaves 1,000 under the cap:
+    // 5,000 × 5.80% + 1,000 × 4.20%
+    expect(
+      estimate(
+        5_000,
+        "2028-12-14T00:00:00.000Z",
+        counted(49_000)
+      )?.yearly.toString()
+    ).toBe("332");
+  });
+
+  it("earns only the native rate for a wallet the campaign excludes", () => {
+    expect(
+      estimate(25_000, "2028-12-14T00:00:00.000Z", {
+        _tag: "NotEligible",
+      })?.yearly.toString()
+    ).toBe("1450");
+  });
+
+  it("counts nothing held while the wallet's standing is unknown", () => {
+    expect(
+      estimate(6.5, "2028-12-14T00:00:00.000Z", {
+        _tag: "Unknown",
+      })?.yearly.toString()
+    ).toBe("0.377");
   });
 
   it("earns the campaign rate only on the part under the cap", () => {
@@ -169,6 +214,7 @@ describe("getCampaignRewardsEstimate", () => {
       campaign: campaign({ startTime: "2027-01-01T00:00:00.000Z" }),
       campaignIncentiveRate: exactDecimal(0.042),
       now,
+      standing: counted(0),
       rewardRate: exactDecimal(0.1),
     });
 

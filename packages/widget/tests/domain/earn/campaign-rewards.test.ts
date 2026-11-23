@@ -76,7 +76,7 @@ describe("getCampaignQualificationState", () => {
     const below = rewards(qualification("below_threshold", "6.5", "0"));
 
     expect(getCampaignQualificationState(below, minimum)).toEqual({
-      _tag: "BelowMinimum",
+      _tag: "BelowCampaignMinimum",
       minimum,
       shortfall: exactDecimal(3.5),
     });
@@ -86,7 +86,7 @@ describe("getCampaignQualificationState", () => {
     const below = rewards(qualification("below_threshold", "6.5", "0"));
 
     expect(getCampaignQualificationState(below, null)).toEqual({
-      _tag: "BelowMinimum",
+      _tag: "BelowCampaignMinimum",
       minimum: null,
       shortfall: null,
     });

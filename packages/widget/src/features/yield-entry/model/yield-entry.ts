@@ -2,7 +2,14 @@ import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 
 import { ActionCommand } from "../../../domain/earn/action-models";
-import type { CampaignAtTime } from "../../../domain/earn/campaign";
+import {
+  type CampaignAtTime,
+  getCampaignLifecycle,
+  getCampaignMinimum,
+  getCampaignMinimumShortfall,
+  isCampaignEarning,
+} from "../../../domain/earn/campaign";
+import type { WalletCampaignStanding } from "../../../domain/earn/campaign-rewards";
 import { isConfidentialYield } from "../../../domain/earn/confidential";
 import {
   getMaxAmount,
@@ -28,6 +35,7 @@ import type {
   WalletAddress,
 } from "../../../domain/identity/identifiers";
 import {
+  equalTokens,
   getTokenArgumentAddress,
   type Token,
 } from "../../../domain/token/token";
@@ -68,6 +76,8 @@ export type YieldEntryProjectionInput = Readonly<{
   readonly additionalValidationErrors?: Readonly<Record<string, boolean>>;
   readonly availableAmount: BigNumber | null;
   readonly campaign: CampaignAtTime | null;
+  /** What the wallet counts toward `campaign` before this entry. */
+  readonly campaignStanding: WalletCampaignStanding;
   readonly connected: boolean;
   readonly amountInitialization: YieldEntryAmountInitialization;
   readonly entry: YieldEntryInput;
@@ -568,6 +578,59 @@ const getMinEntryAmount = ({
   return token ? roundUpToTokenDecimals(minimum, token.decimals) : minimum;
 };
 
+/**
+ * What the amount means for the yield's earning Campaign: how much more a
+ * typed amount needs to reach the Campaign Minimum, counting what the wallet
+ * already holds, or that the campaign excludes the wallet. The minimum counts
+ * the yield's own token, so another entry token says nothing; so does a
+ * standing still unknown.
+ */
+export type YieldEntryCampaignNotice =
+  | Readonly<{
+      readonly _tag: "BelowCampaignMinimum";
+      readonly minimum: BigNumber;
+      readonly needed: BigNumber;
+      readonly token: Token;
+    }>
+  | Readonly<{ readonly _tag: "NotEligible" }>;
+
+const getYieldEntryCampaignNotice = (
+  input: YieldEntryProjectionInput
+): YieldEntryCampaignNotice | null => {
+  const { campaign, campaignStanding: standing } = input;
+  const { amount, token, yield: selectedYield } = input.entry;
+  if (
+    !campaign ||
+    !isCampaignEarning(getCampaignLifecycle(campaign.campaign, campaign.now))
+  ) {
+    return null;
+  }
+  if (standing._tag === "NotEligible") return { _tag: "NotEligible" };
+  if (
+    standing._tag === "Unknown" ||
+    !selectedYield ||
+    !token ||
+    !equalTokens(token, selectedYield.token) ||
+    !amount.isGreaterThan(0)
+  ) {
+    return null;
+  }
+
+  const minimum = getCampaignMinimum(campaign.campaign);
+  const needed = getCampaignMinimumShortfall({
+    campaign: campaign.campaign,
+    qualifyingBalance: standing.qualifyingBalance.plus(amount),
+  });
+  return minimum && needed?.isGreaterThan(0)
+    ? {
+        _tag: "BelowCampaignMinimum",
+        minimum,
+        needed,
+        token: selectedYield.token,
+      }
+    : null;
+};
+
 export const projectYieldEntry = ({
   gasReserve = exactZero(),
   input,
@@ -666,10 +729,12 @@ export const projectYieldEntry = ({
     estimatedRewards: getYieldEstimatedRewards({
       amount,
       campaign: input.campaign,
+      campaignStanding: input.campaignStanding,
       providers: input.providers,
       validators: input.entry.validators,
       yield: input.entry.yield,
     }),
+    campaignNotice: getYieldEntryCampaignNotice(input),
     /** What Max fills in; null while the gas it must leave is unknown. */
     maxAmount,
     /**

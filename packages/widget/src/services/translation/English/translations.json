@@ -527,7 +527,14 @@
       "payouts_resume": "Payouts resume when the campaign resumes",
       "reward_token": "Reward token",
       "funded_by": "Funded by {{sponsor}}",
-      "terms": "Read the campaign terms"
+      "terms": "Read the campaign terms",
+      "minimum": "Minimum to earn",
+      "minimum_caption": "Counted across your position in this yield",
+      "cap": "Max that earns",
+      "cap_caption": "Anything above it earns this yield's own rate"
+    },
+    "entry": {
+      "below_minimum": "Add {{needed}} more to earn the campaign rate. It needs at least {{minimum}} in this position."
     },
     "rewards": {
       "title": "Campaign rewards",
