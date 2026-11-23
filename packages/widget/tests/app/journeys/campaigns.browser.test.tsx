@@ -1,5 +1,6 @@
 import { DateTime, Effect } from "effect";
 import { HttpResponse, http } from "msw";
+import { userEvent } from "vitest/browser";
 
 import {
   yieldApiCampaignDtoFixture,
@@ -182,6 +183,47 @@ describe("Campaigns on Earn", () => {
     await expect.element(section.getByText("50,000 ETH")).toBeVisible();
     await expect.element(toggle).toHaveFocus();
     await expect.element(app.getByRole("dialog")).not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("never understates the Campaign Minimum or what more reaches it", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", 0.042)],
+        campaigns: [
+          {
+            ...liveCampaign,
+            qualificationConfig: {
+              type: "min_token_amount",
+              threshold: "9.99999",
+              maxIncentivizedTvlToken: null,
+            },
+          },
+        ],
+      })
+    );
+
+    const app = await renderApp();
+    await expect.element(app.getByTestId("campaign-strip")).toBeVisible();
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard("1.23456");
+
+    // 9.99999 − 1.23456 = 8.76543: shown at four decimals, rounded up.
+    await expect
+      .element(app.getByTestId("earn-campaign-notice"))
+      .toHaveTextContent(
+        "Add 8.7655 ETH more to earn the campaign rate. It needs at least 10 ETH in this position."
+      );
+
+    await app
+      .getByTestId("campaign-strip")
+      .getByRole("button", { name: "Details" })
+      .click();
+    const section = app.getByTestId("campaign-section");
+    await expect.element(section.getByText("10 ETH")).toBeVisible();
 
     await app.unmount();
   });

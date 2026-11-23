@@ -1,9 +1,8 @@
-import type BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 
 import { getCampaignMinimum } from "../../../domain/earn/campaign";
 import type { Token } from "../../../domain/token/token";
-import { formatTokenAmountWithSymbol } from "../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../shared/lib/number-format";
 import type { YieldCampaignView } from "./yield-campaign-view";
 
 /** Who funds the campaign, and its terms; null without either. */
@@ -35,8 +34,6 @@ export const getCampaignBalanceRules = (
 ) => {
   const minimum = getCampaignMinimum(view.campaign);
   const cap = view.campaign.qualificationConfig?.maxIncentivizedTvlToken;
-  const format = (amount: BigNumber) =>
-    formatTokenAmountWithSymbol({ amount, token: yieldToken }, locale);
 
   return [
     ...(minimum
@@ -44,7 +41,8 @@ export const getCampaignBalanceRules = (
           {
             id: "minimum",
             label: t("campaign.details.minimum"),
-            value: format(minimum),
+            // Rounded up, so the shown minimum is never short of the rule.
+            value: `${formatTokenAmount(minimum, locale, "up")} ${yieldToken.symbol}`,
             caption: t("campaign.details.minimum_caption"),
           },
         ]
@@ -54,7 +52,8 @@ export const getCampaignBalanceRules = (
           {
             id: "cap",
             label: t("campaign.details.cap"),
-            value: format(cap),
+            // Rounded down, so the shown cap never overstates it.
+            value: `${formatTokenAmount(cap, locale, "down")} ${yieldToken.symbol}`,
             caption: t("campaign.details.cap_caption"),
           },
         ]

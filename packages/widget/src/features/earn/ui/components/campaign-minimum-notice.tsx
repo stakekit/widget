@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { formatTokenAmountWithSymbol } from "../../../../shared/lib/number-format";
+import { formatTokenAmount } from "../../../../shared/lib/number-format";
 import { useWidgetPresentation } from "../../../../shared/react/widget-presentation";
 import { Notice } from "../../../../ui/index";
 import { useEarnEntry } from "../use-earn-facades";
@@ -29,17 +29,13 @@ export const EarnCampaignMinimumNotice = () => {
     );
   }
 
+  // Both are what the wallet needs, so neither may read short of it.
+  const { symbol } = notice.token;
   return (
     <Notice tone="info" testId="earn-campaign-notice">
       {t("campaign.entry.below_minimum", {
-        shortfall: formatTokenAmountWithSymbol(
-          { amount: notice.shortfall, token: notice.token },
-          locale
-        ),
-        minimum: formatTokenAmountWithSymbol(
-          { amount: notice.minimum, token: notice.token },
-          locale
-        ),
+        shortfall: `${formatTokenAmount(notice.shortfall, locale, "up")} ${symbol}`,
+        minimum: `${formatTokenAmount(notice.minimum, locale, "up")} ${symbol}`,
       })}
     </Notice>
   );
