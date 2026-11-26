@@ -164,6 +164,11 @@ const validatorPolicyFields = {
 } satisfies Record<keyof ValidatorPolicySettings, Schema.Constraint>;
 
 const ValidatorPolicy = Schema.Struct(validatorPolicyFields);
+// The policy with any `preferredOrder`, to keep the rest when only it fails.
+const ValidatorPolicyAnyOrder = Schema.Struct({
+  ...validatorPolicyFields,
+  preferredOrder: optional(Schema.Unknown),
+});
 
 const IconMapping = Schema.Record(Schema.String, Schema.String);
 // Fields recovered entry by entry: only their outer shape is decoded with the
@@ -450,6 +455,9 @@ const keepNetworkEntries = <Key extends string, Value>(
 
 const decodeIconUrl = Schema.decodeUnknownOption(Schema.String);
 const decodeValidatorPolicy = Schema.decodeUnknownOption(ValidatorPolicy);
+const decodeValidatorPolicyAnyOrder = Schema.decodeUnknownOption(
+  ValidatorPolicyAnyOrder
+);
 const decodeHostTokenKey = Schema.decodeUnknownOption(HostTokenKey);
 const decodePreferredYield = Schema.decodeUnknownOption(PreferredYield);
 const decodeProviderId = Schema.decodeUnknownOption(ProviderId);
@@ -464,18 +472,16 @@ const decodeValidatorPolicyEntry = (
   warnings: Array<HostConfigurationWarning>
 ) => {
   const decoded = decodeValidatorPolicy(policy);
-  if (Option.isSome(decoded) || !Predicate.isObject(policy)) return decoded;
-  if (!("preferredOrder" in policy)) return decoded;
-  const { preferredOrder: _, ...rest } = policy;
-  const recovered = decodeValidatorPolicy(rest);
-  if (Option.isSome(recovered)) {
-    warnings.push({
-      _tag: "InvalidEntry",
-      field: "validatorsConfig",
-      path: `${network}.preferredOrder`,
-    });
-  }
-  return recovered;
+  if (Option.isSome(decoded)) return decoded;
+  const recovered = decodeValidatorPolicyAnyOrder(policy);
+  if (Option.isNone(recovered)) return Option.none();
+  warnings.push({
+    _tag: "InvalidEntry",
+    field: "validatorsConfig",
+    path: `${network}.preferredOrder`,
+  });
+  const { preferredOrder: _, ...rest } = recovered.value;
+  return Option.some(rest);
 };
 
 /** One network's preferred token yields that decode; each other is a warning. */
