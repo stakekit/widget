@@ -507,6 +507,13 @@ no gap, to the host's flex or grid layout.
   `presentationMarker`, and a component reads one with
   `stylex.when.ancestor('[data-sk-tabs-indicator="pill"]', presentationMarker)`
   in its own style map. Components never take them as props.
+- Every `data-sk-*` attribute, its values and the marker a StyleX condition
+  on it names are listed once, in `skAttributes` (`src/ui/sk-attributes.ts`);
+  the Presentation Setting types derive from it. StyleX reads a condition's
+  selector in the file that writes it, so conditions spell theirs as
+  literals; scripts and tests build theirs with `skSelector`, and element
+  props are typed by `SkAttributeProps`. A new attribute or value joins the
+  list first.
 - Under `elevated`, filled cards and rows lift off the canvas as
   `surfaceRaised` with the `raised` elevation, so parts inside them (the picker
   trigger) stay flat on `surface` and soft badges fill from `surfaceRaised`:
@@ -701,6 +708,12 @@ deliberate exception and states its reason after `--`, for example
   raw font sizes, weights, line heights, radii, shadows, z-indices, durations
   and px, rem, em, ch, vw and vh lengths in StyleX definitions
   (`no-raw-design-value`; `1em`, `100vw` and `100vh` stay allowed).
+  Across `src` and `tests` it rejects a `data-sk-*` name or value that
+  `skAttributes` does not list, in strings, template literals and JSX
+  attributes (`known-sk-attribute`), and a `stylex.when` condition on one
+  that names a marker other than the one listed (`sk-attribute-marker`);
+  `tests/ui/theme/reset.test.ts` checks the reset stylesheet's selectors
+  against the same list, since oxlint reads no stylesheets.
   `widget/no-blanket-disable` fails any oxlint suppression, of these rules or
   any other, that names no rule or gives no reason after `--`.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid

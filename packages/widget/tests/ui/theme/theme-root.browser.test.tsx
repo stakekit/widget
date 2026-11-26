@@ -8,6 +8,7 @@ import {
   ThemeRoot,
 } from "../../../src/ui/composition";
 import { Box, Button, Card, ListRow, Modal, Text } from "../../../src/ui/index";
+import { skSelector } from "../../../src/ui/sk-attributes";
 import { render } from "../../utils/test-utils";
 
 const backgroundOf = (element: Element) =>
@@ -154,7 +155,7 @@ describe("ThemeRoot", () => {
     );
 
     await expect.element(screen.getByText("Elevated")).toBeVisible();
-    const portal = portalContainer.querySelector("[data-sk-portal]");
+    const portal = portalContainer.querySelector(skSelector("data-sk-portal"));
     const card = screen.getByText("Elevated").element().parentElement;
 
     expect(portal?.getAttribute("data-sk-surface-style")).toBe("elevated");

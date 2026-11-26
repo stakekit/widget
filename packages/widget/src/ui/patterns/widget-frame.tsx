@@ -14,6 +14,7 @@ import { useReducedMotion } from "../components/use-reduced-motion";
 import type { HostHook } from "../host-hook";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
+import type { SkAttribute } from "../sk-attributes";
 import { color } from "../tokens/color.stylex";
 import { splitMarker } from "../tokens/container.stylex";
 import { elevation } from "../tokens/elevation.stylex";
@@ -295,8 +296,9 @@ const useSplitMark = (ref: RefObject<HTMLElement | null>) => {
   useLayoutEffect(() => {
     const element = ref.current;
     if (element === null) return;
+    const splitAttribute: SkAttribute = "data-sk-split";
     const mark = (width: number) =>
-      element.toggleAttribute("data-sk-split", width >= splitWidth);
+      element.toggleAttribute(splitAttribute, width >= splitWidth);
     mark(Number.parseFloat(getComputedStyle(element).width));
     let frameRequest = 0;
     const observer = new ResizeObserver(([entry]) => {

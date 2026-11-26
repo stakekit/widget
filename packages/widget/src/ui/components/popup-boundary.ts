@@ -1,8 +1,9 @@
 import { useState } from "react";
 
+import { skSelector } from "../sk-attributes";
+
 /** A dialog a popup may open from, or the Widget's visible frame. */
-const boundarySelector =
-  '[role="dialog"], [role="alertdialog"], [data-sk-frame]';
+const boundarySelector = `[role="dialog"], [role="alertdialog"], ${skSelector("data-sk-frame")}`;
 
 /**
  * What a popup anchored at `anchor` stays inside: the dialog it opens from,
@@ -12,7 +13,8 @@ const boundarySelector =
  */
 const boundaryOf = (anchor: Element | null): Element | "clipping-ancestors" => {
   const boundary =
-    anchor?.closest(boundarySelector) ?? anchor?.closest("[data-sk-root]");
+    anchor?.closest(boundarySelector) ??
+    anchor?.closest(skSelector("data-sk-root"));
   if (
     boundary === null ||
     boundary === undefined ||

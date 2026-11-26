@@ -7,6 +7,7 @@ import { page, userEvent } from "vitest/browser";
 
 import { ThemeRoot } from "../../../src/ui/composition";
 import { Button, Modal, Select, Tooltip } from "../../../src/ui/index";
+import { skSelector } from "../../../src/ui/sk-attributes";
 import { yieldApiRoute } from "../../mocks/api-routes";
 import type { TestWorker } from "../../utils/test-extend";
 import { describe, expect, it, vi } from "../../utils/test-extend";
@@ -263,9 +264,11 @@ describe("Widget portal container", () => {
     await expect
       .element(app.getByText("This feature is not available in Austria."))
       .toBeInTheDocument();
-    const root = modal.element().closest("[data-sk-root]");
+    const root = modal.element().closest(skSelector("data-sk-root"));
     expect(root).not.toBeNull();
-    expect(modal.element().closest("[data-sk-portal]")).not.toBeNull();
+    expect(
+      modal.element().closest(skSelector("data-sk-portal"))
+    ).not.toBeNull();
     expect(root === null ? null : getComputedStyle(root).isolation).toBe(
       "isolate"
     );
@@ -292,11 +295,11 @@ describe("Widget portal container", () => {
       name: geoBlockTitle,
     });
     await expect.element(modal).toBeVisible();
-    expect(modal.element().closest("[data-sk-root]")).toBeNull();
+    expect(modal.element().closest(skSelector("data-sk-root"))).toBeNull();
     // The Widget themes an element of its own inside the host's container and
     // leaves the host's element alone.
     const widgetPortal = portalContainer.querySelector(
-      ":scope > [data-sk-portal]"
+      `:scope > ${skSelector("data-sk-portal")}`
     );
     expect(widgetPortal?.contains(modal.element())).toBe(true);
     expect(widgetPortal?.classList.length).toBeGreaterThan(0);
@@ -329,7 +332,7 @@ describe("Widget portal container", () => {
     const dialog = app.getByTestId("wallet-connect-dialog");
     await expect.element(dialog).toBeVisible();
     const widgetPortal = portalContainer.querySelector(
-      ":scope > [data-sk-portal]"
+      `:scope > ${skSelector("data-sk-portal")}`
     );
     expect(widgetPortal?.contains(dialog.element())).toBe(true);
     // The dark default `background` role.

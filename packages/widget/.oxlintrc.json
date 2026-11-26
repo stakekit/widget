@@ -47,10 +47,12 @@
     "layout/no-layout-path-outside-layout-ui": "error",
     "layout/no-layout-read-in-features": "error",
     "layout/no-raw-widget-path": "error",
+    "design-system/known-sk-attribute": "error",
     "design-system/no-class-name-or-style-outside-design-system": "error",
     "design-system/no-color-literal-in-design-system": "error",
     "design-system/no-html-element-outside-design-system": "error",
-    "design-system/no-raw-design-value": "error"
+    "design-system/no-raw-design-value": "error",
+    "design-system/sk-attribute-marker": "error"
   },
   "overrides": [
     {
