@@ -1,5 +1,3 @@
-import { Array as EArray } from "effect";
-
 import { getActionValidatorAddresses } from "../../../domain/action/rules";
 import type {
   IntegrationId,
@@ -11,7 +9,10 @@ import type { Market } from "../../../domain/borrow/market";
 import type { BorrowActivityAction } from "../../../domain/borrow/responses";
 import type { BorrowToken } from "../../../domain/borrow/token";
 import type { YieldAction } from "../../../domain/earn/action-models";
-import type { EarnValidator } from "../../../domain/earn/validator";
+import {
+  addressOnlyValidator,
+  type EarnValidator,
+} from "../../../domain/earn/validator";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
 import type {
   ValidatorAddress,
@@ -95,15 +96,12 @@ export const projectYieldActivityItem = (
 ): YieldActivityItem => ({
   _tag: "yield",
   actionData: action,
-  validatorsData: EArray.flatMap(
-    getActionValidatorAddresses(action) ?? [],
-    (address) => {
-      const validator = validatorsByKey.get(
+  // The action's address stays when its validator fact is missing.
+  validatorsData: (getActionValidatorAddresses(action) ?? []).map(
+    (address) =>
+      validatorsByKey.get(
         validatorFactKey({ address, yieldId: action.yieldId })
-      );
-
-      return validator ? [validator] : [];
-    }
+      ) ?? addressOnlyValidator(address)
   ),
   walletScope,
   yieldData: yieldsById.get(action.yieldId) ?? null,

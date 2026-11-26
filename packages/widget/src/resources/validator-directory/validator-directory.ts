@@ -1,8 +1,8 @@
-import { Data, Duration, Effect, Option, Schema, Stream } from "effect";
+import { Data, Duration, Effect, Option, Stream } from "effect";
 import * as Atom from "effect/reactivity/Atom";
 
 import {
-  EarnValidator,
+  type EarnValidator,
   validatorAddressIdentity,
 } from "../../domain/earn/validator";
 import type {
@@ -12,7 +12,7 @@ import type {
 import { appRuntime } from "../../runtime/app-runtime";
 import {
   type ApiRequestError,
-  ResponseDecodeError,
+  type ResponseDecodeError,
   type ValidatorDirectoryRequest,
   YieldResourceSource,
 } from "../../services/api/resource-sources";
@@ -216,15 +216,20 @@ export const preferredValidatorsResourceAtom = makePresentableResourceFamily(
   preferredValidatorsCanonicalAtom
 );
 
-export class ValidatorByAddressKey extends Data.TaggedClass(
-  "ValidatorByAddressKey"
+export class ValidatorsAtAddressKey extends Data.TaggedClass(
+  "ValidatorsAtAddressKey"
 )<{
   readonly address: ValidatorAddress;
+  readonly status: "active" | null;
   readonly yieldId: YieldId;
 }> {}
 
-const validatorByAddressCanonicalAtom = Atom.family(
-  (key: ValidatorByAddressKey) =>
+/**
+ * The validators at exactly this address, one per subnet where the network
+ * has subnets; none when the directory lists none there.
+ */
+const validatorsAtAddressCanonicalAtom = Atom.family(
+  (key: ValidatorsAtAddressKey) =>
     appRuntime
       .atom(() =>
         YieldResourceSource.use((source) =>
@@ -234,39 +239,30 @@ const validatorByAddressCanonicalAtom = Atom.family(
               limit: API_MAX_PAGE_SIZE,
               offset: 0,
               yieldId: key.yieldId,
+              ...(key.status ? { status: key.status } : {}),
             })
             .pipe(
-              Effect.mapError((cause) => new ValidatorsError({ cause })),
-              Effect.flatMap((page) => {
-                const addressIdentity = validatorAddressIdentity(key.address);
-                const validator = page.items?.find(
-                  (item) =>
-                    validatorAddressIdentity(item.address) === addressIdentity
-                );
-
-                return validator
-                  ? Effect.succeed(validator)
-                  : Schema.decodeEffect(EarnValidator)({
-                      address: key.address,
-                    }).pipe(
-                      Effect.mapError(
-                        (cause) =>
-                          new ValidatorsError({
-                            cause: ResponseDecodeError.make({
-                              cause,
-                              issue: cause.message,
-                              operation: "validator-by-address-fallback",
-                            }),
-                          })
-                      )
-                    );
+              Effect.mapBoth({
+                onFailure: (cause) => new ValidatorsError({ cause }),
+                onSuccess: (page) => {
+                  // The API matches addresses by substring.
+                  const addressIdentity = validatorAddressIdentity(key.address);
+                  return (page.items ?? []).filter(
+                    (item) =>
+                      validatorAddressIdentity(item.address) === addressIdentity
+                  );
+                },
               })
             )
         )
       )
-      .pipe(validatorPolicy, Atom.withLabel("validatorByAddressAtom"))
+      .pipe(
+        Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
+        validatorPolicy,
+        Atom.withLabel("validatorsAtAddressAtom")
+      )
 );
 
-export const validatorByAddressAtom = makePresentableResourceFamily(
-  validatorByAddressCanonicalAtom
+export const validatorsAtAddressAtom = makePresentableResourceFamily(
+  validatorsAtAddressCanonicalAtom
 );

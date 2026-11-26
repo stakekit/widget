@@ -344,6 +344,27 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
+  it("drops a validatorsConfig entry with an unknown preferred order", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      validatorsConfig: {
+        ethereum: { preferred: ["0xvalidator"], preferredOrder: "listed" },
+        solana: { preferred: ["validator"], preferredOrder: "apr" },
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.validatorsConfig).toEqual({
+        ethereum: { preferred: ["0xvalidator"], preferredOrder: "listed" },
+      });
+      expect(result.success.warnings).toEqual([
+        { _tag: "InvalidEntry", field: "validatorsConfig", path: "solana" },
+      ]);
+    }
+  });
+
   it("decodes preferred token yields as yield IDs or the default choice, dropping an invalid one", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",

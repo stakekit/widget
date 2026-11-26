@@ -150,12 +150,17 @@ type ValidatorPolicySettings = NonNullable<
   NonNullable<SettingsProps["validatorsConfig"]>["*"]
 >;
 
+const preferredOrders = exhaustiveLiterals<
+  NonNullable<ValidatorPolicySettings["preferredOrder"]>
+>()(["rewardRate", "listed"]);
+
 const validatorPolicyFields = {
   allowed: optional(Schema.Array(Schema.String)),
   blocked: optional(Schema.Array(Schema.String)),
   mergePreferredWithDefault: optional(Schema.Boolean),
   preferred: optional(Schema.Array(Schema.String)),
   preferredOnly: optional(Schema.Boolean),
+  preferredOrder: optional(Schema.Literals(preferredOrders)),
 } satisfies Record<keyof ValidatorPolicySettings, Schema.Constraint>;
 
 const ValidatorPolicy = Schema.Struct(validatorPolicyFields);

@@ -556,6 +556,49 @@ describe("activity enrichment per loaded page", () => {
     registry.dispose();
   });
 
+  it("keeps an action's validator address when the directory lists none there", async () => {
+    const yieldModel = yieldApiYieldFixture();
+    const action = yieldApiActionFixture({
+      address,
+      id: "unlisted-validator-action",
+      rawArguments: { validatorAddress: "unlisted-validator" },
+      yieldId: yieldModel.id,
+    });
+    const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
+      Effect.succeed({
+        items: [],
+        limit: request.limit,
+        offset: request.offset,
+        total: 0,
+      })
+    );
+    const registry = makeEnrichmentRegistry({
+      getOpportunity: () => Effect.succeed(yieldModel),
+      listActivity: pagedActivity([action]),
+      listValidators,
+    });
+    const resource = activityActionsPullAtom(
+      new ActivityActionsKey({
+        borrowEnabled: false,
+        filter: "all",
+        scope: walletScope,
+      })
+    );
+    const unmount = registry.mount(resource);
+
+    await vi.waitFor(() =>
+      expect(getActivityActions(registry.get(resource))).toHaveLength(1)
+    );
+    expect(getActivityActions(registry.get(resource))[0]).toMatchObject({
+      validatorsData: [{ address: "unlisted-validator" }],
+    });
+    // A past action can name a validator that is no longer active.
+    expect(listValidators.mock.calls[0]?.[0]).not.toHaveProperty("status");
+
+    unmount();
+    registry.dispose();
+  });
+
   it("recovers details continuation after the Yield Resource recovers", async () => {
     const yieldModel = yieldApiYieldFixture();
     // The fixture's far-future createdAt keeps the continuation window open.

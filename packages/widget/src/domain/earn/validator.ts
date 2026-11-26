@@ -60,6 +60,13 @@ export const validatorAddressIdentities = (addresses: Iterable<string>) => [
   ...new Set(Array.from(addresses, addressIdentity)),
 ];
 
+const decodeEarnValidator = Schema.decodeSync(EarnValidator);
+
+/** A validator known only by its address, for one the directory does not list. */
+export const addressOnlyValidator = (
+  address: ValidatorAddress
+): EarnValidator => decodeEarnValidator({ address });
+
 /**
  * Substrate nomination accepts at most 16 targets. The API rejects more
  * (`MAXIMUM_VALIDATOR_COUNT` in the backend chains library) without exposing

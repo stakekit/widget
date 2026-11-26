@@ -223,6 +223,16 @@ It ranks yields, never validators.
 **Eligible Validator**: A validator satisfying the selected yield's
 requirements and current Validator Policy.
 
+**Preferred Validator**: An Eligible Validator that the Validator Policy names
+preferred, or that the API marks preferred unless the Validator Policy excludes
+the API's choices. Validator choices list Preferred Validators first; the
+Validator Policy can rank the ones it names.
+
+**Initial Validator**: The validator selected before the user picks one: the
+one a link requests (none when no validator matches it), otherwise the first
+of the validator choices, which lead with the Preferred Validators the
+Validator Policy ranks.
+
 **Yield Reward Rate**: The current rate advertised for a yield, independent of
 validator choice.
 

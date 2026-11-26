@@ -679,8 +679,19 @@ type SettingsPropsBase = {
         allowed?: string[];
         /** Hides these validator addresses, even when allowed. */
         blocked?: string[];
-        /** Marks these validator addresses as preferred. */
+        /**
+         * Marks these validator addresses as preferred. With `preferredOrder:
+         * "listed"`, their order ranks them.
+         */
         preferred?: string[];
+        /**
+         * How preferred validators are ordered. `"rewardRate"` (the default)
+         * keeps the widget's own order: by reward rate where the layout ranks
+         * validators by it, as the API lists them otherwise. `"listed"` shows
+         * the `preferred` addresses first, in the order given, and Earn starts
+         * on the first eligible one unless a link requests another validator.
+         */
+        preferredOrder?: "rewardRate" | "listed";
         /** Also keeps the API's preferred validators. Defaults to `true`. */
         mergePreferredWithDefault?: boolean;
         /** Shows only preferred validators. Defaults to `false`. */
