@@ -103,6 +103,7 @@ const makeEnterIntake = (): Extract<
 
   return {
     _tag: "Enter",
+    campaignStanding: { _tag: "Unknown" },
     gasFeeToken: selectedStake.mechanics.gasFeeToken,
     providersDetails: [{ name: "StakeKit" }],
     request: {

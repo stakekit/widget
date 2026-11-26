@@ -30,6 +30,7 @@ const projectEnter = (
       amountInitialization: "PreserveIntent",
       availableAmount: new BigNumber("2"),
       campaign: null,
+      campaignStanding: { _tag: "Unknown" },
       connected: true,
       entry: {
         amount: new BigNumber(amount),

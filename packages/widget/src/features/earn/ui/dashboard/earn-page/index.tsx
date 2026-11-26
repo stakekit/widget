@@ -2,6 +2,7 @@ import { useWidgetConfig } from "../../../../../features/widget-configuration/in
 import { widgetRoutes } from "../../../../../services/navigation/widget-routes";
 import { Divider, Stack } from "../../../../../ui/index";
 import { TransactionFlowFailureNotice } from "../../../../transaction-flow/views";
+import { EarnCampaignMinimumNotice } from "../../components/campaign-minimum-notice";
 import { EarnKycGate } from "../../components/earn-kyc-gate";
 import { EarnLoadFailed } from "../../components/earn-load-failed";
 import { EarnPageCta } from "../../components/earn-page-cta";
@@ -33,6 +34,8 @@ export const EarnPageContent = ({
       <TransactionFlowFailureNotice route={widgetRoutes.earn} />
       <Stack gap={12}>
         <SelectTokenSection />
+
+        <EarnCampaignMinimumNotice />
 
         <SelectYieldSection alwaysShowStrategy showRiskSummary={false} />
 

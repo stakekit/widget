@@ -12,6 +12,7 @@ import {
 } from "../finance/scalars";
 import { CampaignId, YieldId } from "../identity/identifiers";
 import { Token } from "../token/token";
+import type { WalletCampaignStanding } from "./campaign-rewards";
 import { getExtendedYieldType } from "./yield";
 import type { EarnYield } from "./yield-schema";
 
@@ -196,7 +197,7 @@ export type CampaignAtTime = {
 };
 
 /** Whether a campaign adds to its yield's rate in this lifecycle state. */
-const isCampaignEarning = (lifecycle: CampaignLifecycle) =>
+export const isCampaignEarning = (lifecycle: CampaignLifecycle) =>
   lifecycle === "active" || lifecycle === "ending_soon";
 
 /**
@@ -214,10 +215,39 @@ export const getEarningCampaign = (
 };
 
 /**
- * Yearly and monthly earnings on `amount` while a campaign is earning. The
- * Campaign Incentive Rate applies only from the minimum balance, only up to the
- * per-wallet cap, and only for the time the campaign has left. Null when the
- * campaign adds nothing now, so the plain rate applies.
+ * The Campaign Minimum, or null for a campaign without one: no rule, or a
+ * minimum of nothing.
+ */
+export const getCampaignMinimum = (campaign: YieldCampaign) => {
+  const minimum = campaign.qualificationConfig?.threshold;
+  return minimum?.isGreaterThan(0) ? minimum : null;
+};
+
+/**
+ * How much more `balance` needs to reach the Campaign Minimum: none once it
+ * does, null for a campaign without one.
+ */
+export const getCampaignMinimumShortfall = ({
+  balance,
+  campaign,
+}: {
+  /** What counts toward the minimum, an amount about to be added included. */
+  readonly balance: BigNumber;
+  readonly campaign: YieldCampaign;
+}) => {
+  const minimum = getCampaignMinimum(campaign);
+  if (!minimum) return null;
+  const shortfall = minimum.minus(balance);
+  return shortfall.isNegative() ? exactZero() : shortfall;
+};
+
+/**
+ * Yearly and monthly earnings on `amount` added to what the wallet holds in
+ * the campaign while it is earning. The Campaign Incentive Rate applies
+ * only once both reach the Campaign Minimum, only to the part of `amount`
+ * under the per-wallet cap, only for the time the campaign has left, and
+ * never for a wallet it excludes. A standing still unknown counts nothing
+ * held. Null when the campaign adds nothing now, so the plain rate applies.
  */
 export const getCampaignRewardsEstimate = ({
   amount,
@@ -225,6 +255,7 @@ export const getCampaignRewardsEstimate = ({
   campaignIncentiveRate,
   now,
   rewardRate,
+  standing,
 }: {
   readonly amount: BigNumber;
   readonly campaign: YieldCampaign;
@@ -233,6 +264,8 @@ export const getCampaignRewardsEstimate = ({
   readonly now: DateTime.Utc;
   /** The full rate, Campaign Incentive Rate included. */
   readonly rewardRate: BigNumber;
+  /** What the wallet counts toward the campaign before `amount`. */
+  readonly standing: WalletCampaignStanding;
 }) => {
   if (
     !isCampaignEarning(getCampaignLifecycle(campaign, now)) ||
@@ -241,13 +274,19 @@ export const getCampaignRewardsEstimate = ({
     return null;
   }
 
-  const qualification = campaign.qualificationConfig;
-  const walletCap = qualification?.maxIncentivizedTvlToken;
-  const belowMinimum =
-    qualification !== null && amount.isLessThan(qualification.threshold);
-  const cappedAmount =
-    walletCap && amount.isGreaterThan(walletCap) ? walletCap : amount;
-  const incentivizedAmount = belowMinimum ? exactZero() : cappedAmount;
+  const walletCap = campaign.qualificationConfig?.maxIncentivizedTvlToken;
+  const capped = (balance: BigNumber) =>
+    walletCap && balance.isGreaterThan(walletCap) ? walletCap : balance;
+  const held = standing._tag === "Counted" ? standing.held : exactZero();
+  const total = held.plus(amount);
+  const shortfall = getCampaignMinimumShortfall({
+    campaign,
+    balance: total,
+  });
+  const incentivizedAmount =
+    standing._tag === "NotEligible" || shortfall?.isGreaterThan(0)
+      ? exactZero()
+      : capped(total).minus(capped(held));
   const nativeRate = rewardRate.minus(campaignIncentiveRate);
   const earningNativeRate = nativeRate.isNegative() ? exactZero() : nativeRate;
   const remaining = DateTime.distance(now, campaign.endTime);

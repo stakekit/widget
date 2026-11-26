@@ -138,6 +138,7 @@ describe("action preview", () => {
 
     const review = makeEarnReviewPage({
       _tag: "Enter",
+      campaignStanding: { _tag: "Unknown" },
       gasFeeToken: kycRequiredStake.mechanics.gasFeeToken,
       providersDetails: [],
       request: command,

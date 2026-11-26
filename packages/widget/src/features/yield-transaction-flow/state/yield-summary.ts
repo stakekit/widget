@@ -82,6 +82,7 @@ export const makeYieldFlowStakeReviewViewAtom = (
     const estimatedRewards = getYieldEstimatedRewards({
       amount: stakeAmount,
       campaign: get(yieldCampaignAtom(intake.selectedStake.id)),
+      campaignStanding: intake.campaignStanding,
       providers: yieldSummary.providers,
       validators: new Map(intake.selectedValidators),
       yield: intake.selectedStake,
@@ -139,6 +140,7 @@ export const makeYieldFlowEnterCompleteViewAtom = (
     const yearly = getYieldEstimatedRewards({
       amount,
       campaign: get(yieldCampaignAtom(intake.selectedStake.id)),
+      campaignStanding: intake.campaignStanding,
       providers: yieldSummary.providers,
       validators,
       yield: intake.selectedStake,

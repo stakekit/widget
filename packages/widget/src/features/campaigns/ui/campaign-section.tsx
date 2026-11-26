@@ -24,14 +24,18 @@ import {
   getCampaignProgressScale,
   getCampaignSectionNotice,
 } from "../model/campaign-copy";
-import { getCampaignAboutModel } from "../model/campaign-details-copy";
+import {
+  getCampaignAboutModel,
+  getCampaignBalanceRules,
+} from "../model/campaign-details-copy";
 import { campaignDetailsRequestAtom } from "../state/campaign-details-request";
 import { yieldCampaignAtom } from "../state/yield-campaign";
 import { CampaignRateRows } from "./campaign-rate-rows";
 
 /**
- * A yield's campaign details: who funds it, its rates, schedule and payouts.
- * It opens and comes into view when its strip or rate tip asks for them.
+ * A yield's campaign details: who funds it, its rates, schedule, balance
+ * rules and payouts. It opens and comes into view when its strip or rate tip
+ * asks for them.
  */
 export const CampaignSection = ({
   yieldDto,
@@ -55,6 +59,7 @@ export const CampaignSection = ({
   const progress = getCampaignProgress(campaign, view.now);
   const notice = getCampaignSectionNotice(view, t, locale);
   const about = getCampaignAboutModel(view, t);
+  const balanceRules = getCampaignBalanceRules(view, yieldDto.token, t, locale);
 
   return (
     <Disclosure
@@ -99,6 +104,14 @@ export const CampaignSection = ({
         {notice ? <Notice tone={notice.tone}>{notice.text}</Notice> : null}
 
         <DetailList>
+          {balanceRules.map((rule) => (
+            <DetailRow
+              key={rule.id}
+              label={rule.label}
+              value={rule.value}
+              caption={rule.caption}
+            />
+          ))}
           <DetailRow
             label={t("campaign.details.payouts")}
             value={getCampaignPayouts(view, t)}

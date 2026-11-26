@@ -6,6 +6,7 @@ import { TransactionFlowFailureNotice } from "../../../../transaction-flow/views
 import { ZerionChainModal } from "../../../../wallet/views";
 import { useWidgetConfig } from "../../../../widget-configuration/index";
 import { PageContainer, PageCtaButton } from "../../../../widget-shell/views";
+import { EarnCampaignMinimumNotice } from "../../components/campaign-minimum-notice";
 import { EarnCampaignOffer } from "../../components/campaign-offer";
 import {
   AmountPanelSkeleton,
@@ -65,6 +66,8 @@ const EarnPage = () => {
               <EarnCampaignOffer />
 
               <SelectTokenSection />
+
+              <EarnCampaignMinimumNotice />
 
               <SelectYieldSection alwaysShowStrategy={false} showRiskSummary />
 

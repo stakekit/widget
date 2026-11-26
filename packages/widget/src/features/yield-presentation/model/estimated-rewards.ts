@@ -5,6 +5,7 @@ import {
   type CampaignAtTime,
   getCampaignRewardsEstimate,
 } from "../../../domain/earn/campaign";
+import type { WalletCampaignStanding } from "../../../domain/earn/campaign-rewards";
 import { getRateComposition } from "../../../domain/earn/reward-rate";
 import type {
   EarnValidator,
@@ -21,6 +22,7 @@ type YieldRewardProvider = Readonly<{
 export const getYieldEstimatedRewards = ({
   amount,
   campaign,
+  campaignStanding,
   providers,
   validators,
   yield: selectedYield,
@@ -28,6 +30,8 @@ export const getYieldEstimatedRewards = ({
   readonly amount: BigNumber;
   /** The yield's campaign; its rules limit the campaign part of the rate. */
   readonly campaign: CampaignAtTime | null;
+  /** What the wallet counts toward `campaign` before `amount`. */
+  readonly campaignStanding: WalletCampaignStanding;
   readonly providers: ReadonlyArray<YieldRewardProvider> | null;
   readonly validators: ReadonlyMap<EarnValidatorKey, EarnValidator>;
   readonly yield: EarnYieldWithProvider | null;
@@ -58,6 +62,7 @@ export const getYieldEstimatedRewards = ({
           exactZero(),
         now: campaign.now,
         rewardRate: rewardRateAverage,
+        standing: campaignStanding,
       })
     : null;
   const hasRate = rewardRateAverage.isGreaterThan(0);

@@ -34,9 +34,9 @@ type RewardsNotice = {
 const formatAmount = (amount: BigNumber, token: Token, locale: string) =>
   formatTokenAmountWithSymbol({ amount, token }, locale);
 
-/** Whether the wallet can't earn the campaign now, below its minimum or excluded. */
+/** Whether the wallet can't earn the campaign now, below its Campaign Minimum or excluded. */
 const isBlocked = (state: CampaignQualificationState) =>
-  state._tag === "NotEligible" || state._tag === "BelowMinimum";
+  state._tag === "NotEligible" || state._tag === "BelowCampaignMinimum";
 
 export type CampaignRowBadgeTone = "accent" | "warning" | "neutral";
 
@@ -139,7 +139,7 @@ const getQualificationNotice = (
         title: t("campaign.rewards.notice.not_eligible_title"),
         text: t("campaign.rewards.notice.not_eligible"),
       };
-    case "BelowMinimum": {
+    case "BelowCampaignMinimum": {
       const { minimum, shortfall } = state;
       return {
         id: "below-minimum",

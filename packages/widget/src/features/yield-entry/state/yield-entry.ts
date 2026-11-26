@@ -21,7 +21,10 @@ import {
 } from "../../../services/wallet/wallet-command-identity";
 import { WalletModal } from "../../../services/wallet/wallet-modal";
 import { WalletService } from "../../../services/wallet/wallet-service";
-import { yieldCampaignAtom } from "../../campaigns/index";
+import {
+  yieldCampaignAtom,
+  yieldCampaignStandingAtom,
+} from "../../campaigns/index";
 import { walletConnectionStateAtom, walletScopeAtom } from "../../wallet/index";
 import {
   CurrentYieldKycGateKey,
@@ -172,6 +175,9 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
         campaign: input.entry.yield
           ? get(yieldCampaignAtom(input.entry.yield.id))
           : null,
+        campaignStanding: input.entry.yield
+          ? get(yieldCampaignStandingAtom(input.entry.yield))
+          : { _tag: "Unknown" },
         connected,
         entry: input.entry,
         externalProviders: Boolean(config.externalProviders),
@@ -350,6 +356,7 @@ export const makeYieldEntry = (inputAtom: Atom.Atom<YieldEntryFacadeInput>) => {
                 {
                   intake: {
                     _tag: "Enter",
+                    campaignStanding: input.projection.campaignStanding,
                     request: view.preparation.command,
                     selectedToken: view.preparation.selectedToken,
                     gasFeeToken: view.preparation.gasFeeToken,

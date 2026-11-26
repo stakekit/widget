@@ -12,6 +12,7 @@ import type {
   EarnBalance,
   YieldBalanceType,
 } from "../../../domain/earn/balance";
+import type { WalletCampaignStanding } from "../../../domain/earn/campaign-rewards";
 import {
   getPendingActionDecryptHandle,
   isEncryptedBalance,
@@ -44,6 +45,12 @@ type YieldFlowProviderOption = {
 
 export type EnterYieldTransactionFlowIntake = {
   readonly _tag: "Enter";
+  /**
+   * What the wallet held toward the yield's Campaign when the entry was
+   * submitted. Review and Complete estimate from it, so a confirmed deposit
+   * the live balance comes to include isn't counted twice.
+   */
+  readonly campaignStanding: WalletCampaignStanding;
   readonly gasFeeToken: EarnYieldWithProvider["token"];
   readonly providersDetails: ReadonlyArray<YieldFlowProviderDetail>;
   readonly request: ActionCommand;

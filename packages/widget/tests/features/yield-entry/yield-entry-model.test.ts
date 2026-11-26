@@ -1,11 +1,13 @@
 import BigNumber from "bignumber.js";
-import { Schema } from "effect";
+import { DateTime, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import type {
   ActionCommand,
   ActionSimulation,
 } from "../../../src/domain/earn/action-models";
+import { YieldCampaign } from "../../../src/domain/earn/campaign";
+import type { WalletCampaignStanding } from "../../../src/domain/earn/campaign-rewards";
 import { Prices } from "../../../src/domain/finance/prices";
 import {
   TokenAddress,
@@ -23,6 +25,7 @@ import {
 } from "../../../src/features/yield-entry/model/yield-entry";
 import {
   confidentialYieldFixture,
+  yieldApiCampaignDtoFixture,
   yieldApiYieldDtoFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
@@ -81,6 +84,7 @@ const entryInput = ({
     amountInitialization: "PreserveIntent",
     availableAmount,
     campaign: null,
+    campaignStanding: { _tag: "Unknown" },
     connected,
     entry: {
       amount: new BigNumber(amount),
@@ -589,5 +593,91 @@ describe("Min", () => {
 
     expect(projected.amount.toFixed()).toBe("0.000001");
     expect(projected.validation.errors.stakeAmountLessThanMin).toBe(false);
+  });
+});
+
+describe("Campaign Minimum notice", () => {
+  // The fixture campaign runs on ETH staking, with a Campaign Minimum of 10.
+  const runningCampaign = {
+    campaign: Schema.decodeUnknownSync(YieldCampaign)(
+      yieldApiCampaignDtoFixture()
+    ),
+    now: DateTime.makeUnsafe("2026-12-14T00:00:00.000Z"),
+  };
+  const counted = (held: number) =>
+    ({
+      _tag: "Counted",
+      held: new BigNumber(held),
+    }) as const;
+  const notice = ({
+    amount,
+    campaign = runningCampaign,
+    standing = counted(0),
+    token = eth,
+  }: {
+    readonly amount: string;
+    readonly campaign?: typeof runningCampaign;
+    readonly standing?: WalletCampaignStanding;
+    readonly token?: Token;
+  }) =>
+    projectYieldEntry({
+      input: {
+        ...entryInput({ amount, availableAmount: new BigNumber(100), token }),
+        campaign,
+        campaignStanding: standing,
+      },
+      submitted: false,
+    }).campaignNotice;
+
+  it("says how much more an amount short of the Campaign Minimum needs", () => {
+    expect(notice({ amount: "4" })).toEqual({
+      _tag: "BelowCampaignMinimum",
+      minimum: new BigNumber(10),
+      shortfall: new BigNumber(6),
+      token: eth,
+    });
+  });
+
+  it("counts what the wallet already holds toward the Campaign Minimum", () => {
+    expect(notice({ amount: "4", standing: counted(3.5) })).toMatchObject({
+      shortfall: new BigNumber(2.5),
+    });
+    expect(notice({ amount: "4", standing: counted(6) })).toBeNull();
+  });
+
+  it("says nothing before an amount is typed, or once it is enough", () => {
+    expect(notice({ amount: "0" })).toBeNull();
+    expect(notice({ amount: "10" })).toBeNull();
+  });
+
+  it("says nothing while what the wallet counts is unknown", () => {
+    expect(notice({ amount: "4", standing: { _tag: "Unknown" } })).toBeNull();
+  });
+
+  it("says a wallet the campaign excludes can't earn it, whatever the amount", () => {
+    const excluded = { _tag: "NotEligible" } as const;
+    expect(notice({ amount: "4", standing: excluded })).toEqual({
+      _tag: "NotEligible",
+    });
+    expect(notice({ amount: "0", standing: excluded })).toEqual({
+      _tag: "NotEligible",
+    });
+  });
+
+  it("says nothing while the campaign isn't earning", () => {
+    const upcoming = {
+      ...runningCampaign,
+      now: DateTime.makeUnsafe("2026-11-01T00:00:00.000Z"),
+    };
+    const paused = {
+      ...runningCampaign,
+      campaign: { ...runningCampaign.campaign, status: "paused" as const },
+    };
+    expect(notice({ amount: "4", campaign: upcoming })).toBeNull();
+    expect(notice({ amount: "4", campaign: paused })).toBeNull();
+  });
+
+  it("says nothing for a token other than the one the Campaign Minimum counts", () => {
+    expect(notice({ amount: "4", token: usdc })).toBeNull();
   });
 });

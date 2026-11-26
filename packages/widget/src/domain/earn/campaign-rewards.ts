@@ -9,7 +9,7 @@ import {
   TolerantNullableUtcDateTimeFromString,
 } from "../finance/scalars";
 import { CampaignId, TransactionHash, YieldId } from "../identity/identifiers";
-import { Token } from "../token/token";
+import { Token, type TokenString, tokenString } from "../token/token";
 import type { EarnBalance } from "./balance";
 
 const rewardsOperation = "campaign-rewards";
@@ -143,7 +143,7 @@ export type CampaignQualificationState =
       readonly uncapped: BigNumber;
     }
   | {
-      readonly _tag: "BelowMinimum";
+      readonly _tag: "BelowCampaignMinimum";
       /** The campaign's minimum balance, when known. */
       readonly minimum: BigNumber | null;
       readonly shortfall: BigNumber | null;
@@ -170,7 +170,7 @@ export const getCampaignQualificationState = (
     case "below_threshold": {
       const shortfall = minimum?.minus(qualification.qualifyingBalance);
       return {
-        _tag: "BelowMinimum",
+        _tag: "BelowCampaignMinimum",
         minimum,
         shortfall: shortfall?.isNegative() ? exactZero() : (shortfall ?? null),
       };
@@ -188,6 +188,63 @@ export const getCampaignQualificationState = (
           }
         : { _tag: "Earning" };
   }
+};
+
+/**
+ * What a wallet counts toward a Campaign before it adds more: what it holds
+ * there, or that the campaign excludes it; unknown while its rewards load or
+ * fail.
+ */
+export type WalletCampaignStanding =
+  | {
+      readonly _tag: "Counted";
+      /**
+       * The higher of the Qualifying Balance and the live balance, since the
+       * Qualifying Balance trails a deposit until the backend's next accrual.
+       */
+      readonly held: BigNumber;
+    }
+  | { readonly _tag: "NotEligible" }
+  | { readonly _tag: "Unknown" };
+
+/**
+ * The live balance a Campaign would count: the active balances in the
+ * yield's token. Balances on their way out, and the locked balance holding a
+ * campaign's unpaid rewards, earn no campaign rate.
+ */
+export const getLiveCampaignBalance = (
+  balances: ReadonlyArray<EarnBalance>,
+  yieldToken: TokenString
+) =>
+  balances
+    .filter(
+      (balance) =>
+        balance.type === "active" &&
+        !balance.isEncrypted &&
+        balance.campaignId === undefined &&
+        tokenString(balance.token) === yieldToken
+    )
+    .reduce((sum, balance) => sum.plus(balance.amount), exactZero());
+
+/**
+ * The wallet's standing in a Campaign from its rewards there and its live
+ * balance in the yield: a wallet the rewards don't list yet, or whose
+ * Qualifying Balance doesn't count a recent deposit, holds its live balance.
+ */
+export const getWalletCampaignStanding = ({
+  liveBalance,
+  rewards,
+}: {
+  readonly liveBalance: BigNumber;
+  readonly rewards: WalletCampaignRewards | null;
+}): WalletCampaignStanding => {
+  const qualification = rewards?.qualification ?? null;
+  if (qualification?.status === "not_eligible") return { _tag: "NotEligible" };
+  const counted = qualification?.qualifyingBalance ?? exactZero();
+  return {
+    _tag: "Counted",
+    held: counted.isGreaterThan(liveBalance) ? counted : liveBalance,
+  };
 };
 
 export type CampaignRewardsStage =

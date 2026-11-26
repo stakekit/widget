@@ -61,6 +61,7 @@ const selectedStake = yieldApiYieldFixture();
 const gasToken = selectedStake.mechanics.gasFeeToken;
 const enterIntake: YieldTransactionFlowIntake = {
   _tag: "Enter",
+  campaignStanding: { _tag: "Unknown" },
   gasFeeToken: gasToken,
   providersDetails: [],
   request: { address, arguments: { amount: "1" }, yieldId: selectedStake.id },
@@ -607,6 +608,7 @@ describe("confidential vault Review", () => {
       {
         intake: {
           _tag: "Enter",
+          campaignStanding: { _tag: "Unknown" },
           gasFeeToken,
           providersDetails: [],
           request: {

@@ -1,5 +1,6 @@
 import { DateTime, Effect } from "effect";
 import { HttpResponse, http } from "msw";
+import { userEvent } from "vitest/browser";
 
 import {
   yieldApiCampaignDtoFixture,
@@ -175,11 +176,110 @@ describe("Campaigns on Earn", () => {
     await expect
       .element(section.getByText("Daily, added to your position"))
       .toBeVisible();
+    // The balance rules, before a deposit shows whether it reaches them.
+    await expect.element(section.getByText("Campaign minimum")).toBeVisible();
+    await expect.element(section.getByText("10 ETH")).toBeVisible();
     await expect
-      .element(section.getByText("Minimum balance"))
-      .not.toBeInTheDocument();
+      .element(section.getByText("Reward cap per wallet"))
+      .toBeVisible();
+    await expect.element(section.getByText("50,000 ETH")).toBeVisible();
     await expect.element(toggle).toHaveFocus();
     await expect.element(app.getByRole("dialog")).not.toBeInTheDocument();
+
+    await app.unmount();
+  });
+
+  it("never understates the Campaign Minimum or what more reaches it", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", 0.042)],
+        campaigns: [
+          {
+            ...liveCampaign,
+            qualificationConfig: {
+              type: "min_token_amount",
+              threshold: "9.99999",
+              maxIncentivizedTvlToken: null,
+            },
+          },
+        ],
+      })
+    );
+
+    const app = await renderApp();
+    await expect.element(app.getByTestId("campaign-strip")).toBeVisible();
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard("1.23456");
+
+    // 9.99999 − 1.23456 = 8.76543: shown at four decimals, rounded up.
+    await expect
+      .element(app.getByTestId("earn-campaign-notice"))
+      .toHaveTextContent(
+        "Deposit 8.7655 ETH more to earn campaign rewards. The campaign minimum is 10 ETH in this yield."
+      );
+
+    await app
+      .getByTestId("campaign-strip")
+      .getByRole("button", { name: "Details" })
+      .click();
+    const section = app.getByTestId("campaign-section");
+    await expect.element(section.getByText("10 ETH")).toBeVisible();
+
+    await app.unmount();
+  });
+
+  it("says a shortfall too small to show as the least amount that reaches the minimum", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [vault(campaignYieldId, "Allez USDC Vault", 0.042)],
+        campaigns: [liveCampaign],
+      })
+    );
+
+    const app = await renderApp();
+    await expect.element(app.getByTestId("campaign-strip")).toBeVisible();
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard("9.99995");
+
+    // 10 − 9.99995 = 0.00005, which would read "<0.0001".
+    await expect
+      .element(app.getByTestId("earn-campaign-notice"))
+      .toHaveTextContent(
+        "Deposit 0.0001 ETH more to earn campaign rewards. The campaign minimum is 10 ETH in this yield."
+      );
+
+    await app.unmount();
+  });
+
+  it("words what more reaches the minimum as the yield enters: stake", async ({
+    worker,
+  }) => {
+    worker.use(
+      ...catalogHandlers({
+        yields: [
+          {
+            ...vault(campaignYieldId, "ETH Staking", 0.042),
+            mechanics: baseYield.mechanics,
+          },
+        ],
+        campaigns: [liveCampaign],
+      })
+    );
+
+    const app = await renderApp();
+    await expect.element(app.getByTestId("campaign-strip")).toBeVisible();
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard("4");
+
+    await expect
+      .element(app.getByTestId("earn-campaign-notice"))
+      .toHaveTextContent(
+        "Stake 6 ETH more to earn campaign rewards. The campaign minimum is 10 ETH in this yield."
+      );
 
     await app.unmount();
   });
