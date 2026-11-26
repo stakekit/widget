@@ -410,17 +410,19 @@ export const yieldValidatorsAtom = Atom.family(
             });
           }
           return get(source).pipe(
+            // Ranked as one list, so a validator the policy ranks first leads
+            // even when it arrives on a later page.
             AsyncResult.map(({ done, items }) => ({
               done,
-              items: EArray.map(items, (page) => ({
-                ...page,
+              items: EArray.of({
+                hasNextPage: !done,
                 items: projectValidators({
                   network,
                   selectedYieldId,
-                  validators: page.items,
+                  validators: items.flatMap((page) => page.items),
                   validatorsConfig,
                 }),
-              })),
+              }),
             })),
             mapAsyncResultError(toCatalogError("validators"))
           );

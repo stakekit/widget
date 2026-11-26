@@ -237,6 +237,38 @@ describe("Earn validators under a Validator Policy", () => {
     }
   });
 
+  it("ranks search results across every loaded page", async () => {
+    const registry = makeRegistry(
+      rankedPolicy(["validator-140", "validator-12"])
+    );
+    // 150 matches: validator-12 on the first page, validator-140 on the second.
+    const search = earnValidators().validatorsPullAtom(
+      new YieldValidatorsPullKey({ search: "validator" })
+    );
+    const unmount = registry.mount(search);
+    const found = () =>
+      AsyncResult.getOrThrow(registry.get(search)).items.flatMap((page) =>
+        page.items.map(({ address }) => address)
+      );
+
+    try {
+      await vi.waitFor(() =>
+        expect(AsyncResult.isSuccess(registry.get(search))).toBe(true)
+      );
+      registry.set(search, undefined);
+
+      await vi.waitFor(() => expect(found()).toContain("validator-140"));
+      expect(found().slice(0, 3)).toEqual([
+        "validator-140",
+        "validator-12",
+        "validator-0",
+      ]);
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
   it("lists exactly the allowed validators without paging the directory", async () => {
     const { defaultsDone, initial } = await readInitial({
       [token.network]: { allowed: ["validator-120", "validator-7"] },
