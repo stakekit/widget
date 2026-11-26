@@ -241,9 +241,18 @@ const styles = stylex.create({
   },
 });
 
+// A header pill holds its logo and its caret 8px in from either edge.
 const sizeStyles = stylex.create({
-  sm: { height: pickerTriggerHeight.sm },
-  tabs: { height: pickerTriggerHeight.tabs },
+  sm: {
+    paddingInlineEnd: space[8],
+    paddingInlineStart: space[8],
+    height: pickerTriggerHeight.sm,
+  },
+  tabs: {
+    paddingInlineEnd: space[8],
+    paddingInlineStart: space[8],
+    height: pickerTriggerHeight.tabs,
+  },
   md: {
     gap: space[8],
     paddingInlineStart: space[6],
