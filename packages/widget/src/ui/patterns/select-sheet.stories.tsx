@@ -1497,24 +1497,28 @@ const SortedYieldSheet = ({
           />
         ),
       }}
-      options={[
-        {
-          id: "morpho",
-          title: "Morpho USDC Vault",
-          subtitle: "via Morpho",
-          value: "5.10%",
-          badges: [{ label: "Risk A", tone: "info", hint: "Rated by Credora" }],
-        },
-        {
-          id: "aave",
-          title: "Aave USDC",
-          subtitle: "via Aave",
-          value: "4.20%",
-        },
-      ]}
+      options={sort === "rate" ? yieldsByRate : yieldsRecommended}
     />
   );
 };
+
+const morphoYield = {
+  id: "morpho",
+  title: "Morpho USDC Vault",
+  subtitle: "via Morpho",
+  value: "5.10%",
+  badges: [
+    { label: "Risk A", tone: "info" as const, hint: "Rated by Credora" },
+  ],
+};
+const aaveYield = {
+  id: "aave",
+  title: "Aave USDC",
+  subtitle: "via Aave",
+  value: "4.20%",
+};
+const yieldsRecommended = [aaveYield, morphoYield];
+const yieldsByRate = [morphoYield, aaveYield];
 
 /**
  * A sort beside the search field, as its action, and a badge whose hint,
@@ -1561,4 +1565,35 @@ export const SearchActionAndBadgeHint: Story = {
 export const SearchActionAndBadgeHintDark: Story = {
   ...SearchActionAndBadgeHint,
   globals: { colorScheme: "dark" },
+};
+
+/**
+ * The option the arrow keys reached stays active as a sort reorders the
+ * options, so Enter in the search field chooses it, not what took its place.
+ */
+export const ActiveOptionFollowsReorder: Story = {
+  render: (args) => <SortedYieldSheet onSelect={args.onSelect} />,
+  play: async ({ args }) => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a yield" });
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search yields",
+    });
+    await waitFor(() => expect(search).toHaveFocus());
+
+    await userEvent.keyboard("{ArrowDown}");
+    await expect(
+      within(sheet).getByRole("option", { name: /Aave/ })
+    ).toHaveAttribute("id", search.getAttribute("aria-activedescendant"));
+
+    await userEvent.click(
+      within(sheet).getByRole("combobox", { name: "Sort yields: Recommended" })
+    );
+    await userEvent.click(
+      await screen.findByRole("option", { name: "Highest rate" })
+    );
+    await userEvent.click(search);
+    await userEvent.keyboard("{Enter}");
+
+    await expect(args.onSelect).toHaveBeenCalledWith("aave");
+  },
 };

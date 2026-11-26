@@ -28,15 +28,6 @@ const ids = (yields: ReadonlyArray<{ readonly id: string }>) =>
   yields.map((item) => item.id);
 
 describe("sortYields", () => {
-  it("keeps the recommended order", () => {
-    const yields = [
-      yieldOf({ id: "low", rate: 0.01 }),
-      yieldOf({ id: "high", rate: 0.09 }),
-    ];
-
-    expect(ids(sortYields(yields, "recommended"))).toEqual(["low", "high"]);
-  });
-
   it("lists the highest reward rate first, ties in their given order", () => {
     const yields = [
       yieldOf({ id: "mid-a", rate: 0.05 }),
@@ -67,14 +58,21 @@ describe("sortYields", () => {
     ]);
   });
 
-  it("lists the highest TVL first and yields without one last", () => {
+  it("lists the highest TVL first and yields that show none last", () => {
     const yields = [
       yieldOf({ id: "none" }),
+      yieldOf({ id: "zero", tvlUsd: "0" }),
       yieldOf({ id: "small", tvlUsd: "950000.5" }),
       yieldOf({ id: "large", tvlUsd: "12000000" }),
     ];
 
-    expect(ids(sortYields(yields, "tvl"))).toEqual(["large", "small", "none"]);
+    // A TVL of zero shows as none, so it keeps its place among them.
+    expect(ids(sortYields(yields, "tvl"))).toEqual([
+      "large",
+      "small",
+      "none",
+      "zero",
+    ]);
   });
 
   it("lists the least risky first on one scale across raters, unrated last", () => {

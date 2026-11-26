@@ -288,13 +288,15 @@ export const SelectSheet = ({
   const [ownOpen, setOwnOpen] = useState(false);
   const shown = open ?? ownOpen;
   // Unset until the keys or the query move it, the active option is the
-  // current choice.
-  const [movedIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  // current choice; a query leaves none (null). The keys hold the option they
+  // reached by its id, so it stays active as the options reorder, such as
+  // under a sort.
+  const [movedId, setMovedId] = useState<string | null | undefined>(undefined);
   // A sheet its owner reopens starts on the current choice again.
   const [wasShown, setWasShown] = useState(shown);
   if (shown !== wasShown) {
     setWasShown(shown);
-    setActiveIndex(undefined);
+    setMovedId(undefined);
   }
   // However it closes, by its own controls or by its owner, it reopens with
   // every option listed.
@@ -320,17 +322,20 @@ export const SelectSheet = ({
     multiple === undefined
       ? option.id === selectedId
       : multiple.selectedIds.has(option.id);
-  const activeIndex =
-    movedIndex ??
-    flat.findIndex((option) => isSelected(option) && option.disabled !== true);
-  const active = activeIndex < flat.length ? activeIndex : -1;
+  const active =
+    movedId === undefined
+      ? flat.findIndex(
+          (option) => isSelected(option) && option.disabled !== true
+        )
+      : flat.findIndex((option) => option.id === movedId);
+  const moveActive = (index: number) => setMovedId(flat[index]?.id ?? null);
   const optionId = (index: number) => `${baseId}-option-${index}`;
   const showsOptions = error === undefined && flat.length > 0;
   const showsEmpty = !loading && error === undefined && flat.length === 0;
 
   const setOpen = (next: boolean) => {
     setOwnOpen(next);
-    setActiveIndex(undefined);
+    setMovedId(undefined);
     onOpenChange?.(next);
   };
 
@@ -408,7 +413,7 @@ export const SelectSheet = ({
               // The focus ring follows the keys: on open, the current choice
               // is active but reads by its selection ring alone, so the
               // search field's is the only focus ring.
-              active: index === active && movedIndex !== undefined,
+              active: index === active && movedId !== undefined,
               onSelect: () => choose(option),
               disabled: option.disabled === true,
               position: hasMore ? { index } : { index, count: flat.length },
@@ -501,7 +506,7 @@ export const SelectSheet = ({
       inputRef={searchRef}
       value={search.value}
       onValueChange={(next) => {
-        setActiveIndex(-1);
+        setMovedId(null);
         search.onValueChange(next);
       }}
       label={search.label}
@@ -514,9 +519,9 @@ export const SelectSheet = ({
         ...(active === -1 ? {} : { activeOptionId: optionId(active) }),
         onKey: (key) => {
           if (key === "ArrowDown") {
-            setActiveIndex(nextEnabled(flat, active, 1));
+            moveActive(nextEnabled(flat, active, 1));
           } else if (key === "ArrowUp") {
-            setActiveIndex(nextEnabled(flat, active, -1));
+            moveActive(nextEnabled(flat, active, -1));
           } else if (showsOptions) {
             const option = flat[active];
             if (option !== undefined) choose(option);

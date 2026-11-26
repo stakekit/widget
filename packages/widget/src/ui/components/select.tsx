@@ -9,8 +9,9 @@ import { borderWidth, focusRing } from "../tokens/border.stylex";
 import { color } from "../tokens/color.stylex";
 import { layer } from "../tokens/layer.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { opacity } from "../tokens/opacity.stylex";
 import { overlaySize, popupOffset } from "../tokens/overlay.stylex";
-import { radius } from "../tokens/radius.stylex";
+import { controlRadius, radius } from "../tokens/radius.stylex";
 import { controlHeight } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 import {
@@ -98,6 +99,7 @@ export const Select = <const T extends string>({
           aria-label={chosen ? `${label}: ${chosen.label}` : label}
           {...stylex.props(
             styles.trigger,
+            styles.iconTrigger,
             sizeStyles[size],
             iconTriggerSizeStyles[size],
             hitAreaStyles.coarse
@@ -223,6 +225,15 @@ const styles = stylex.create({
     color: color.accentText,
     display: "flex",
   },
+  // Pressed and disabled, it reads as an `IconButton` does.
+  iconTrigger: {
+    opacity: { default: 1, ":is([data-disabled])": opacity.disabled },
+    transform: {
+      default: "none",
+      ":active:not([data-disabled])": motion.press,
+    },
+    transitionProperty: "background-color, border-color, opacity, transform",
+  },
 });
 
 const sizeStyles = stylex.create({
@@ -231,9 +242,12 @@ const sizeStyles = stylex.create({
   lg: { height: controlHeight.lg },
 });
 
-/** The icon trigger is square: as wide as it is tall. */
+/**
+ * The icon trigger is square, as wide as it is tall, with its size's corners,
+ * as an `IconButton`.
+ */
 const iconTriggerSizeStyles = stylex.create({
-  sm: { padding: 0, width: controlHeight.sm },
-  md: { padding: 0, width: controlHeight.md },
-  lg: { padding: 0, width: controlHeight.lg },
+  sm: { padding: 0, borderRadius: controlRadius.sm, width: controlHeight.sm },
+  md: { padding: 0, borderRadius: controlRadius.md, width: controlHeight.md },
+  lg: { padding: 0, borderRadius: controlRadius.lg, width: controlHeight.lg },
 });

@@ -160,6 +160,7 @@ const IconTriggerSelect = ({
   onValueChange,
   options,
   label,
+  disabled = false,
 }: Parameters<typeof StatefulSelect>[0]) => {
   const [value, setValue] = useState<Network | null>(initial);
   return (
@@ -167,6 +168,7 @@ const IconTriggerSelect = ({
       <Select
         options={options}
         label={label}
+        disabled={disabled}
         iconTrigger={{ icon: "SortIcon", marked: value !== "ethereum" }}
         value={value}
         onValueChange={(next) => {
@@ -196,14 +198,42 @@ export const IconTrigger: Story = {
     await userEvent.click(within(list).getByRole("option", { name: "Solana" }));
 
     await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
-    await expect(
-      within(canvasElement).getByRole("combobox", { name: "Sort: Solana" })
-    ).toHaveFocus();
+    const chosen = within(canvasElement).getByRole("combobox", {
+      name: "Sort: Solana",
+    });
+    await expect(chosen).toHaveFocus();
     await expect(args.onValueChange).toHaveBeenCalledWith("solana");
+
+    // The keyboard opens it and chooses as on a field trigger.
+    await userEvent.keyboard("{Enter}");
+    const reopened = await screen.findByRole("listbox", { name: "Sort" });
+    await waitFor(() =>
+      expect(
+        within(reopened).getByRole("option", { name: "Solana" })
+      ).toHaveFocus()
+    );
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+    await expect(
+      within(canvasElement).getByRole("combobox", { name: "Sort: Cosmos Hub" })
+    ).toHaveFocus();
   },
 };
 
 export const IconTriggerDark: Story = {
   ...IconTrigger,
   globals: { colorScheme: "dark" },
+};
+
+export const IconTriggerDisabled: Story = {
+  args: { initial: "ethereum", label: "Sort", disabled: true },
+  render: (args) => <IconTriggerSelect {...args} />,
+  play: async ({ args, canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("combobox", {
+      name: "Sort: Ethereum",
+    });
+    await userEvent.click(trigger, { pointerEventsCheck: 0 });
+    await expect(screen.queryByRole("listbox")).toBeNull();
+    await expect(args.onValueChange).not.toHaveBeenCalled();
+  },
 };

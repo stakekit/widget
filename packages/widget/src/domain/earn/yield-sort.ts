@@ -81,6 +81,12 @@ const getShownRewardRate = (yieldDto: EarnYieldWithProvider) => {
   return total.isZero() && !isNonZeroRewardRateYield(yieldDto) ? null : total;
 };
 
+/** The TVL the yield shows; null where it shows none, as for a zero TVL. */
+const getShownTvlUsd = (yieldDto: EarnYieldWithProvider) => {
+  const tvl = getYieldTvlUsd(yieldDto);
+  return tvl?.isGreaterThan(0) ? tvl : null;
+};
+
 /**
  * Orders a pair by `firstBefore`, which is negative when its first value
  * comes first; a missing value goes last.
@@ -95,8 +101,11 @@ const missingLast = <Value>(
   return firstBefore(left, right);
 };
 
+/** A sort that reorders the yields: every sort but the recommended order. */
+type ReorderingYieldSort = Exclude<YieldSort, "recommended">;
+
 const comparators: Record<
-  Exclude<YieldSort, "recommended">,
+  ReorderingYieldSort,
   (left: EarnYieldWithProvider, right: EarnYieldWithProvider) => number
 > = {
   rewardRate: (left, right) =>
@@ -107,8 +116,8 @@ const comparators: Record<
     ),
   tvl: (left, right) =>
     missingLast(
-      getYieldTvlUsd(left) ?? null,
-      getYieldTvlUsd(right) ?? null,
+      getShownTvlUsd(left),
+      getShownTvlUsd(right),
       (leftTvl, rightTvl) => rightTvl.comparedTo(leftTvl) ?? 0
     ),
   // A lower score is less risky.
@@ -126,6 +135,5 @@ const comparators: Record<
  */
 export const sortYields = <Yield extends EarnYieldWithProvider>(
   yields: ReadonlyArray<Yield>,
-  sort: YieldSort
-): Yield[] =>
-  sort === "recommended" ? [...yields] : yields.toSorted(comparators[sort]);
+  sort: ReorderingYieldSort
+): Yield[] => yields.toSorted(comparators[sort]);
