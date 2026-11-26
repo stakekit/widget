@@ -454,6 +454,30 @@ const decodeHostTokenKey = Schema.decodeUnknownOption(HostTokenKey);
 const decodePreferredYield = Schema.decodeUnknownOption(PreferredYield);
 const decodeProviderId = Schema.decodeUnknownOption(ProviderId);
 
+/**
+ * One network's Validator Policy. An unknown `preferredOrder` drops only
+ * itself: dropping the whole policy would lift its allowlist and blocklist.
+ */
+const decodeValidatorPolicyEntry = (
+  policy: unknown,
+  network: Network | "*",
+  warnings: Array<HostConfigurationWarning>
+) => {
+  const decoded = decodeValidatorPolicy(policy);
+  if (Option.isSome(decoded) || !Predicate.isObject(policy)) return decoded;
+  if (!("preferredOrder" in policy)) return decoded;
+  const { preferredOrder: _, ...rest } = policy;
+  const recovered = decodeValidatorPolicy(rest);
+  if (Option.isSome(recovered)) {
+    warnings.push({
+      _tag: "InvalidEntry",
+      field: "validatorsConfig",
+      path: `${network}.preferredOrder`,
+    });
+  }
+  return recovered;
+};
+
 /** One network's preferred token yields that decode; each other is a warning. */
 const decodePreferredYields = (
   tokens: unknown,
@@ -782,7 +806,7 @@ export const decodeHostConfiguration = (
     "validatorsConfig",
     decoded.success.validatorsConfig,
     isNetworkOrAnyKey,
-    (value) => decodeValidatorPolicy(value)
+    decodeValidatorPolicyEntry
   );
 
   const translations = migrateLegacyTranslationKeys(values.customTranslations);
