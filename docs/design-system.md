@@ -429,11 +429,12 @@ and sets figures too.
   `SplitView` pane are size containers, so a part inside a pane lays out by
   the pane's width. Whether the Dashboard splits reads the frame's width,
   which the `WidgetFrame` measures rather than queries: from `split` up it
-  carries `data-sk-split`, which a `SplitView` and a `wide` frame's column
-  read through `splitMarker`. Safari's page zoom scales the width a
-  container query compares (WebKit bug 319197), so a query stacked a
-  zoomed-out frame wide enough to split and split a zoomed-in one too narrow
-  for it; the measured width is the frame's CSS width at any zoom.
+  carries `data-sk-split`, which a `SplitView`, a `Grid`'s `split` columns
+  and a `wide` frame's column read through `splitMarker`. Safari's page zoom
+  scales the width a container query compares (WebKit bug 319197), so a
+  query stacked a zoomed-out frame wide enough to split and split a
+  zoomed-in one too narrow for it; the measured width is the frame's CSS
+  width at any zoom.
   Below `split` the Dashboard stacks in one column: a `SplitView` puts its
   secondary pane under the primary one; and a `wide` `WidgetFrame` holds its
   header in the same centred column as the page. A property that reads a value at more
@@ -546,8 +547,9 @@ props, so the compiler lists the looks that exist.
 
 A `Grid`'s `columns` can vary with the container's width: pass
 `{ base, sm, md, split }` instead of a single value, for example
-`<Grid columns={{ base: 1, split: 2 }} />`. `base` applies at every width and
-each other key from its container size up. Every other layout prop takes a
+`<Grid columns={{ base: 1, split: 2 }} />`. `base` applies at every width,
+`sm` and `md` from their container size up, and `split` while the frame
+splits, whatever a container query reads. Every other layout prop takes a
 single value. The Widget root and each `SplitView` pane are size containers,
 so in-Widget layout never reads the viewport.
 

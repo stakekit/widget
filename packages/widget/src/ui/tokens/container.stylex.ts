@@ -13,13 +13,13 @@ export const container = stylex.defineConsts({
 
 /**
  * Marks a `WidgetFrame`, which carries `data-sk-split` while it is at least
- * the `split` container size (960px) wide: a `SplitView` sets its panes side
- * by side, and a `wide` frame lets its header span the frame, under
- * `[stylex.when.ancestor("[data-sk-split]", splitMarker)]`; narrower, the
- * Dashboard stacks in one column. The frame measures its width rather than
- * a container query reading it, because Safari's page zoom scales the width
- * a container query compares (WebKit bug 319197), so a zoomed-out Safari
- * stacked a frame wide enough to split.
+ * 960 CSS px wide: a `SplitView` sets its panes side by side, a `Grid` uses
+ * its `split` columns, and a `wide` frame lets its header span the frame,
+ * under `[stylex.when.ancestor("[data-sk-split]", splitMarker)]`; narrower,
+ * the Dashboard stacks in one column. The frame measures its width rather
+ * than a container query reading it, because Safari's page zoom scales the
+ * width a container query compares (WebKit bug 319197), so a zoomed-out
+ * Safari stacked a frame wide enough to split.
  */
 export const splitMarker = stylex.defineMarker();
 
@@ -31,6 +31,5 @@ export const splitMarker = stylex.defineMarker();
  */
 export const containerBand = stylex.defineConsts({
   sm: "@container (400px <= width < 520px)",
-  md: "@container (520px <= width < 960px)",
-  split: "@container (min-width: 960px)",
+  md: "@container (min-width: 520px)",
 });

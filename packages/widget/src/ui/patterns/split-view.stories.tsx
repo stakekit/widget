@@ -110,13 +110,14 @@ export const SecondaryOnly: Story = {
 
 /**
  * Each pane is a size container: inside one, a layout reads the pane's
- * width, so a grid that waits for the `split` size for two columns keeps one
- * in a pane narrower than it, though the frame is wider.
+ * width, so a grid that waits for the `sm` size for two columns keeps one in
+ * the primary pane, narrower than it, though the frame is wider. (A grid's
+ * `split` columns follow the frame instead.)
  */
 export const PanesAreSizeContainers: Story = {
   args: {
-    secondary: (
-      <Grid columns={{ base: 1, split: 2 }} gap={8}>
+    primary: (
+      <Grid columns={{ base: 1, sm: 2 }} gap={8}>
         <div data-testid="first-item">
           <Text>Reward rate</Text>
         </div>
@@ -131,11 +132,13 @@ export const PanesAreSizeContainers: Story = {
     const canvas = within(canvasElement);
     const first = canvas.getByTestId("first-item").getBoundingClientRect();
     const second = canvas.getByTestId("second-item").getBoundingClientRect();
-    const primary = canvas.getByTestId("primary-pane").getBoundingClientRect();
+    const secondary = canvas
+      .getByTestId("secondary-pane")
+      .getBoundingClientRect();
 
     // Split, as the frame is past the `split` size.
-    await expect(primary.right).toBeLessThan(first.left);
-    // The pane is narrower than the `split` size, so its items stack.
+    await expect(first.right).toBeLessThan(secondary.left);
+    // The primary pane is narrower than the `sm` size, so its items stack.
     await expect(second.top).toBeGreaterThanOrEqual(first.bottom);
     await expect(second.left).toBe(first.left);
   },

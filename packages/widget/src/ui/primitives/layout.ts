@@ -2,7 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { AriaAttributes, AriaRole, ReactNode } from "react";
 
 import type { HostHook } from "../host-hook";
-import { containerBand } from "../tokens/container.stylex";
+import { containerBand, splitMarker } from "../tokens/container.stylex";
 import { gutter } from "../tokens/presentation.stylex";
 import { gridTrack } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -116,43 +116,34 @@ const columnsFixed = stylex.create({
 
 // A responsive `columns` value sets one variable per container size. A size's
 // map sets its own variable and every larger one, so a value applies from its
-// size up; `columnsStyles` applies the maps smallest first.
+// size up; `columnsStyles` applies the maps smallest first. A `split` value
+// sets its own variable, read only while the frame splits.
 const columnsBase = stylex.create({
-  1: { [v.base]: ONE, [v.sm]: ONE, [v.md]: ONE, [v.split]: ONE },
-  2: { [v.base]: TWO, [v.sm]: TWO, [v.md]: TWO, [v.split]: TWO },
-  3: { [v.base]: THREE, [v.sm]: THREE, [v.md]: THREE, [v.split]: THREE },
-  4: { [v.base]: FOUR, [v.sm]: FOUR, [v.md]: FOUR, [v.split]: FOUR },
-  metrics: {
-    [v.base]: METRICS,
-    [v.sm]: METRICS,
-    [v.md]: METRICS,
-    [v.split]: METRICS,
-  },
-  split: { [v.base]: SPLIT, [v.sm]: SPLIT, [v.md]: SPLIT, [v.split]: SPLIT },
-  flanked: {
-    [v.base]: FLANKED,
-    [v.sm]: FLANKED,
-    [v.md]: FLANKED,
-    [v.split]: FLANKED,
-  },
+  1: { [v.base]: ONE, [v.sm]: ONE, [v.md]: ONE },
+  2: { [v.base]: TWO, [v.sm]: TWO, [v.md]: TWO },
+  3: { [v.base]: THREE, [v.sm]: THREE, [v.md]: THREE },
+  4: { [v.base]: FOUR, [v.sm]: FOUR, [v.md]: FOUR },
+  metrics: { [v.base]: METRICS, [v.sm]: METRICS, [v.md]: METRICS },
+  split: { [v.base]: SPLIT, [v.sm]: SPLIT, [v.md]: SPLIT },
+  flanked: { [v.base]: FLANKED, [v.sm]: FLANKED, [v.md]: FLANKED },
 });
 const columnsSm = stylex.create({
-  1: { [v.sm]: ONE, [v.md]: ONE, [v.split]: ONE },
-  2: { [v.sm]: TWO, [v.md]: TWO, [v.split]: TWO },
-  3: { [v.sm]: THREE, [v.md]: THREE, [v.split]: THREE },
-  4: { [v.sm]: FOUR, [v.md]: FOUR, [v.split]: FOUR },
-  metrics: { [v.sm]: METRICS, [v.md]: METRICS, [v.split]: METRICS },
-  split: { [v.sm]: SPLIT, [v.md]: SPLIT, [v.split]: SPLIT },
-  flanked: { [v.sm]: FLANKED, [v.md]: FLANKED, [v.split]: FLANKED },
+  1: { [v.sm]: ONE, [v.md]: ONE },
+  2: { [v.sm]: TWO, [v.md]: TWO },
+  3: { [v.sm]: THREE, [v.md]: THREE },
+  4: { [v.sm]: FOUR, [v.md]: FOUR },
+  metrics: { [v.sm]: METRICS, [v.md]: METRICS },
+  split: { [v.sm]: SPLIT, [v.md]: SPLIT },
+  flanked: { [v.sm]: FLANKED, [v.md]: FLANKED },
 });
 const columnsMd = stylex.create({
-  1: { [v.md]: ONE, [v.split]: ONE },
-  2: { [v.md]: TWO, [v.split]: TWO },
-  3: { [v.md]: THREE, [v.split]: THREE },
-  4: { [v.md]: FOUR, [v.split]: FOUR },
-  metrics: { [v.md]: METRICS, [v.split]: METRICS },
-  split: { [v.md]: SPLIT, [v.split]: SPLIT },
-  flanked: { [v.md]: FLANKED, [v.split]: FLANKED },
+  1: { [v.md]: ONE },
+  2: { [v.md]: TWO },
+  3: { [v.md]: THREE },
+  4: { [v.md]: FOUR },
+  metrics: { [v.md]: METRICS },
+  split: { [v.md]: SPLIT },
+  flanked: { [v.md]: FLANKED },
 });
 const columnsSplit = stylex.create({
   1: { [v.split]: ONE },
@@ -164,14 +155,31 @@ const columnsSplit = stylex.create({
   flanked: { [v.split]: FLANKED },
 });
 
-// Reads the responsive `columns` variables at each container size.
+// Reads the responsive `columns` variables at each container size. With a
+// `split` value, the frame's split mark wins at every container size, nested
+// in each query so it outranks the query's own value: Safari's page zoom
+// skews container queries (WebKit bug 319197), so a query can read less than
+// a frame that splits.
 const columnsBySize = stylex.create({
   read: {
     gridTemplateColumns: {
       default: v.base,
       [containerBand.sm]: v.sm,
       [containerBand.md]: v.md,
-      [containerBand.split]: v.split,
+    },
+  },
+  readSplit: {
+    gridTemplateColumns: {
+      default: v.base,
+      [stylex.when.ancestor("[data-sk-split]", splitMarker)]: v.split,
+      [containerBand.sm]: {
+        default: v.sm,
+        [stylex.when.ancestor("[data-sk-split]", splitMarker)]: v.split,
+      },
+      [containerBand.md]: {
+        default: v.md,
+        [stylex.when.ancestor("[data-sk-split]", splitMarker)]: v.split,
+      },
     },
   },
 });
@@ -193,7 +201,8 @@ type Columns = keyof typeof columnsFixed;
 
 /**
  * Columns that can change with the container's width: `base` applies at
- * every width, and `sm`, `md` and `split` from their container size up.
+ * every width, `sm` and `md` from their container size up, and `split` while
+ * the `WidgetFrame` splits (see `splitMarker`).
  */
 export type ResponsiveColumns =
   | Columns
@@ -206,7 +215,7 @@ export const columnsStyles = (value: ResponsiveColumns) => {
   if (typeof value !== "object") return [columnsFixed[value]];
   const { base, sm, md, split } = value;
   return [
-    columnsBySize.read,
+    split === undefined ? columnsBySize.read : columnsBySize.readSplit,
     columnsBase[base],
     sm !== undefined && columnsSm[sm],
     md !== undefined && columnsMd[md],

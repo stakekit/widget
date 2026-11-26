@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { describe, expect, it } from "vitest";
 
-import { SplitView, WidgetFrame } from "../../../src/ui/index";
+import { Grid, SplitView, WidgetFrame } from "../../../src/ui/index";
 import { type RenderResult, render } from "../../utils/test-utils";
 
 // A wide frame holding a split view, in a host box of the given width. The
@@ -64,6 +64,22 @@ describe("SplitView in a WidgetFrame", () => {
     expect(isSplit(screen)).toBe(split);
   });
 
+  // Mounted on the other side of the split size, so the ResizeObserver path
+  // marks the frame rather than the mount.
+  it.each([
+    { from: 1000, width: 959, split: false },
+    { from: 900, width: 960, split: true },
+  ])(
+    "splits $split after resizing from $from px to $width px",
+    async ({ from, width, split }) => {
+      const screen = await renderInFrame(from);
+
+      resizeHost(screen, width);
+
+      await expect.poll(() => isSplit(screen)).toBe(split);
+    }
+  );
+
   it("follows the frame across the split size as it resizes", async () => {
     const screen = await renderInFrame(1000);
     expect(isSplit(screen)).toBe(true);
@@ -100,6 +116,10 @@ describe("SplitView in a WidgetFrame", () => {
 
   // A host that zooms its page draws the frame at another size on screen;
   // the split still reads the frame's CSS width, as the frame's layout does.
+  // Chromium's CSS `zoom` does not scale container queries the way Safari's
+  // page zoom does (WebKit bug 319197), so these guard the measurement
+  // rather than reproduce the Safari bug; "Grid split columns" below covers
+  // a container query that disagrees with the frame.
   it.each([
     { zoom: 0.75, width: 1000, split: true },
     { zoom: 1.25, width: 900, split: false },
@@ -111,4 +131,47 @@ describe("SplitView in a WidgetFrame", () => {
       expect(isSplit(screen)).toBe(split);
     }
   );
+});
+
+// A split-keyed grid, as the Activity tab lays out its list and details.
+const renderGridInFrame = (width: number, paneWidth?: number) =>
+  render(
+    <div data-testid="host" style={{ width }}>
+      <WidgetFrame width="wide" poweredByLabel="Powered by" brandName="Yield">
+        {/* A size container narrower than the split size stands in for a
+            container query that reads less than the frame's CSS width. */}
+        <div
+          style={
+            paneWidth === undefined
+              ? undefined
+              : { containerType: "inline-size", width: paneWidth }
+          }
+        >
+          <Grid columns={{ base: 1, split: 2 }}>
+            <p data-testid="primary">List</p>
+            <p data-testid="secondary">Details</p>
+          </Grid>
+        </div>
+      </WidgetFrame>
+    </div>
+  );
+
+describe("Grid split columns", () => {
+  it.each([
+    { width: 900, split: false },
+    { width: 1000, split: true },
+  ])(
+    "uses its split columns $split in a $width px frame",
+    async ({ width, split }) => {
+      const screen = await renderGridInFrame(width);
+
+      await expect.poll(() => isSplit(screen)).toBe(split);
+    }
+  );
+
+  it("follows the frame's split, not the nearest container query", async () => {
+    const screen = await renderGridInFrame(1000, 700);
+
+    await expect.poll(() => isSplit(screen)).toBe(true);
+  });
 });
