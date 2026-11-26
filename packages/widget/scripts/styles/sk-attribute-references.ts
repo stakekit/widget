@@ -17,9 +17,9 @@ type SkAttributeReference = Readonly<{
 
 // A whole name, then an optional `="value"`, `='value'` or bare `=value`
 // under any attribute operator. `data-sk-*` in prose names the family, not
-// an attribute.
+// an attribute; a `*` before `=` is the substring operator.
 const reference =
-  /data-sk-(?![\w-]*\*)[\w-]*(?:\s*[~|^$*]?=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'\]]+)))?/gu;
+  /data-sk-(?![\w-]*\*(?!=))[\w-]*(?:\s*[~|^$*]?=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'\]]+)))?/gu;
 
 const isSkAttribute = (name: string): name is SkAttribute =>
   Object.hasOwn(skAttributes, name);

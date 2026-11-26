@@ -225,6 +225,8 @@ run("known-sk-attribute", {
     'const label = "data-skip"',
     'const note = "Filter data-sk-* attributes"',
     'const root = <div data-sk-tabs-indicator={"pill"} />',
+    "const root = <div data-sk-tabs-indicator={`pill`} />",
+    "const root = <div data-sk-tabs-indicator={`${tabsIndicator}`} />",
   ],
   invalid: [
     "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-surface-styles=\"elevated\"]', presentationMarker)]: color.muted } } })",
@@ -243,6 +245,8 @@ run("known-sk-attribute", {
     "const root = anchor.closest('[data-sk-Root]')",
     'const root = <div data-sk-tabs-indicator={"pil"} />',
     "const pill = '[data-sk-tabs-indicator~=pil]'",
+    "const portal = anchor.closest('[data-sk-portl*=\"x\"]')",
+    "const root = <div data-sk-tabs-indicator={`pil`} />",
   ],
   outOfScope: [
     `${widget}src/generated/api.tsx`,

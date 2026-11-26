@@ -287,13 +287,20 @@ const skAttributeFiles: FileScope = excluding(sourceAndTestFiles, [
   "tests/scripts/oxlint/design-system-plugin.test.ts",
 ]);
 
-/** A JSX attribute's string value, quoted or in braces. */
+/** A string, or a template literal with no substitutions, as its text. */
+const staticText = (node: Node): string | undefined => {
+  if (isString(node)) return node.value;
+  return node.type === "TemplateLiteral" && node.expressions.length === 0
+    ? literalTexts(node)[0]
+    : undefined;
+};
+
+/** A JSX attribute's static string value, quoted or in braces. */
 const jsxStringValue = (value: Node | null): string | undefined => {
   if (value === null) return undefined;
-  if (isString(value)) return value.value;
-  return value.type === "JSXExpressionContainer" && isString(value.expression)
-    ? value.expression.value
-    : undefined;
+  return value.type === "JSXExpressionContainer"
+    ? staticText(value.expression)
+    : staticText(value);
 };
 
 /** Every `data-sk-*` name and value written comes from `skAttributes`. */
