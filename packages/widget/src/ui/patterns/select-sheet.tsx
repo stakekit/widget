@@ -18,7 +18,7 @@ import { ListRow } from "../components/list-row";
 import { Modal } from "../components/modal";
 import { SearchInput } from "../components/search-input";
 import { Spinner } from "../components/spinner";
-import { Tooltip } from "../components/tooltip";
+import { Tooltip, TooltipGroup } from "../components/tooltip";
 import { useCoarsePointer } from "../components/use-media-query";
 import { VirtualList } from "../components/virtual-list";
 import { Box } from "../primitives/box";
@@ -494,7 +494,12 @@ export const SelectSheet = ({
           }))}
         />
       );
-    return <div {...stylex.props(styles.list)}>{list}</div>;
+    // The options' badge hints open as a group, sooner than a lone tooltip.
+    return (
+      <div {...stylex.props(styles.list)}>
+        <TooltipGroup>{list}</TooltipGroup>
+      </div>
+    );
   };
   const replacing = loading && flat.length > 0 && error === undefined;
   // A touch keyboard would cover the options, so a coarse pointer focuses

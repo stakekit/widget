@@ -1,6 +1,6 @@
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import * as stylex from "@stylexjs/stylex";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { usePortalProps } from "../theme/portal-container";
 import { color } from "../tokens/color.stylex";
@@ -17,6 +17,26 @@ import {
   lineHeight,
 } from "../tokens/typography.stylex";
 import { usePopupBoundary } from "./popup-boundary";
+
+/**
+ * How long the pointer rests on a grouped trigger before its tooltip opens,
+ * in milliseconds: shorter than a lone tooltip's 600, as a group's hints are
+ * read one after another.
+ */
+const groupOpenDelay = 300;
+
+/**
+ * Groups the tooltips inside it, such as the badge hints down a list's rows:
+ * the first opens sooner than a lone tooltip, and once one has shown, the
+ * next opens at once.
+ */
+export const TooltipGroup = ({
+  children,
+}: {
+  readonly children: ReactNode;
+}) => (
+  <BaseTooltip.Provider delay={groupOpenDelay}>{children}</BaseTooltip.Provider>
+);
 
 type TooltipProps = {
   /** The hint. Only repeat what the element already says: touch never opens it. */

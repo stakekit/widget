@@ -1567,6 +1567,29 @@ export const SearchActionAndBadgeHintDark: Story = {
   globals: { colorScheme: "dark" },
 };
 
+/** Whether `text` shows outside `row`, as its badge's hint. */
+const hintShown = (row: HTMLElement, text: string) =>
+  screen
+    .queryAllByText(text)
+    .some((hint) => !row.contains(hint) && hint.checkVisibility());
+
+/**
+ * A badge hint opens sooner than a lone tooltip, as a row's badges are read
+ * one after another: within half a second of the pointer reaching it.
+ */
+export const BadgeHintOpensSoon: Story = {
+  render: (args) => <SortedYieldSheet onSelect={args.onSelect} />,
+  play: async () => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a yield" });
+    await waitFor(() => expect(sheet).toBeVisible());
+    const row = within(sheet).getByRole("option", { name: /Morpho/ });
+
+    await userEvent.hover(within(row).getByText("Risk A"));
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    await expect(hintShown(row, "Rated by Credora")).toBe(true);
+  },
+};
+
 /**
  * The option the arrow keys reached stays active as a sort reorders the
  * options, so Enter in the search field chooses it, not what took its place.
