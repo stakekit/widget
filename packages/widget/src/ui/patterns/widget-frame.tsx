@@ -15,7 +15,7 @@ import type { HostHook } from "../host-hook";
 import { Stack } from "../primitives/stack";
 import { Text } from "../primitives/text";
 import { color } from "../tokens/color.stylex";
-import { container } from "../tokens/container.stylex";
+import { splitMarker } from "../tokens/container.stylex";
 import { elevation } from "../tokens/elevation.stylex";
 import { motionEasing, motionSeconds } from "../tokens/motion-timing";
 import { gutter } from "../tokens/presentation.stylex";
@@ -76,8 +76,9 @@ type WidgetFrameProps = {
  * the gutter inset, and the "Powered by" footer. As wide as the viewport,
  * such as on a phone, it drops its corners and edge and meets the screen's.
  * It is a size container, so what it holds lays out by the frame's width,
- * not the page's. It can ease its height between pages and grow open on
- * mount.
+ * not the page's, and from the `split` container size up it carries
+ * `data-sk-split` (`splitMarker`). It can ease its height between pages and
+ * grow open on mount.
  */
 export const WidgetFrame = ({
   header,
@@ -95,6 +96,7 @@ export const WidgetFrame = ({
   const content = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const fillsViewport = useFillsViewportWidth(frame);
+  useSplitMark(frame);
   const [contentHeight, setContentHeight] = useState<number>();
   // The height the frame eases to during a page change.
   const [pageHeight, setPageHeight] = useState<number>();
@@ -210,7 +212,8 @@ export const WidgetFrame = ({
         styles.root,
         widthStyles[width],
         fillsViewport && styles.edgeToEdge,
-        pinnedHeight !== undefined && styles.pinned(`${pinnedHeight}px`)
+        pinnedHeight !== undefined && styles.pinned(`${pinnedHeight}px`),
+        splitMarker
       )}
       data-rk={hostHook}
       data-sk-frame=""
@@ -272,6 +275,42 @@ const useFillsViewportWidth = (ref: RefObject<HTMLElement | null>) => {
   }, [ref]);
 
   return fills;
+};
+
+/** The `split` container size in pixels. */
+const splitWidth = Number.parseFloat(containerWidth.split);
+
+/**
+ * Keeps `data-sk-split` on the element while it is at least the `split`
+ * container size wide, without rendering the page again. Marked at once on
+ * mount, so the effects and scripts that run after it read the split. A
+ * resize marks it in the next animation frame, before that frame's layout:
+ * marking it within the resize observation would resize the frame and its
+ * observed content again in the same delivery, which ends the observation
+ * loop with an error on the host's window. Widths are CSS pixels whatever
+ * the page or CSS zoom, as the frame's layout is. The frame has no padding
+ * or border, so its width is its content's.
+ */
+const useSplitMark = (ref: RefObject<HTMLElement | null>) => {
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (element === null) return;
+    const mark = (width: number) =>
+      element.toggleAttribute("data-sk-split", width >= splitWidth);
+    mark(Number.parseFloat(getComputedStyle(element).width));
+    let frameRequest = 0;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry?.contentBoxSize[0]?.inlineSize;
+      if (width === undefined) return;
+      cancelAnimationFrame(frameRequest);
+      frameRequest = requestAnimationFrame(() => mark(width));
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frameRequest);
+    };
+  }, [ref]);
 };
 
 const settleMs = motionSeconds.pageSettle * 1000;
@@ -359,9 +398,9 @@ const widthStyles = stylex.create({
   full: { width: "100%" },
 });
 
-// The header and the page share one column: below the `split` container
-// size a `wide` frame centres it at the stacked split view's width, so the
-// tabs and wallet controls line up with the page under them.
+// The header and the page share one column: until the frame splits a `wide`
+// frame centres it at the stacked split view's width, so the tabs and wallet
+// controls line up with the page under them.
 const columnStyles = stylex.create({
   narrow: {},
   wide: {
@@ -369,7 +408,7 @@ const columnStyles = stylex.create({
     boxSizing: "border-box",
     maxWidth: {
       default: `calc(${containerWidth.md} + 2 * ${gutter.size})`,
-      [container.split]: "none",
+      [stylex.when.ancestor("[data-sk-split]", splitMarker)]: "none",
     },
     width: "100%",
   },

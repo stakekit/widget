@@ -3,14 +3,25 @@ import * as stylex from "@stylexjs/stylex";
 /**
  * Container sizes, the only thresholds for in-Widget layout. Each query
  * applies from its width up and reads the nearest size container: the Widget
- * root and each `SplitView` pane are ones. The split view expands from
- * 960px; narrower, the Dashboard stacks in one column.
+ * root and each `SplitView` pane are ones. Whether the Dashboard splits is
+ * not a query: see `splitMarker`.
  */
 export const container = stylex.defineConsts({
   sm: "@container (min-width: 400px)",
   md: "@container (min-width: 520px)",
-  split: "@container (min-width: 960px)",
 });
+
+/**
+ * Marks a `WidgetFrame`, which carries `data-sk-split` while it is at least
+ * the `split` container size (960px) wide: a `SplitView` sets its panes side
+ * by side, and a `wide` frame lets its header span the frame, under
+ * `[stylex.when.ancestor("[data-sk-split]", splitMarker)]`; narrower, the
+ * Dashboard stacks in one column. The frame measures its width rather than
+ * a container query reading it, because Safari's page zoom scales the width
+ * a container query compares (WebKit bug 319197), so a zoomed-out Safari
+ * stacked a frame wide enough to split.
+ */
+export const splitMarker = stylex.defineMarker();
 
 /**
  * The container sizes as bands, each from its size up to the next. A property
