@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import type { EarnYieldWithProvider } from "../../../src/domain/earn/yield-schema";
+import type { YieldSort } from "../../../src/domain/earn/yield-sort";
 import { SelectYield } from "../../../src/features/earn/ui/components/select-yield-section/select-yield";
 import { createWidgetI18nInstance } from "../../../src/services/translation/widget-translation";
 import { yieldApiYieldFixture } from "../../fixtures";
@@ -13,6 +14,9 @@ const i18nInstance = createWidgetI18nInstance();
 
 const hookState = vi.hoisted(() => ({
   filtered: [] as ReadonlyArray<EarnYieldWithProvider>,
+  sort: "recommended" as YieldSort,
+  select: vi.fn<(id: string) => void>(),
+  setSort: vi.fn<(sort: YieldSort) => void>(),
 }));
 
 vi.mock(
@@ -22,13 +26,15 @@ vi.mock(
     return {
       ...actual,
       useEarnYieldSelection: () => ({
-        select: vi.fn(),
+        select: hookState.select,
         selectCategory: vi.fn(),
         setSearch: vi.fn(),
+        setSort: hookState.setSort,
         view: {
           campaigns: new Map(),
           filtered: hookState.filtered,
           search: "",
+          sort: hookState.sort,
           selected: hookState.filtered[0] ?? null,
         },
       }),
@@ -44,16 +50,22 @@ const yieldOf = ({
   rateType,
   total,
   type,
+  risk,
 }: {
   readonly id: string;
   readonly name: string;
   readonly rateType: "APY" | "APR";
   readonly total: number;
   readonly type: "staking" | "lending";
+  readonly risk?: {
+    readonly rating: string;
+    readonly source: "credora" | "stakingRewards";
+  };
 }): EarnYieldWithProvider => {
   const fixture = yieldApiYieldFixture({
     id,
     rewardRate: { rateType, total },
+    ...(risk ? { risk: { ratings: [risk] } } : {}),
   });
 
   return {
@@ -113,6 +125,9 @@ beforeEach(async () => {
 
 afterEach(() => {
   hookState.filtered = [];
+  hookState.sort = "recommended";
+  hookState.select.mockReset();
+  hookState.setSort.mockReset();
 });
 
 describe("select yield sheet", () => {
@@ -173,5 +188,85 @@ describe("select yield sheet", () => {
     // A missing rate beside a long name stays on one line.
     expect(lineCount(leafWithText("staking-a", "—"))).toBe(1);
     expect(lineCount(leafWithText("staking-b", "1.86%"))).toBe(1);
+  });
+
+  it("lists a sorted list as one run, without type headers, and changes the sort", async () => {
+    hookState.sort = "rewardRate";
+    hookState.filtered = [
+      yieldOf({
+        id: "lending-a",
+        name: "Aave Lending",
+        rateType: "APY",
+        total: 0.06,
+        type: "lending",
+      }),
+      yieldOf({
+        id: "staking-a",
+        name: "Lido Staking",
+        rateType: "APY",
+        total: 0.03,
+        type: "staking",
+      }),
+    ];
+
+    await renderSheet();
+
+    const sheet = page.getByTestId("select-modal__container");
+    await expect.element(row("lending-a")).toBeVisible();
+    await expect.element(row("staking-a")).toBeVisible();
+    // The recommended order heads each type's run; a sort lists one run.
+    await expect
+      .element(sheet.getByText("Lending", { exact: true }))
+      .not.toBeInTheDocument();
+
+    // The sort button beside the search field names the sort it applies.
+    const sortControl = sheet.getByRole("combobox", {
+      name: "Sort yields: Highest rate",
+    });
+    await expect.element(sortControl).toBeVisible();
+    await userEvent.click(sortControl);
+    await userEvent.click(page.getByRole("option", { name: "Lowest risk" }));
+
+    expect(hookState.setSort).toHaveBeenCalledWith("risk");
+  });
+
+  it("names the rater of a risk rating on hover and to screen readers", async () => {
+    hookState.filtered = [
+      yieldOf({
+        id: "rated",
+        name: "Morpho USDC Vault",
+        rateType: "APY",
+        total: 0.05,
+        type: "lending",
+        risk: { rating: "A", source: "credora" },
+      }),
+    ];
+
+    await renderSheet();
+
+    // The row names the rater to screen readers; the tooltip only repeats it.
+    await expect.element(row("rated")).toBeVisible();
+    expect(row("rated").element().textContent).toContain("Rated by Credora");
+    await userEvent.hover(row("rated").getByText("Risk A", { exact: true }));
+
+    const tooltip = () =>
+      page
+        .getByText("Rated by Credora", { exact: true })
+        .elements()
+        .find(
+          (element) =>
+            !row("rated").element().contains(element) &&
+            element.checkVisibility()
+        );
+    await expect.poll(() => tooltip() !== undefined).toBe(true);
+
+    // A press on the hint is not a press on its row.
+    const hint = tooltip();
+    if (!hint) throw new Error("No risk rater hint");
+    await userEvent.click(hint);
+    expect(hookState.select).not.toHaveBeenCalled();
+    await expect
+      .element(page.getByTestId("select-modal__container"))
+      .toBeVisible();
   });
 });

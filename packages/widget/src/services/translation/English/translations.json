@@ -747,6 +747,13 @@
     "opportunities_no_results": "No yields found",
     "opportunity_item_subtitle_no_network": "via {{provider}}",
     "opportunity_item_tvl": "TVL {{amount}}",
+    "yield_sort": {
+      "label": "Sort yields",
+      "recommended": "Recommended",
+      "reward_rate": "Highest rate",
+      "tvl": "Highest TVL",
+      "risk": "Lowest risk"
+    },
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
     "provider_search_title": "Select provider",

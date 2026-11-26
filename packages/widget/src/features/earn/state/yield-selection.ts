@@ -8,6 +8,7 @@ import {
   getYieldRewardTokens,
 } from "../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../domain/earn/yield-schema";
+import { sortYields, type YieldSort } from "../../../domain/earn/yield-sort";
 import type { YieldId } from "../../../domain/identity/identifiers";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { yieldCampaignAtom } from "../../campaigns/index";
@@ -38,6 +39,15 @@ const groupYields = (items: ReadonlyArray<EarnYieldWithProvider>) => {
   }
   return [...groups.values()];
 };
+
+/**
+ * The yield list's order. Unlike the search, it holds as the sheet closes, so
+ * the list opens in the order last chosen.
+ */
+const earnYieldSortAtom = Atom.make<YieldSort>("recommended").pipe(
+  Atom.keepAlive,
+  Atom.withLabel("earnYieldSortAtom")
+);
 
 /**
  * The yield category the Dashboard's Earn tab stands for: the selected one
@@ -85,10 +95,14 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
       return campaign ? [[item.id, campaign] as const] : [];
     })
   );
-  const filtered = pinCampaignYields(
-    searchFiltered.filter(inCategory),
-    new Set(campaigns.keys())
-  );
+  // A chosen sort orders every yield, campaign yields included; the
+  // recommended order pins campaign yields first.
+  const sort = get(earnYieldSortAtom);
+  const inView = searchFiltered.filter(inCategory);
+  const filtered =
+    sort === "recommended"
+      ? pinCampaignYields(inView, new Set(campaigns.keys()))
+      : sortYields(inView, sort);
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;
   const yieldLoading = status.loading.yields;
@@ -109,6 +123,7 @@ export const earnYieldSelectionViewAtom = Atom.make((get) => {
     search,
     selected,
     selectedCategory: category,
+    sort,
   } as const;
 }).pipe(Atom.withLabel("earnYieldSelectionViewAtom"));
 
@@ -116,6 +131,10 @@ export const setEarnYieldSearchAtom = Atom.fnSync((stake: string, context) => {
   const search = context(earnPageSearchAtom);
   context.set(earnPageSearchAtom, { ...search, stake });
 }).pipe(Atom.withLabel("setEarnYieldSearchAtom"));
+
+export const setEarnYieldSortAtom = Atom.fnSync((sort: YieldSort, context) =>
+  context.set(earnYieldSortAtom, sort)
+).pipe(Atom.withLabel("setEarnYieldSortAtom"));
 
 export const selectEarnYieldAtom = Atom.fnSync((yieldId: YieldId, context) =>
   context.set(selectEarnSelectionYieldAtom, yieldId)

@@ -153,3 +153,57 @@ export const KeyboardSelection: Story = {
     await expect(args.onValueChange).toHaveBeenCalledWith("cosmos");
   },
 };
+
+/** An icon-trigger select at the end of a row, marked off its first choice. */
+const IconTriggerSelect = ({
+  initial,
+  onValueChange,
+  options,
+  label,
+}: Parameters<typeof StatefulSelect>[0]) => {
+  const [value, setValue] = useState<Network | null>(initial);
+  return (
+    <div style={{ display: "flex", justifyContent: "flex-end", width: 240 }}>
+      <Select
+        options={options}
+        label={label}
+        iconTrigger={{ icon: "SortIcon", marked: value !== "ethereum" }}
+        value={value}
+        onValueChange={(next) => {
+          setValue(next);
+          onValueChange(next);
+        }}
+      />
+    </div>
+  );
+};
+
+/**
+ * An icon trigger: a square button whose name says the choice, its list
+ * growing from its end. `marked` dots it, here while the choice is not the
+ * first.
+ */
+export const IconTrigger: Story = {
+  args: { initial: "ethereum", label: "Sort" },
+  render: (args) => <IconTriggerSelect {...args} />,
+  play: async ({ args, canvasElement }) => {
+    const trigger = within(canvasElement).getByRole("combobox", {
+      name: "Sort: Ethereum",
+    });
+
+    await userEvent.click(trigger);
+    const list = await screen.findByRole("listbox", { name: "Sort" });
+    await userEvent.click(within(list).getByRole("option", { name: "Solana" }));
+
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+    await expect(
+      within(canvasElement).getByRole("combobox", { name: "Sort: Solana" })
+    ).toHaveFocus();
+    await expect(args.onValueChange).toHaveBeenCalledWith("solana");
+  },
+};
+
+export const IconTriggerDark: Story = {
+  ...IconTrigger,
+  globals: { colorScheme: "dark" },
+};

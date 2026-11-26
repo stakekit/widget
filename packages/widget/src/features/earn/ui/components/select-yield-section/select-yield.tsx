@@ -5,6 +5,10 @@ import {
   getYieldRiskDisplay,
 } from "../../../../../domain/earn/yield";
 import type { EarnYieldWithProvider } from "../../../../../domain/earn/yield-schema";
+import {
+  type YieldSort,
+  yieldSorts,
+} from "../../../../../domain/earn/yield-sort";
 import { capitalizeFirstLetters } from "../../../../../shared/lib/formatters";
 import { unavailableFigure } from "../../../../../shared/lib/number-format";
 import {
@@ -12,7 +16,7 @@ import {
   useTokenLogoResolver,
 } from "../../../../../shared/react/token-logo";
 import { useWidgetPresentation } from "../../../../../shared/react/widget-presentation";
-import { SelectSheet, PickerTrigger } from "../../../../../ui/index";
+import { PickerTrigger, Select, SelectSheet } from "../../../../../ui/index";
 import {
   getCampaignBadge,
   getCampaignSelectorNote,
@@ -21,6 +25,7 @@ import { useTrackEvent } from "../../../../tracking/index";
 import {
   getRiskRatingTone,
   getYieldFigures,
+  getYieldRiskSourceLabel,
   getYieldTypeLabels,
 } from "../../../../yield-presentation/index";
 import { useEarnYieldSelection } from "../../use-earn-facades";
@@ -36,14 +41,15 @@ export const SelectYield = () => {
 
 /**
  * The yields to choose from; each row shows its rate, TVL and risk rating.
- * Each run of yields of one type is a group, so the ranking holds.
+ * In the recommended order each run of yields of one type is a group, so the
+ * ranking holds; another sort lists them as one run, in its order.
  */
 const SelectYieldSheet = ({
   selected,
 }: {
   readonly selected: EarnYieldWithProvider;
 }) => {
-  const { select, setSearch, view } = useEarnYieldSelection();
+  const { select, setSearch, setSort, view } = useEarnYieldSelection();
   const trackEvent = useTrackEvent();
   const { t } = useTranslation();
   const { locale } = useWidgetPresentation();
@@ -62,6 +68,85 @@ const SelectYieldSheet = ({
     name: displayToken.symbol,
   };
 
+  const sortLabels = {
+    recommended: t("details.yield_sort.recommended"),
+    rewardRate: t("details.yield_sort.reward_rate"),
+    tvl: t("details.yield_sort.tvl"),
+    risk: t("details.yield_sort.risk"),
+  } satisfies Record<YieldSort, string>;
+
+  /**
+   * A yield's row. Under a group that heads its rows with their shared rate
+   * label, the row leaves its own out.
+   */
+  const optionOf = (
+    item: EarnYieldWithProvider,
+    index: number,
+    { rate, tvl }: ReturnType<typeof getYieldFigures>,
+    sharedRateLabel: string | undefined
+  ) => {
+    const risk = getYieldRiskDisplay(item);
+    const campaign = view.campaigns.get(item.id);
+    const campaignBadge = campaign
+      ? getCampaignBadge(campaign.lifecycle, t)
+      : null;
+    const campaignNote = campaign
+      ? getCampaignSelectorNote(campaign, item, t, locale)
+      : null;
+    const via = item.provider?.name
+      ? t("details.opportunity_item_subtitle_no_network", {
+          provider: item.provider.name,
+        })
+      : capitalizeFirstLetters(item.token.network);
+    // A campaign yield's note stands under its rate, as the campaign
+    // is why it leads its group; other rows keep their rate type, and a
+    // campaign row without a group's shared type puts its own before the note.
+    const rateLabel = sharedRateLabel ? undefined : rate?.label;
+    const subvalue = campaignNote
+      ? {
+          subvalue: rateLabel ? `${rateLabel} · ${campaignNote}` : campaignNote,
+          subvalueTone: "accent" as const,
+        }
+      : { subvalue: rateLabel };
+
+    return {
+      id: item.id,
+      testId: `select-opportunity__item_${item.id}-${index}`,
+      title: item.metadata.name,
+      subtitle: tvl
+        ? `${via} · ${t("details.opportunity_item_tvl", { amount: tvl.usd })}`
+        : via,
+      value: rate?.value ?? unavailableFigure,
+      ...subvalue,
+      ...(campaignBadge || risk
+        ? {
+            badges: [
+              ...(campaignBadge ? [campaignBadge] : []),
+              ...(risk
+                ? [
+                    {
+                      label: t("details.risk.badge", { rating: risk.rating }),
+                      tone: getRiskRatingTone(risk),
+                      hint: t("details.risk.rated_by", {
+                        source: getYieldRiskSourceLabel(risk.source, t),
+                      }),
+                    },
+                  ]
+                : []),
+            ],
+          }
+        : {}),
+      logo: resolveLogo(item.token, {
+        badge: "provider",
+        metadata: {
+          logoURI: item.metadata.logoURI,
+          name: item.metadata.name,
+          provider: item.provider,
+        },
+      }),
+    };
+  };
+
   const groups = view.filtered.reduce<
     Array<{
       key: string;
@@ -78,6 +163,48 @@ const SelectYieldSheet = ({
     }
     return acc;
   }, []);
+
+  const list =
+    view.sort === "recommended"
+      ? {
+          groups: groups.map((group) => {
+            const figures = group.items.map(({ item }) =>
+              getYieldFigures({ yieldDto: item, locale, t })
+            );
+            const rateLabels = new Set(
+              figures.flatMap((figure) =>
+                figure.rate ? [figure.rate.label] : []
+              )
+            );
+            // A rate label every row shares heads the group, above the rates.
+            const [sharedRateLabel] =
+              rateLabels.size === 1 ? [...rateLabels] : [];
+
+            return {
+              key: group.key,
+              label: group.label,
+              ...(sharedRateLabel ? { caption: sharedRateLabel } : {}),
+              options: group.items.map(({ item, index }, position) =>
+                optionOf(
+                  item,
+                  index,
+                  figures[position] ?? { rate: null, tvl: null },
+                  sharedRateLabel
+                )
+              ),
+            };
+          }),
+        }
+      : {
+          options: view.filtered.map((item, index) =>
+            optionOf(
+              item,
+              index,
+              getYieldFigures({ yieldDto: item, locale, t }),
+              undefined
+            )
+          ),
+        };
 
   return (
     <SelectSheet
@@ -101,84 +228,24 @@ const SelectYieldSheet = ({
         label: t("shared.search"),
         placeholder: t("shared.search_yields"),
         clearLabel: t("shared.clear_search"),
+        action: (
+          <Select
+            label={t("details.yield_sort.label")}
+            iconTrigger={{
+              icon: "SortIcon",
+              marked: view.sort !== "recommended",
+            }}
+            options={yieldSorts.map((sort) => ({
+              value: sort,
+              label: sortLabels[sort],
+            }))}
+            value={view.sort}
+            onValueChange={setSort}
+          />
+        ),
       }}
       empty={{ title: t("details.opportunities_no_results") }}
-      groups={groups.map((group) => {
-        const figures = group.items.map(({ item }) =>
-          getYieldFigures({ yieldDto: item, locale, t })
-        );
-        const rateLabels = new Set(
-          figures.flatMap((figure) => (figure.rate ? [figure.rate.label] : []))
-        );
-        // A rate label every row shares heads the group, above the rates.
-        const [sharedRateLabel] = rateLabels.size === 1 ? [...rateLabels] : [];
-
-        return {
-          key: group.key,
-          label: group.label,
-          ...(sharedRateLabel ? { caption: sharedRateLabel } : {}),
-          options: group.items.map(({ item, index }, position) => {
-            const { rate, tvl } = figures[position] ?? {
-              rate: null,
-              tvl: null,
-            };
-            const risk = getYieldRiskDisplay(item);
-            const campaign = view.campaigns.get(item.id);
-            const campaignBadge = campaign
-              ? getCampaignBadge(campaign.lifecycle, t)
-              : null;
-            const campaignNote = campaign
-              ? getCampaignSelectorNote(campaign, item, t, locale)
-              : null;
-            const via = item.provider?.name
-              ? t("details.opportunity_item_subtitle_no_network", {
-                  provider: item.provider.name,
-                })
-              : capitalizeFirstLetters(item.token.network);
-            // A campaign yield's note stands under its rate, as the campaign
-            // is why it leads its group; other rows keep their rate type.
-            const subvalue = campaignNote
-              ? { subvalue: campaignNote, subvalueTone: "accent" as const }
-              : { subvalue: sharedRateLabel ? undefined : rate?.label };
-
-            return {
-              id: item.id,
-              testId: `select-opportunity__item_${item.id}-${index}`,
-              title: item.metadata.name,
-              subtitle: tvl
-                ? `${via} · ${t("details.opportunity_item_tvl", { amount: tvl.usd })}`
-                : via,
-              value: rate?.value ?? unavailableFigure,
-              ...subvalue,
-              ...(campaignBadge || risk
-                ? {
-                    badges: [
-                      ...(campaignBadge ? [campaignBadge] : []),
-                      ...(risk
-                        ? [
-                            {
-                              label: t("details.risk.badge", {
-                                rating: risk.rating,
-                              }),
-                              tone: getRiskRatingTone(risk),
-                            },
-                          ]
-                        : []),
-                    ],
-                  }
-                : {}),
-              logo: resolveLogo(item.token, {
-                badge: "provider",
-                metadata: {
-                  logoURI: item.metadata.logoURI,
-                  name: item.metadata.name,
-                  provider: item.provider,
-                },
-              }),
-            };
-          }),
-        };
-      })}
+      {...list}
       selectedId={selected.id}
       onSelect={(id) => {
         const item = view.filtered.find((candidate) => candidate.id === id);

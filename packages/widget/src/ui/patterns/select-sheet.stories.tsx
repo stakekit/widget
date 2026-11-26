@@ -4,6 +4,7 @@ import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 
 import { Avatar } from "../components/avatar";
 import { Button } from "../components/button";
+import { Select } from "../components/select";
 import {
   isWithin,
   outlineWithin,
@@ -1460,4 +1461,104 @@ export const AnnouncedBadge: Story = {
     );
     await expect(within(sheet).getAllByRole("status")).toHaveLength(1);
   },
+};
+
+/** A yield sheet with a sort over its options, as a Feature would hold it. */
+const SortedYieldSheet = ({
+  onSelect,
+}: {
+  readonly onSelect: (id: string) => void;
+}) => {
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"recommended" | "rate">("recommended");
+
+  return (
+    <SelectSheet
+      open
+      title="Select a yield"
+      closeLabel="Close"
+      listLabel="Yields"
+      onSelect={onSelect}
+      search={{
+        value: query,
+        onValueChange: setQuery,
+        label: "Search yields",
+        clearLabel: "Clear search",
+        action: (
+          <Select
+            label="Sort yields"
+            iconTrigger={{ icon: "SortIcon", marked: sort !== "recommended" }}
+            options={[
+              { value: "recommended", label: "Recommended" },
+              { value: "rate", label: "Highest rate" },
+            ]}
+            value={sort}
+            onValueChange={setSort}
+          />
+        ),
+      }}
+      options={[
+        {
+          id: "morpho",
+          title: "Morpho USDC Vault",
+          subtitle: "via Morpho",
+          value: "5.10%",
+          badges: [{ label: "Risk A", tone: "info", hint: "Rated by Credora" }],
+        },
+        {
+          id: "aave",
+          title: "Aave USDC",
+          subtitle: "via Aave",
+          value: "4.20%",
+        },
+      ]}
+    />
+  );
+};
+
+/**
+ * A sort beside the search field, as its action, and a badge whose hint,
+ * such as who issued a rating, is read with its row and shown on hover.
+ */
+export const SearchActionAndBadgeHint: Story = {
+  render: (args) => <SortedYieldSheet onSelect={args.onSelect} />,
+  play: async () => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a yield" });
+    await waitFor(() => expect(sheet).toBeVisible());
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search yields",
+    });
+    const sort = within(sheet).getByRole("combobox", {
+      name: "Sort yields: Recommended",
+    });
+    await expect(shareLine(search, sort)).toBe(true);
+
+    await userEvent.click(sort);
+    await userEvent.click(
+      await screen.findByRole("option", { name: "Highest rate" })
+    );
+    await waitFor(() =>
+      expect(
+        within(sheet).getByRole("combobox", {
+          name: "Sort yields: Highest rate",
+        })
+      ).toHaveFocus()
+    );
+
+    const row = within(sheet).getByRole("option", { name: /Morpho/ });
+    await expect(row).toHaveTextContent("Rated by Credora");
+    await userEvent.hover(within(row).getByText("Risk A"));
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByText("Rated by Credora")
+          .some((hint) => !row.contains(hint) && hint.checkVisibility())
+      ).toBe(true)
+    );
+  },
+};
+
+export const SearchActionAndBadgeHintDark: Story = {
+  ...SearchActionAndBadgeHint,
+  globals: { colorScheme: "dark" },
 };

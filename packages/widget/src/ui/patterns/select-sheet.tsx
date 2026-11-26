@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import {
   type ComponentProps,
+  Fragment,
   type ReactElement,
   type ReactNode,
   useEffect,
@@ -17,6 +18,7 @@ import { ListRow } from "../components/list-row";
 import { Modal } from "../components/modal";
 import { SearchInput } from "../components/search-input";
 import { Spinner } from "../components/spinner";
+import { Tooltip } from "../components/tooltip";
 import { useCoarsePointer } from "../components/use-media-query";
 import { VirtualList } from "../components/virtual-list";
 import { Box } from "../primitives/box";
@@ -53,6 +55,11 @@ type SelectSheetOption = {
         readonly tone?: Tone;
         /** Announces the badge as it appears, such as a pending state. */
         readonly announce?: boolean;
+        /**
+         * Says more about the badge, such as who issued a rating: read with
+         * the row, and shown on hover.
+         */
+        readonly hint?: string;
       }>
     | undefined;
   /**
@@ -166,6 +173,11 @@ type SelectSheetProps = OptionsOrGroups &
           /** Says what the field searches, such as "Search tokens"; unset, `label`. */
           readonly placeholder?: string | undefined;
           readonly clearLabel: string;
+          /**
+           * A control at the end of the field's row, such as a `Select` with
+           * an `iconTrigger` that sorts the options.
+           */
+          readonly action?: ReactNode;
         }
       | undefined;
     /**
@@ -346,15 +358,29 @@ export const SelectSheet = ({
       details: option.details,
       testId: option.testId,
       leading,
-      badges: option.badges?.map((badge) => (
-        <Badge
-          key={badge.label}
-          tone={badge.tone ?? "neutral"}
-          {...(badge.announce === true ? { role: "status" } : {})}
-        >
-          {badge.label}
-        </Badge>
-      )),
+      badges: option.badges?.map((badge) => {
+        const chip = (
+          <Badge
+            tone={badge.tone ?? "neutral"}
+            {...(badge.announce === true ? { role: "status" } : {})}
+          >
+            {badge.label}
+          </Badge>
+        );
+        if (badge.hint === undefined) {
+          return <Fragment key={badge.label}>{chip}</Fragment>;
+        }
+        // The tooltip only repeats the hint the row already reads, as touch
+        // never opens it.
+        return (
+          <Fragment key={badge.label}>
+            <Tooltip label={badge.hint}>
+              <span>{chip}</span>
+            </Tooltip>
+            <VisuallyHidden>{badge.hint}</VisuallyHidden>
+          </Fragment>
+        );
+      }),
     };
     const selected = isSelected(option);
     const check = multiple !== undefined;
@@ -470,6 +496,36 @@ export const SelectSheet = ({
   // the dialog rather than the search field.
   const searchFocus = coarsePointer ? "dialog" : searchRef;
 
+  const searchField = search !== undefined && (
+    <SearchInput
+      inputRef={searchRef}
+      value={search.value}
+      onValueChange={(next) => {
+        setActiveIndex(-1);
+        search.onValueChange(next);
+      }}
+      label={search.label}
+      testId={testIds?.search}
+      clearLabel={search.clearLabel}
+      placeholder={search.placeholder}
+      listbox={{
+        id: listId,
+        expanded: showsOptions,
+        ...(active === -1 ? {} : { activeOptionId: optionId(active) }),
+        onKey: (key) => {
+          if (key === "ArrowDown") {
+            setActiveIndex(nextEnabled(flat, active, 1));
+          } else if (key === "ArrowUp") {
+            setActiveIndex(nextEnabled(flat, active, -1));
+          } else if (showsOptions) {
+            const option = flat[active];
+            if (option !== undefined) choose(option);
+          }
+        },
+      }}
+    />
+  );
+
   return (
     <Modal
       open={shown}
@@ -501,34 +557,13 @@ export const SelectSheet = ({
       }
     >
       {notice}
-      {search !== undefined && (
-        <SearchInput
-          inputRef={searchRef}
-          value={search.value}
-          onValueChange={(next) => {
-            setActiveIndex(-1);
-            search.onValueChange(next);
-          }}
-          label={search.label}
-          testId={testIds?.search}
-          clearLabel={search.clearLabel}
-          placeholder={search.placeholder}
-          listbox={{
-            id: listId,
-            expanded: showsOptions,
-            ...(active === -1 ? {} : { activeOptionId: optionId(active) }),
-            onKey: (key) => {
-              if (key === "ArrowDown") {
-                setActiveIndex(nextEnabled(flat, active, 1));
-              } else if (key === "ArrowUp") {
-                setActiveIndex(nextEnabled(flat, active, -1));
-              } else if (showsOptions) {
-                const option = flat[active];
-                if (option !== undefined) choose(option);
-              }
-            },
-          }}
-        />
+      {search?.action === undefined ? (
+        searchField
+      ) : (
+        <Stack direction="row" align="center" gap={8}>
+          <Box grow>{searchField}</Box>
+          {search.action}
+        </Stack>
       )}
       {search !== undefined && (
         // Focus stays in the field as the listbox goes, so a search with no

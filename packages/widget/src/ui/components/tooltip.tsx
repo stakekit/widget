@@ -48,7 +48,13 @@ export const Tooltip = ({ label, children, side = "top" }: TooltipProps) => {
           collisionBoundary={collisionBoundary}
           {...stylex.props(styles.positioner)}
         >
-          <BaseTooltip.Popup {...stylex.props(styles.popup)}>
+          <BaseTooltip.Popup
+            // The hint is portaled out of its trigger but React still
+            // bubbles its events there: a press on it must not press what it
+            // describes, such as a row it sits in.
+            onClick={(event) => event.stopPropagation()}
+            {...stylex.props(styles.popup)}
+          >
             {label}
           </BaseTooltip.Popup>
         </BaseTooltip.Positioner>

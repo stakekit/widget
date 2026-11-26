@@ -747,6 +747,13 @@
     "opportunities_no_results": "Aucun rendement trouvé",
     "opportunity_item_subtitle_no_network": "via {{provider}}",
     "opportunity_item_tvl": "TVL {{amount}}",
+    "yield_sort": {
+      "label": "Trier les rendements",
+      "recommended": "Recommandé",
+      "reward_rate": "Taux le plus élevé",
+      "tvl": "TVL la plus élevée",
+      "risk": "Risque le plus faible"
+    },
     "validator_search_title_one": "Sélectionnez un validateur",
     "validator_search_title_other": "Sélectionnez des validateurs",
     "provider_search_title": "Sélectionnez un fournisseur",

@@ -1,0 +1,141 @@
+import { describe, expect, it } from "vitest";
+
+import { sortYields } from "../../../src/domain/earn/yield-sort";
+import { yieldApiYieldFixture } from "../../fixtures";
+
+const yieldOf = ({
+  id,
+  rate = 0.05,
+  tvlUsd = null,
+  ratings = [],
+}: {
+  readonly id: string;
+  readonly rate?: number;
+  readonly tvlUsd?: string | null;
+  readonly ratings?: ReadonlyArray<{
+    readonly rating: string;
+    readonly source: "credora" | "stakingRewards";
+  }>;
+}) =>
+  yieldApiYieldFixture({
+    id,
+    rewardRate: { rateType: "APY", total: rate },
+    statistics: { tvlUsd },
+    ...(ratings.length > 0 ? { risk: { ratings: [...ratings] } } : {}),
+  });
+
+const ids = (yields: ReadonlyArray<{ readonly id: string }>) =>
+  yields.map((item) => item.id);
+
+describe("sortYields", () => {
+  it("keeps the recommended order", () => {
+    const yields = [
+      yieldOf({ id: "low", rate: 0.01 }),
+      yieldOf({ id: "high", rate: 0.09 }),
+    ];
+
+    expect(ids(sortYields(yields, "recommended"))).toEqual(["low", "high"]);
+  });
+
+  it("lists the highest reward rate first, ties in their given order", () => {
+    const yields = [
+      yieldOf({ id: "mid-a", rate: 0.05 }),
+      yieldOf({ id: "low", rate: 0.01 }),
+      yieldOf({ id: "high", rate: 0.09 }),
+      yieldOf({ id: "mid-b", rate: 0.05 }),
+    ];
+
+    expect(ids(sortYields(yields, "rewardRate"))).toEqual([
+      "high",
+      "mid-a",
+      "mid-b",
+      "low",
+    ]);
+  });
+
+  it("lists a yield whose rate shows as missing after every shown rate", () => {
+    const yields = [
+      yieldOf({ id: "zero", rate: 0 }),
+      yieldOf({ id: "negative", rate: -0.01 }),
+      yieldOf({ id: "positive", rate: 0.02 }),
+    ];
+
+    expect(ids(sortYields(yields, "rewardRate"))).toEqual([
+      "positive",
+      "negative",
+      "zero",
+    ]);
+  });
+
+  it("lists the highest TVL first and yields without one last", () => {
+    const yields = [
+      yieldOf({ id: "none" }),
+      yieldOf({ id: "small", tvlUsd: "950000.5" }),
+      yieldOf({ id: "large", tvlUsd: "12000000" }),
+    ];
+
+    expect(ids(sortYields(yields, "tvl"))).toEqual(["large", "small", "none"]);
+  });
+
+  it("lists the least risky first on one scale across raters, unrated last", () => {
+    const yields = [
+      yieldOf({ id: "unrated" }),
+      yieldOf({
+        id: "sr-bb",
+        ratings: [{ rating: "BB", source: "stakingRewards" }],
+      }),
+      yieldOf({
+        id: "credora-c",
+        ratings: [{ rating: "C", source: "credora" }],
+      }),
+      yieldOf({
+        id: "unknown-grade",
+        ratings: [{ rating: "Z", source: "credora" }],
+      }),
+      yieldOf({
+        id: "sr-aa",
+        ratings: [{ rating: "aa", source: "stakingRewards" }],
+      }),
+      yieldOf({
+        id: "credora-b",
+        ratings: [{ rating: "B", source: "credora" }],
+      }),
+      yieldOf({
+        id: "credora-a-minus",
+        ratings: [{ rating: " A- ", source: "credora" }],
+      }),
+    ];
+
+    // Credora B and StakingRewards BB share a score, so they keep their order.
+    expect(ids(sortYields(yields, "risk"))).toEqual([
+      "sr-aa",
+      "credora-a-minus",
+      "sr-bb",
+      "credora-b",
+      "credora-c",
+      "unrated",
+      "unknown-grade",
+    ]);
+  });
+
+  it("ranks a yield by the rating it shows, its first", () => {
+    const yields = [
+      yieldOf({
+        id: "credora-first",
+        ratings: [
+          { rating: "C", source: "credora" },
+          { rating: "AAA", source: "stakingRewards" },
+        ],
+      }),
+      yieldOf({
+        id: "credora-a",
+        ratings: [{ rating: "A", source: "credora" }],
+      }),
+    ];
+
+    expect(ids(sortYields(yields, "risk"))).toEqual([
+      "credora-a",
+      "credora-first",
+    ]);
+  });
+});
