@@ -231,6 +231,7 @@ export const makeYieldResourceSource = (yieldApi: YieldApi.YieldApi) => {
         .YieldsControllerGetYieldValidators(request.yieldId, {
           params: {
             ...(request.address ? { address: request.address } : {}),
+            ...(request.addresses ? { addresses: request.addresses } : {}),
             limit: request.limit,
             ...(request.name ? { name: request.name } : {}),
             offset: request.offset,

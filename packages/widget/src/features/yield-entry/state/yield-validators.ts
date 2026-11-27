@@ -2,24 +2,31 @@ import { Data, Effect, Array as EArray, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-import type { EarnValidator } from "../../../domain/earn/validator";
+import {
+  type EarnValidator,
+  validatorAddressIdentity,
+} from "../../../domain/earn/validator";
 import {
   getValidatorPolicyListing,
   rankedEligibleValidators,
 } from "../../../domain/earn/yield";
-import type { YieldId } from "../../../domain/identity/identifiers";
+import type {
+  ValidatorAddress,
+  YieldId,
+} from "../../../domain/identity/identifiers";
 import type { Network } from "../../../domain/network/network";
 import {
   preferredValidatorsResourceAtom,
   type ValidatorsError,
-  ValidatorsAtAddressKey,
+  ValidatorsAtAddressesKey,
   ValidatorsKey,
-  validatorsAtAddressAtom,
+  validatorsAtAddressesAtom,
   validatorsPullAtom,
 } from "../../../resources/validator-directory/validator-directory";
 import { appRuntime } from "../../../runtime/app-runtime";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import {
+  API_MAX_VALIDATOR_ADDRESSES,
   type PullPage,
   withPullPageDone,
 } from "../../../shared/effect/pagination";
@@ -38,24 +45,54 @@ export type PolicyValidators = {
 };
 
 /**
+ * Validators in the order of the addresses they are at; each address's
+ * validators once, at its first appearance.
+ */
+const inAddressOrder = (
+  addresses: ReadonlyArray<ValidatorAddress>,
+  validators: ReadonlyArray<EarnValidator>
+) => {
+  const atAddress = Map.groupBy(validators, (validator) =>
+    validatorAddressIdentity(validator.address)
+  );
+  return addresses.flatMap((address) => {
+    const identity = validatorAddressIdentity(address);
+    const found = atAddress.get(identity) ?? [];
+    atAddress.delete(identity);
+    return found;
+  });
+};
+
+/**
  * The active validators a network's Validator Policy names, in the policy's
  * order, looked up by address because the directory's pages may not reach
- * them. A failed lookup leaves its validators out and the result incomplete.
+ * them. A failed batch of lookups leaves its validators out and the result
+ * incomplete.
  */
 export const policyValidatorsAtom = Atom.family((key: PolicyValidatorsKey) =>
   appRuntime
-    .atom((context) =>
-      Effect.forEach(
-        getValidatorPolicyListing({
-          network: key.network,
-          validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
-        }).named,
-        (address) =>
+    .atom((context) => {
+      const { named } = getValidatorPolicyListing({
+        network: key.network,
+        validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
+      });
+      // Sorted before batching, so reordering the policy keeps its batches.
+      const batches = EArray.chunksOf(
+        EArray.dedupeWith(
+          named.toSorted(),
+          (left, right) =>
+            validatorAddressIdentity(left) === validatorAddressIdentity(right)
+        ),
+        API_MAX_VALIDATOR_ADDRESSES
+      );
+      return Effect.forEach(
+        batches,
+        (addresses) =>
           context
             .result(
-              validatorsAtAddressAtom.local(
-                new ValidatorsAtAddressKey({
-                  address,
+              validatorsAtAddressesAtom.local(
+                new ValidatorsAtAddressesKey({
+                  addresses,
                   status: "active",
                   yieldId: key.yieldId,
                 })
@@ -66,10 +103,13 @@ export const policyValidatorsAtom = Atom.family((key: PolicyValidatorsKey) =>
       ).pipe(
         Effect.map((lookups): PolicyValidators => ({
           complete: lookups.every((lookup) => lookup !== null),
-          validators: lookups.flatMap((lookup) => lookup ?? []),
+          validators: inAddressOrder(
+            named,
+            lookups.flatMap((lookup) => lookup ?? [])
+          ),
         }))
-      )
-    )
+      );
+    })
     .pipe(Atom.withLabel("policyValidatorsAtom"))
 );
 
