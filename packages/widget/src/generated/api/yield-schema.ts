@@ -306,6 +306,7 @@ export type ArgumentFieldDto = {
     | "cAddressBech"
     | "pAddressBech"
     | "executionMode"
+    | "route"
     | "ledgerWalletApiCompatible"
     | "useMaxAmount"
     | "useInstantExecution"
@@ -360,6 +361,7 @@ export const ArgumentFieldDto = Schema.Struct({
     "cAddressBech",
     "pAddressBech",
     "executionMode",
+    "route",
     "ledgerWalletApiCompatible",
     "useMaxAmount",
     "useInstantExecution",
@@ -1052,6 +1054,12 @@ export const InvestorEligibilityEntryDto = Schema.Struct({
     }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
   ),
 }).annotate({ identifier: "InvestorEligibilityEntryDto" });
+export type YieldRoute = "primary" | "secondary";
+export const YieldRoute = Schema.Literals(["primary", "secondary"]).annotate({
+  description:
+    "Routes that require issuer identity verification (KYC/KYB). Absent means every route. Covers identity verification only: eligibility (geo, US person, investor tier) applies to every route",
+  identifier: "YieldRoute",
+});
 export type SelfAttestationDocumentDto = {
   readonly name: string;
   readonly url: string;
@@ -2014,6 +2022,7 @@ export type TransactionDto = {
     | "STAKE"
     | "SET_OPERATOR"
     | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
     | "CLAIM_REWARDS"
     | "RESTAKE_REWARDS"
     | "UNSTAKE"
@@ -2226,6 +2235,7 @@ export const TransactionDto = Schema.Struct({
     "STAKE",
     "SET_OPERATOR",
     "CLAIM_UNSTAKED",
+    "REFUND_REQUEST",
     "CLAIM_REWARDS",
     "RESTAKE_REWARDS",
     "UNSTAKE",
@@ -2410,755 +2420,18 @@ export const ActionEventDto = Schema.Struct({
     format: "date-time",
   }),
 }).annotate({ identifier: "ActionEventDto" });
-export type ActionArgumentsDto = {
-  readonly amount?: string;
-  readonly amountRaw?: string;
-  readonly amounts?: ReadonlyArray<string>;
-  readonly shareAmount?: string;
-  readonly shareAmountRaw?: string;
-  readonly validatorAddress?: string;
-  readonly validatorAddresses?: ReadonlyArray<string>;
-  readonly providerId?: string;
-  readonly duration?: number;
-  readonly inputToken?: string;
-  readonly inputTokenNetwork?:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "arc"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "xlayer"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly outputToken?: string;
-  readonly outputTokenNetwork?:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "arc"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "xlayer"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly subnetId?: number;
-  readonly tronResource?: "BANDWIDTH" | "ENERGY";
-  readonly feeConfigurationId?: string;
-  readonly cosmosPubKey?: string;
-  readonly tezosPubKey?: string;
-  readonly cAddressBech?: string;
-  readonly pAddressBech?: string;
-  readonly executionMode?: "individual" | "batched";
-  readonly ledgerWalletApiCompatible?: boolean;
-  readonly useMaxAmount?: boolean;
-  readonly useInstantExecution?: boolean;
-  readonly useAutoClaim?: boolean;
-  readonly skipPrechecks?: boolean;
-  readonly slippageBps?: number;
-  readonly useMaxAllowance?: boolean;
-  readonly feePayerAddress?: string;
-  readonly encryptedAmount?: string;
-  readonly encryptedAmountProof?: string;
-  readonly encryptedLegAmounts?: ReadonlyArray<string>;
-  readonly encryptedLegProof?: string;
-  readonly decryptedAmount?: string;
-  readonly decryptionProof?: string;
-  readonly receiverAddress?: string;
-  readonly rangeMin?: string;
-  readonly rangeMax?: string;
-  readonly percentage?: number;
-  readonly tokenId?: string;
+export type ShareTokenDto = {
+  readonly address: string;
+  readonly symbol: string;
+  readonly decimals: number;
+  readonly network: string;
 };
-export const ActionArgumentsDto = Schema.Struct({
-  amount: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        'Amount in human-readable token units, not the smallest denomination. For example, "1.500000" for 1.5 USDC (6 decimals) or "0.01" for 0.01 ETH (18 decimals). Precision up to the token\'s decimal places is supported. Mutually exclusive with amountRaw.',
-      examples: ["1.500000"],
-    })
-  ),
-  amountRaw: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        'Amount in the smallest denomination (wei for ETH, satoshi for BTC, etc.). For example, "1500000" for 1.5 USDC (6 decimals) or "10000000000000000" for 0.01 ETH (18 decimals). Mutually exclusive with amount.',
-      examples: ["1000000000000000000"],
-    })
-  ),
-  amounts: Schema.optionalKey(
-    Schema.Array(Schema.String).annotate({
-      description:
-        "Amounts in human-readable token units, not the smallest denomination. Precision up to the token's decimal places is supported.",
-      examples: [["1.500000", "2.000000"]],
-    })
-  ),
-  shareAmount: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Share amount to withdraw",
-      examples: ["1.500000"],
-    })
-  ),
-  shareAmountRaw: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Share amount to withdraw in raw decimals",
-      examples: ["1500000"],
-    })
-  ),
-  validatorAddress: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Validator address for single validator selection",
-      examples: ["cosmosvaloper1..."],
-    })
-  ),
-  validatorAddresses: Schema.optionalKey(
-    Schema.Array(Schema.String).annotate({
-      description: "Multiple validator addresses",
-      examples: [["cosmosvaloper1...", "cosmosvaloper2..."]],
-    })
-  ),
-  providerId: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Provider ID for Ethereum native staking",
-      examples: ["kiln"],
-    })
-  ),
-  duration: Schema.optionalKey(
-    Schema.Number.annotate({
-      description: "Duration for Avalanche native staking (in seconds)",
-      examples: [1209600],
-    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
-  ),
-  inputToken: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        'Token for deposits. Use "0x" for native token or provide the token address. For cross-chain deposits, also provide inputTokenNetwork.',
-      examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
-    })
-  ),
-  inputTokenNetwork: Schema.optionalKey(
-    Schema.Literals([
-      "ethereum",
-      "ethereum-goerli",
-      "ethereum-holesky",
-      "ethereum-sepolia",
-      "ethereum-hoodi",
-      "arbitrum",
-      "base",
-      "base-sepolia",
-      "gnosis",
-      "optimism",
-      "polygon",
-      "polygon-amoy",
-      "starknet",
-      "zksync",
-      "linea",
-      "unichain",
-      "plume",
-      "monad-testnet",
-      "monad",
-      "robinhood",
-      "robinhood-testnet",
-      "arc-testnet",
-      "arc",
-      "avalanche-c",
-      "avalanche-c-atomic",
-      "avalanche-p",
-      "binance",
-      "celo",
-      "fantom",
-      "harmony",
-      "moonriver",
-      "okc",
-      "viction",
-      "core",
-      "sonic",
-      "plasma",
-      "katana",
-      "hyperevm",
-      "tempo",
-      "pharos",
-      "xlayer",
-      "agoric",
-      "akash",
-      "axelar",
-      "band-protocol",
-      "bitsong",
-      "canto",
-      "chihuahua",
-      "comdex",
-      "coreum",
-      "cosmos",
-      "crescent",
-      "cronos",
-      "cudos",
-      "desmos",
-      "dydx",
-      "evmos",
-      "fetch-ai",
-      "gravity-bridge",
-      "injective",
-      "irisnet",
-      "juno",
-      "kava",
-      "ki-network",
-      "mars-protocol",
-      "nym",
-      "okex-chain",
-      "onomy",
-      "osmosis",
-      "persistence",
-      "quicksilver",
-      "regen",
-      "secret",
-      "sentinel",
-      "sommelier",
-      "stafi",
-      "stargaze",
-      "stride",
-      "teritori",
-      "tgrade",
-      "umee",
-      "sei",
-      "mantra",
-      "celestia",
-      "saga",
-      "zetachain",
-      "dymension",
-      "humansai",
-      "neutron",
-      "polkadot",
-      "kusama",
-      "westend",
-      "bittensor",
-      "aptos",
-      "binancebeacon",
-      "cardano",
-      "near",
-      "solana",
-      "solana-devnet",
-      "stellar",
-      "stellar-testnet",
-      "sui",
-      "tezos",
-      "tron",
-      "ton",
-      "ton-testnet",
-      "hyperliquid",
-    ]).annotate({
-      description:
-        "Network for the input token. Required for cross-chain deposits when the token is on a different network than the vault.",
-    })
-  ),
-  outputToken: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        'Token for withdrawals. Use "0x" for native token or provide the token address. For cross-chain withdrawals, also provide outputTokenNetwork.',
-      examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
-    })
-  ),
-  outputTokenNetwork: Schema.optionalKey(
-    Schema.Literals([
-      "ethereum",
-      "ethereum-goerli",
-      "ethereum-holesky",
-      "ethereum-sepolia",
-      "ethereum-hoodi",
-      "arbitrum",
-      "base",
-      "base-sepolia",
-      "gnosis",
-      "optimism",
-      "polygon",
-      "polygon-amoy",
-      "starknet",
-      "zksync",
-      "linea",
-      "unichain",
-      "plume",
-      "monad-testnet",
-      "monad",
-      "robinhood",
-      "robinhood-testnet",
-      "arc-testnet",
-      "arc",
-      "avalanche-c",
-      "avalanche-c-atomic",
-      "avalanche-p",
-      "binance",
-      "celo",
-      "fantom",
-      "harmony",
-      "moonriver",
-      "okc",
-      "viction",
-      "core",
-      "sonic",
-      "plasma",
-      "katana",
-      "hyperevm",
-      "tempo",
-      "pharos",
-      "xlayer",
-      "agoric",
-      "akash",
-      "axelar",
-      "band-protocol",
-      "bitsong",
-      "canto",
-      "chihuahua",
-      "comdex",
-      "coreum",
-      "cosmos",
-      "crescent",
-      "cronos",
-      "cudos",
-      "desmos",
-      "dydx",
-      "evmos",
-      "fetch-ai",
-      "gravity-bridge",
-      "injective",
-      "irisnet",
-      "juno",
-      "kava",
-      "ki-network",
-      "mars-protocol",
-      "nym",
-      "okex-chain",
-      "onomy",
-      "osmosis",
-      "persistence",
-      "quicksilver",
-      "regen",
-      "secret",
-      "sentinel",
-      "sommelier",
-      "stafi",
-      "stargaze",
-      "stride",
-      "teritori",
-      "tgrade",
-      "umee",
-      "sei",
-      "mantra",
-      "celestia",
-      "saga",
-      "zetachain",
-      "dymension",
-      "humansai",
-      "neutron",
-      "polkadot",
-      "kusama",
-      "westend",
-      "bittensor",
-      "aptos",
-      "binancebeacon",
-      "cardano",
-      "near",
-      "solana",
-      "solana-devnet",
-      "stellar",
-      "stellar-testnet",
-      "sui",
-      "tezos",
-      "tron",
-      "ton",
-      "ton-testnet",
-      "hyperliquid",
-    ]).annotate({
-      description:
-        "Network for the output token. Required for cross-chain withdrawals when the destination is on a different network than the vault.",
-    })
-  ),
-  subnetId: Schema.optionalKey(
-    Schema.Number.annotate({
-      description: "Subnet ID for Bittensor staking",
-      examples: [1],
-    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
-  ),
-  tronResource: Schema.optionalKey(
-    Schema.Literals(["BANDWIDTH", "ENERGY"]).annotate({
-      description: "Tron resource type for Tron staking",
-    })
-  ),
-  feeConfigurationId: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Fee configuration ID for custom fee settings",
-      examples: ["custom-fee-config-1"],
-    })
-  ),
-  cosmosPubKey: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Cosmos public key for Cosmos staking",
-      examples: ["cosmospub1..."],
-    })
-  ),
-  tezosPubKey: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Tezos public key for Tezos staking",
-      examples: ["edpk..."],
-    })
-  ),
-  cAddressBech: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Avalanche C-chain address",
-      examples: ["0x123..."],
-    })
-  ),
-  pAddressBech: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Avalanche P-chain address",
-      examples: ["P-avax1..."],
-    })
-  ),
-  executionMode: Schema.optionalKey(
-    Schema.Literals(["individual", "batched"]).annotate({
-      description: "Transaction execution mode",
-      examples: ["individual"],
-    })
-  ),
-  ledgerWalletApiCompatible: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description:
-        "Transactions should have Ledger wallet API compatibility for hardware wallet users",
-      examples: [true],
-    })
-  ),
-  useMaxAmount: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description: "Use max amount for ERC4626 withdraw",
-      examples: [true],
-    })
-  ),
-  useInstantExecution: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description: "Use instant execution for exit (faster but may have fees)",
-      examples: [true],
-    })
-  ),
-  useAutoClaim: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description:
-        "Authorize the redeem operator to auto-claim settled async redemptions (one-time per wallet)",
-      examples: [true],
-    })
-  ),
-  skipPrechecks: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description: "Skip pre-flight balance and rent checks",
-      examples: [false],
-    })
-  ),
-  slippageBps: Schema.optionalKey(
-    Schema.Number.annotate({
-      description: "Slippage tolerance in basis points (e.g. 50 = 0.50%)",
-      examples: [50],
-    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
-  ),
-  useMaxAllowance: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description:
-        "When true, ERC20 approval transactions use the maximum allowance (uint256.max) instead of the exact deposit amount. Useful to avoid repeated approval transactions on subsequent deposits.",
-      examples: [true],
-    })
-  ),
-  feePayerAddress: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Fee payer address for gas-sponsored wallets (Solana). When provided, this address is used as the payer for account creation instructions and as the transaction-level fee payer.",
-      examples: ["7Qo3awoTH4y5Vui1FQwsncq2arYDzUuivdeWhwgnAvVo"],
-    })
-  ),
-  encryptedAmount: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
-      examples: [
-        "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
-      ],
-    })
-  ),
-  encryptedAmountProof: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Input proof returned by the Zama SDK alongside encryptedAmount.",
-      examples: ["0x01"],
-    })
-  ),
-  encryptedLegAmounts: Schema.optionalKey(
-    Schema.Array(Schema.String).annotate({
-      description:
-        "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
-      examples: [
-        [
-          "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
-        ],
-      ],
-    })
-  ),
-  encryptedLegProof: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
-      examples: ["0x01"],
-    })
-  ),
-  decryptedAmount: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
-      examples: ["5000000"],
-    })
-  ),
-  decryptionProof: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
-      examples: ["0x01"],
-    })
-  ),
-  receiverAddress: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Receiver wallet address: ERC4626 vault flows, or on Solana the address for tokens after an optional post-exit swap",
-    })
-  ),
-  rangeMin: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Minimum price bound for concentrated liquidity pools (as decimal string). Must be non-negative (can be 0) and less than rangeMax.",
-      examples: ["0.0"],
-    })
-  ),
-  rangeMax: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Maximum price bound for concentrated liquidity pools (as decimal string). Must be positive and greater than rangeMin.",
-      examples: ["1.0"],
-    })
-  ),
-  percentage: Schema.optionalKey(
-    Schema.Number.annotate({
-      description:
-        "Percentage of liquidity to exit (0-100). Required for partial exits from liquidity positions.",
-      examples: [50],
-    })
-      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
-      .check(
-        Schema.isGreaterThanOrEqualTo(0).annotate({
-          expected: "a value greater than or equal to 0",
-        })
-      )
-      .check(
-        Schema.isLessThanOrEqualTo(100).annotate({
-          expected: "a value less than or equal to 100",
-        })
-      )
-  ),
-  tokenId: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "NFT token ID for concentrated liquidity positions. Required for exiting specific positions.",
-      examples: ["12345"],
-    })
-  ),
-}).annotate({ identifier: "ActionArgumentsDto" });
+export const ShareTokenDto = Schema.Struct({
+  address: Schema.String,
+  symbol: Schema.String,
+  decimals: Schema.Int,
+  network: Schema.String,
+}).annotate({ identifier: "ShareTokenDto" });
 export type TransactionType =
   | "SWAP"
   | "DEPOSIT"
@@ -3166,6 +2439,7 @@ export type TransactionType =
   | "STAKE"
   | "SET_OPERATOR"
   | "CLAIM_UNSTAKED"
+  | "REFUND_REQUEST"
   | "CLAIM_REWARDS"
   | "RESTAKE_REWARDS"
   | "UNSTAKE"
@@ -3225,6 +2499,7 @@ export const TransactionType = Schema.Literals([
   "STAKE",
   "SET_OPERATOR",
   "CLAIM_UNSTAKED",
+  "REFUND_REQUEST",
   "CLAIM_REWARDS",
   "RESTAKE_REWARDS",
   "UNSTAKE",
@@ -3278,6 +2553,30 @@ export const TransactionType = Schema.Literals([
   "REDEEM",
   "CANCEL_PENDING",
 ]).annotate({ identifier: "TransactionType" });
+export type ShareAmountValueDto = {
+  readonly amount: string | null;
+  readonly amountRaw: string | null;
+  readonly token: {
+    readonly address: string;
+    readonly symbol: string;
+    readonly decimals: number;
+    readonly network: string;
+  };
+  readonly status: "available" | "estimated" | "unavailable";
+  readonly reason: string | null;
+};
+export const ShareAmountValueDto = Schema.Struct({
+  amount: Schema.Union([Schema.String, Schema.Null]),
+  amountRaw: Schema.Union([Schema.String, Schema.Null]),
+  token: Schema.Struct({
+    address: Schema.String,
+    symbol: Schema.String,
+    decimals: Schema.Int,
+    network: Schema.String,
+  }),
+  status: Schema.Literals(["available", "estimated", "unavailable"]),
+  reason: Schema.Union([Schema.String, Schema.Null]),
+}).annotate({ identifier: "ShareAmountValueDto" });
 export type SubmitHashDto = { readonly hash: string };
 export const SubmitHashDto = Schema.Struct({
   hash: Schema.String.annotate({
@@ -3672,6 +2971,7 @@ export type PendingActionDto = {
     | "WITHDRAW_ALL"
     | "RESTAKE"
     | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
     | "UNLOCK_LOCKED"
     | "STAKE_LOCKED"
     | "VOTE"
@@ -3709,6 +3009,7 @@ export const PendingActionDto = Schema.Struct({
     "WITHDRAW_ALL",
     "RESTAKE",
     "CLAIM_UNSTAKED",
+    "REFUND_REQUEST",
     "UNLOCK_LOCKED",
     "STAKE_LOCKED",
     "VOTE",
@@ -3895,6 +3196,26 @@ export const ConcentratedLiquidityPoolStateDto = Schema.Struct({
     description: "Quote token (token1)",
   }),
 }).annotate({ identifier: "ConcentratedLiquidityPoolStateDto" });
+export type ConfirmedOutcomeOutgoingDto = {
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly token: TokenDto;
+};
+export const ConfirmedOutcomeOutgoingDto = Schema.Struct({
+  amount: Schema.String,
+  amountRaw: Schema.String,
+  token: TokenDto,
+}).annotate({ identifier: "ConfirmedOutcomeOutgoingDto" });
+export type OutcomeOutgoingDto = {
+  readonly amount: string | null;
+  readonly amountRaw: string | null;
+  readonly token: TokenDto;
+};
+export const OutcomeOutgoingDto = Schema.Struct({
+  amount: Schema.Union([Schema.String, Schema.Null]),
+  amountRaw: Schema.Union([Schema.String, Schema.Null]),
+  token: TokenDto,
+}).annotate({ identifier: "OutcomeOutgoingDto" });
 export type RevShareTiersDto = {
   readonly trial?: RevShareDetailsDto;
   readonly standard?: RevShareDetailsDto;
@@ -4105,6 +3426,763 @@ export const KycEligibilityDto = Schema.Struct({
     examples: [["KYC", "KYB"]],
   }),
 }).annotate({ identifier: "KycEligibilityDto" });
+export type ActionArgumentsDto = {
+  readonly amount?: string;
+  readonly amountRaw?: string;
+  readonly amounts?: ReadonlyArray<string>;
+  readonly shareAmount?: string;
+  readonly shareAmountRaw?: string;
+  readonly validatorAddress?: string;
+  readonly validatorAddresses?: ReadonlyArray<string>;
+  readonly providerId?: string;
+  readonly duration?: number;
+  readonly inputToken?: string;
+  readonly inputTokenNetwork?:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "arc-testnet"
+    | "arc"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "xlayer"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly outputToken?: string;
+  readonly outputTokenNetwork?:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "arc-testnet"
+    | "arc"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "xlayer"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly subnetId?: number;
+  readonly tronResource?: "BANDWIDTH" | "ENERGY";
+  readonly feeConfigurationId?: string;
+  readonly cosmosPubKey?: string;
+  readonly tezosPubKey?: string;
+  readonly cAddressBech?: string;
+  readonly pAddressBech?: string;
+  readonly executionMode?: "individual" | "batched";
+  readonly route?: YieldRoute;
+  readonly ledgerWalletApiCompatible?: boolean;
+  readonly useMaxAmount?: boolean;
+  readonly useInstantExecution?: boolean;
+  readonly useAutoClaim?: boolean;
+  readonly skipPrechecks?: boolean;
+  readonly slippageBps?: number;
+  readonly useMaxAllowance?: boolean;
+  readonly feePayerAddress?: string;
+  readonly encryptedAmount?: string;
+  readonly encryptedAmountProof?: string;
+  readonly encryptedLegAmounts?: ReadonlyArray<string>;
+  readonly encryptedLegProof?: string;
+  readonly decryptedAmount?: string;
+  readonly decryptionProof?: string;
+  readonly receiverAddress?: string;
+  readonly rangeMin?: string;
+  readonly rangeMax?: string;
+  readonly percentage?: number;
+  readonly tokenId?: string;
+};
+export const ActionArgumentsDto = Schema.Struct({
+  amount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        'Amount in human-readable token units, not the smallest denomination. For example, "1.500000" for 1.5 USDC (6 decimals) or "0.01" for 0.01 ETH (18 decimals). Precision up to the token\'s decimal places is supported. Mutually exclusive with amountRaw.',
+      examples: ["1.500000"],
+    })
+  ),
+  amountRaw: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        'Amount in the smallest denomination (wei for ETH, satoshi for BTC, etc.). For example, "1500000" for 1.5 USDC (6 decimals) or "10000000000000000" for 0.01 ETH (18 decimals). Mutually exclusive with amount.',
+      examples: ["1000000000000000000"],
+    })
+  ),
+  amounts: Schema.optionalKey(
+    Schema.Array(Schema.String).annotate({
+      description:
+        "Amounts in human-readable token units, not the smallest denomination. Precision up to the token's decimal places is supported.",
+      examples: [["1.500000", "2.000000"]],
+    })
+  ),
+  shareAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Share amount to withdraw",
+      examples: ["1.500000"],
+    })
+  ),
+  shareAmountRaw: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Share amount to withdraw in raw decimals",
+      examples: ["1500000"],
+    })
+  ),
+  validatorAddress: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Validator address for single validator selection",
+      examples: ["cosmosvaloper1..."],
+    })
+  ),
+  validatorAddresses: Schema.optionalKey(
+    Schema.Array(Schema.String).annotate({
+      description: "Multiple validator addresses",
+      examples: [["cosmosvaloper1...", "cosmosvaloper2..."]],
+    })
+  ),
+  providerId: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Provider ID for Ethereum native staking",
+      examples: ["kiln"],
+    })
+  ),
+  duration: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Duration for Avalanche native staking (in seconds)",
+      examples: [1209600],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+  ),
+  inputToken: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        'Token for deposits. Use "0x" for native token or provide the token address. For cross-chain deposits, also provide inputTokenNetwork.',
+      examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
+    })
+  ),
+  inputTokenNetwork: Schema.optionalKey(
+    Schema.Literals([
+      "ethereum",
+      "ethereum-goerli",
+      "ethereum-holesky",
+      "ethereum-sepolia",
+      "ethereum-hoodi",
+      "arbitrum",
+      "base",
+      "base-sepolia",
+      "gnosis",
+      "optimism",
+      "polygon",
+      "polygon-amoy",
+      "starknet",
+      "zksync",
+      "linea",
+      "unichain",
+      "plume",
+      "monad-testnet",
+      "monad",
+      "robinhood",
+      "robinhood-testnet",
+      "arc-testnet",
+      "arc",
+      "avalanche-c",
+      "avalanche-c-atomic",
+      "avalanche-p",
+      "binance",
+      "celo",
+      "fantom",
+      "harmony",
+      "moonriver",
+      "okc",
+      "viction",
+      "core",
+      "sonic",
+      "plasma",
+      "katana",
+      "hyperevm",
+      "tempo",
+      "pharos",
+      "xlayer",
+      "agoric",
+      "akash",
+      "axelar",
+      "band-protocol",
+      "bitsong",
+      "canto",
+      "chihuahua",
+      "comdex",
+      "coreum",
+      "cosmos",
+      "crescent",
+      "cronos",
+      "cudos",
+      "desmos",
+      "dydx",
+      "evmos",
+      "fetch-ai",
+      "gravity-bridge",
+      "injective",
+      "irisnet",
+      "juno",
+      "kava",
+      "ki-network",
+      "mars-protocol",
+      "nym",
+      "okex-chain",
+      "onomy",
+      "osmosis",
+      "persistence",
+      "quicksilver",
+      "regen",
+      "secret",
+      "sentinel",
+      "sommelier",
+      "stafi",
+      "stargaze",
+      "stride",
+      "teritori",
+      "tgrade",
+      "umee",
+      "sei",
+      "mantra",
+      "celestia",
+      "saga",
+      "zetachain",
+      "dymension",
+      "humansai",
+      "neutron",
+      "polkadot",
+      "kusama",
+      "westend",
+      "bittensor",
+      "aptos",
+      "binancebeacon",
+      "cardano",
+      "near",
+      "solana",
+      "solana-devnet",
+      "stellar",
+      "stellar-testnet",
+      "sui",
+      "tezos",
+      "tron",
+      "ton",
+      "ton-testnet",
+      "hyperliquid",
+    ]).annotate({
+      description:
+        "Network for the input token. Required for cross-chain deposits when the token is on a different network than the vault.",
+    })
+  ),
+  outputToken: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        'Token for withdrawals. Use "0x" for native token or provide the token address. For cross-chain withdrawals, also provide outputTokenNetwork.',
+      examples: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
+    })
+  ),
+  outputTokenNetwork: Schema.optionalKey(
+    Schema.Literals([
+      "ethereum",
+      "ethereum-goerli",
+      "ethereum-holesky",
+      "ethereum-sepolia",
+      "ethereum-hoodi",
+      "arbitrum",
+      "base",
+      "base-sepolia",
+      "gnosis",
+      "optimism",
+      "polygon",
+      "polygon-amoy",
+      "starknet",
+      "zksync",
+      "linea",
+      "unichain",
+      "plume",
+      "monad-testnet",
+      "monad",
+      "robinhood",
+      "robinhood-testnet",
+      "arc-testnet",
+      "arc",
+      "avalanche-c",
+      "avalanche-c-atomic",
+      "avalanche-p",
+      "binance",
+      "celo",
+      "fantom",
+      "harmony",
+      "moonriver",
+      "okc",
+      "viction",
+      "core",
+      "sonic",
+      "plasma",
+      "katana",
+      "hyperevm",
+      "tempo",
+      "pharos",
+      "xlayer",
+      "agoric",
+      "akash",
+      "axelar",
+      "band-protocol",
+      "bitsong",
+      "canto",
+      "chihuahua",
+      "comdex",
+      "coreum",
+      "cosmos",
+      "crescent",
+      "cronos",
+      "cudos",
+      "desmos",
+      "dydx",
+      "evmos",
+      "fetch-ai",
+      "gravity-bridge",
+      "injective",
+      "irisnet",
+      "juno",
+      "kava",
+      "ki-network",
+      "mars-protocol",
+      "nym",
+      "okex-chain",
+      "onomy",
+      "osmosis",
+      "persistence",
+      "quicksilver",
+      "regen",
+      "secret",
+      "sentinel",
+      "sommelier",
+      "stafi",
+      "stargaze",
+      "stride",
+      "teritori",
+      "tgrade",
+      "umee",
+      "sei",
+      "mantra",
+      "celestia",
+      "saga",
+      "zetachain",
+      "dymension",
+      "humansai",
+      "neutron",
+      "polkadot",
+      "kusama",
+      "westend",
+      "bittensor",
+      "aptos",
+      "binancebeacon",
+      "cardano",
+      "near",
+      "solana",
+      "solana-devnet",
+      "stellar",
+      "stellar-testnet",
+      "sui",
+      "tezos",
+      "tron",
+      "ton",
+      "ton-testnet",
+      "hyperliquid",
+    ]).annotate({
+      description:
+        "Network for the output token. Required for cross-chain withdrawals when the destination is on a different network than the vault.",
+    })
+  ),
+  subnetId: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Subnet ID for Bittensor staking",
+      examples: [1],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+  ),
+  tronResource: Schema.optionalKey(
+    Schema.Literals(["BANDWIDTH", "ENERGY"]).annotate({
+      description: "Tron resource type for Tron staking",
+    })
+  ),
+  feeConfigurationId: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Fee configuration ID for custom fee settings",
+      examples: ["custom-fee-config-1"],
+    })
+  ),
+  cosmosPubKey: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Cosmos public key for Cosmos staking",
+      examples: ["cosmospub1..."],
+    })
+  ),
+  tezosPubKey: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Tezos public key for Tezos staking",
+      examples: ["edpk..."],
+    })
+  ),
+  cAddressBech: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Avalanche C-chain address",
+      examples: ["0x123..."],
+    })
+  ),
+  pAddressBech: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Avalanche P-chain address",
+      examples: ["P-avax1..."],
+    })
+  ),
+  executionMode: Schema.optionalKey(
+    Schema.Literals(["individual", "batched"]).annotate({
+      description: "Transaction execution mode",
+      examples: ["individual"],
+    })
+  ),
+  route: Schema.optionalKey(
+    Schema.suspend((): Schema.Codec<YieldRoute> => YieldRoute).annotate({
+      description:
+        "Execution route: primary (issuer mint/redeem) or secondary (market swap). Only for yields that list it in their arguments schema. Defaults to primary",
+      examples: ["primary"],
+    })
+  ),
+  ledgerWalletApiCompatible: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "Transactions should have Ledger wallet API compatibility for hardware wallet users",
+      examples: [true],
+    })
+  ),
+  useMaxAmount: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description: "Use max amount for ERC4626 withdraw",
+      examples: [true],
+    })
+  ),
+  useInstantExecution: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description: "Use instant execution for exit (faster but may have fees)",
+      examples: [true],
+    })
+  ),
+  useAutoClaim: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "Authorize the redeem operator to auto-claim settled async redemptions (one-time per wallet)",
+      examples: [true],
+    })
+  ),
+  skipPrechecks: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description: "Skip pre-flight balance and rent checks",
+      examples: [false],
+    })
+  ),
+  slippageBps: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Slippage tolerance in basis points (e.g. 50 = 0.50%)",
+      examples: [50],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+  ),
+  useMaxAllowance: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "When true, ERC20 approval transactions use the maximum allowance (uint256.max) instead of the exact deposit amount. Useful to avoid repeated approval transactions on subsequent deposits.",
+      examples: [true],
+    })
+  ),
+  feePayerAddress: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Fee payer address for gas-sponsored wallets (Solana). When provided, this address is used as the payer for account creation instructions and as the transaction-level fee payer.",
+      examples: ["7Qo3awoTH4y5Vui1FQwsncq2arYDzUuivdeWhwgnAvVo"],
+    })
+  ),
+  encryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "ERC-7984 input handle (bytes32) for the transfer amount, encrypted with the Zama SDK for the signing wallet and the token contract. Used by confidential vaults instead of amount.",
+      examples: [
+        "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
+      ],
+    })
+  ),
+  encryptedAmountProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Input proof returned by the Zama SDK alongside encryptedAmount.",
+      examples: ["0x01"],
+    })
+  ),
+  encryptedLegAmounts: Schema.optionalKey(
+    Schema.Array(Schema.String).annotate({
+      description:
+        "One ERC-7984 input handle per router leg, in the order the argument schema lists, encrypted in one bundle for the signing wallet and the router. Unused legs carry an encrypted zero.",
+      examples: [
+        [
+          "0x5f3a0000000000000000000000000000000000000000000000000000000000c401",
+        ],
+      ],
+    })
+  ),
+  encryptedLegProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Input proof returned by the Zama SDK for the encryptedLegAmounts bundle.",
+      examples: ["0x01"],
+    })
+  ),
+  decryptedAmount: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Cleartext of a publicly decrypted ERC-7984 handle, in base units. Public on-chain once the handle is marked publicly decryptable.",
+      examples: ["5000000"],
+    })
+  ),
+  decryptionProof: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "KMS decryption proof returned by the Zama SDK alongside decryptedAmount.",
+      examples: ["0x01"],
+    })
+  ),
+  receiverAddress: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Receiver wallet address: ERC4626 vault flows, or on Solana the address for tokens after an optional post-exit swap",
+    })
+  ),
+  rangeMin: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Minimum price bound for concentrated liquidity pools (as decimal string). Must be non-negative (can be 0) and less than rangeMax.",
+      examples: ["0.0"],
+    })
+  ),
+  rangeMax: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Maximum price bound for concentrated liquidity pools (as decimal string). Must be positive and greater than rangeMin.",
+      examples: ["1.0"],
+    })
+  ),
+  percentage: Schema.optionalKey(
+    Schema.Number.annotate({
+      description:
+        "Percentage of liquidity to exit (0-100). Required for partial exits from liquidity positions.",
+      examples: [50],
+    })
+      .check(Schema.isFinite().annotate({ expected: "a finite number" }))
+      .check(
+        Schema.isGreaterThanOrEqualTo(0).annotate({
+          expected: "a value greater than or equal to 0",
+        })
+      )
+      .check(
+        Schema.isLessThanOrEqualTo(100).annotate({
+          expected: "a value less than or equal to 100",
+        })
+      )
+  ),
+  tokenId: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "NFT token ID for concentrated liquidity positions. Required for exiting specific positions.",
+      examples: ["12345"],
+    })
+  ),
+}).annotate({ identifier: "ActionArgumentsDto" });
 export type SelfAttestationDto = {
   readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
   readonly notes?: string;
@@ -4287,6 +4365,784 @@ export const CampaignRewardsDto = Schema.Struct({
       "The wallet's qualification state. Null when the counted balance can't be determined yet.",
   }),
 }).annotate({ identifier: "CampaignRewardsDto" });
+export type ConfirmedOutcomeIncomingDto = {
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly token: ShareTokenDto;
+  readonly status: "confirmed";
+  readonly reason: string | null;
+};
+export const ConfirmedOutcomeIncomingDto = Schema.Struct({
+  amount: Schema.String,
+  amountRaw: Schema.String,
+  token: ShareTokenDto,
+  status: Schema.Literal("confirmed"),
+  reason: Schema.Union([Schema.String, Schema.Null]),
+}).annotate({ identifier: "ConfirmedOutcomeIncomingDto" });
+export type TransactionGasEstimateDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
+  readonly stepIndex: number;
+  readonly type: TransactionType | null;
+};
+export const TransactionGasEstimateDto = Schema.Struct({
+  amount: Schema.Union([Schema.String, Schema.Null]),
+  token: TokenDto,
+  gasLimit: Schema.optionalKey(Schema.String),
+  stepIndex: Schema.Finite,
+  type: Schema.Union([TransactionType, Schema.Null]),
+}).annotate({ identifier: "TransactionGasEstimateDto" });
+export type HealthStatusDto = {
+  readonly status: HealthStatus;
+  readonly timestamp: string;
+};
+export const HealthStatusDto = Schema.Struct({
+  status: Schema.suspend(
+    (): Schema.Codec<HealthStatus> => HealthStatus
+  ).annotate({
+    description: "The health status of the service",
+    examples: ["OK"],
+  }),
+  timestamp: Schema.String.annotate({
+    description: "Timestamp when the health check was performed",
+    examples: ["2024-01-15T10:30:00.000Z"],
+    format: "date-time",
+  }),
+}).annotate({ identifier: "HealthStatusDto" });
+export type BalancesRequestDto = {
+  readonly queries: ReadonlyArray<BalancesQueryDto>;
+};
+export const BalancesRequestDto = Schema.Struct({
+  queries: Schema.Array(BalancesQueryDto)
+    .annotate({
+      description: "Array of balance queries (maximum 25 queries per request)",
+      examples: [
+        [
+          {
+            yieldId: "ethereum-eth-lido-staking",
+            address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+            network: "ethereum",
+          },
+        ],
+      ],
+    })
+    .check(
+      Schema.isMinLength(1).annotate({
+        expected: "a value with a length of at least 1",
+      })
+    )
+    .check(
+      Schema.isMaxLength(25).annotate({
+        expected: "a value with a length of at most 25",
+      })
+    ),
+}).annotate({ identifier: "BalancesRequestDto" });
+export type YieldMechanicsArgumentsDto = {
+  readonly enter?: ArgumentSchemaDto;
+  readonly exit?: ArgumentSchemaDto;
+  readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
+  readonly balance?: ArgumentSchemaDto;
+};
+export const YieldMechanicsArgumentsDto = Schema.Struct({
+  enter: Schema.optionalKey(ArgumentSchemaDto),
+  exit: Schema.optionalKey(ArgumentSchemaDto),
+  manage: Schema.optionalKey(
+    Schema.Record(Schema.String, ArgumentSchemaDto).annotate({
+      description:
+        "Manage action schemas. Each yield supports different ActionTypes (CLAIM_UNSTAKED, CLAIM_REWARDS, etc.). Keys are ActionTypes enum values.",
+    })
+  ),
+  balance: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<ArgumentSchemaDto> => ArgumentSchemaDto
+    ).annotate({
+      description:
+        "Arguments for the balances endpoint (e.g., alternative addresses, chain-specific fields)",
+    })
+  ),
+}).annotate({ identifier: "YieldMechanicsArgumentsDto" });
+export type RewardRateDto = {
+  readonly total: number;
+  readonly rateType: string;
+  readonly components: ReadonlyArray<RewardDto>;
+};
+export const RewardRateDto = Schema.Struct({
+  total: Schema.Number.annotate({
+    description:
+      "Estimated underlying integration reward rate across all sources. May include an additional campaign component when an active campaign applies to this project.",
+    examples: [6.5],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  rateType: Schema.String.annotate({
+    description: "Whether this reward rate is APR or APY",
+    examples: ["APR"],
+  }),
+  components: Schema.Array(RewardDto).annotate({
+    description: "Breakdown of reward rates by source",
+  }),
+}).annotate({ identifier: "RewardRateDto" });
+export type YieldStateDto = {
+  readonly pricePerShareState?: PricePerShareStateDto;
+  readonly concentratedLiquidityPoolState?: ConcentratedLiquidityPoolStateDto;
+  readonly capacityState?: CapacityDto;
+  readonly liquidityState?: LiquidityStateDto;
+  readonly allocations?: ReadonlyArray<AllocationDto>;
+};
+export const YieldStateDto = Schema.Struct({
+  pricePerShareState: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<PricePerShareStateDto> => PricePerShareStateDto
+    ).annotate({ description: "Price per share state metadata" })
+  ),
+  concentratedLiquidityPoolState: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<ConcentratedLiquidityPoolStateDto> =>
+        ConcentratedLiquidityPoolStateDto
+    ).annotate({ description: "Concentrated liquidity pool state metadata" })
+  ),
+  capacityState: Schema.optionalKey(
+    Schema.suspend((): Schema.Codec<CapacityDto> => CapacityDto).annotate({
+      description: "Capacity state metadata",
+    })
+  ),
+  liquidityState: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<LiquidityStateDto> => LiquidityStateDto
+    ).annotate({
+      description: "Liquidity state (available liquidity, utilization rate)",
+    })
+  ),
+  allocations: Schema.optionalKey(
+    Schema.Array(AllocationDto).annotate({
+      description:
+        "Allocations to underlying strategies for vault yields (e.g., OAV, Morpho). Includes allocation, APY, TVL, and capacity per strategy.",
+    })
+  ),
+}).annotate({ identifier: "YieldStateDto" });
+export type OutcomeDto = {
+  readonly incoming: ShareAmountValueDto;
+  readonly outgoing: OutcomeOutgoingDto;
+};
+export const OutcomeDto = Schema.Struct({
+  incoming: ShareAmountValueDto,
+  outgoing: OutcomeOutgoingDto,
+}).annotate({ identifier: "OutcomeDto" });
+export type ValidatorProviderDto = {
+  readonly name: string;
+  readonly id: string;
+  readonly logoURI: string;
+  readonly description: string;
+  readonly website: string;
+  readonly tvlUsd: string | null;
+  readonly type: "protocol" | "validator_provider";
+  readonly references?: ReadonlyArray<string> | null;
+  readonly rank: number;
+  readonly preferred: boolean;
+  readonly revshare?: RevShareTiersDto | null;
+  readonly uniqueId?: string;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+};
+export const ValidatorProviderDto = Schema.Struct({
+  name: Schema.String.annotate({
+    description: "Provider name",
+    examples: ["Morpho"],
+  }),
+  id: Schema.String.annotate({
+    description: "Provider ID",
+    examples: ["morpho"],
+  }),
+  logoURI: Schema.String.annotate({
+    description: "Provider logo URI",
+    examples: ["https://morpho.xyz/logo.png"],
+  }),
+  description: Schema.String.annotate({
+    description: "Short description of the provider",
+    examples: ["A peer-to-peer DeFi lending protocol"],
+  }),
+  website: Schema.String.annotate({
+    description: "Provider website",
+    examples: ["https://morpho.xyz"],
+  }),
+  tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
+    description: "Total TVL across the entire provider in USD",
+    examples: ["10,200,000"],
+  }),
+  type: Schema.Literals(["protocol", "validator_provider"]).annotate({
+    description: "Type of provider (protocol or validator provider)",
+    examples: ["protocol"],
+  }),
+  references: Schema.optionalKey(
+    Schema.Union([Schema.Array(Schema.String), Schema.Null]).annotate({
+      description: "Optional social/media references or audit links",
+    })
+  ),
+  rank: Schema.Number.annotate({
+    description: "Provider ranking (lower numbers indicate higher preference)",
+    examples: [1],
+  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
+  preferred: Schema.Boolean.annotate({
+    description: "Whether this provider is marked as preferred",
+    examples: [true],
+  }),
+  revshare: Schema.optionalKey(
+    Schema.Union([RevShareTiersDto, Schema.Null], { mode: "oneOf" }).annotate({
+      description: "Revenue sharing details by tier",
+    })
+  ),
+  uniqueId: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Provider ID (deprecated, use `id` instead)",
+      examples: ["luganodes"],
+    })
+  ),
+  createdAt: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Creation timestamp (deprecated)",
+      format: "date-time",
+    })
+  ),
+  updatedAt: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Last update timestamp (deprecated)",
+      format: "date-time",
+    })
+  ),
+}).annotate({ identifier: "ValidatorProviderDto" });
+export type SchedulePathDto = {
+  readonly kind: "instant" | "standard";
+  readonly cadence: "continuous" | "daily_cutoff" | "periodic" | "scheduled";
+  readonly status: "open" | "closed" | "settling";
+  readonly businessDaysOnly?: boolean;
+  readonly cutoffTime?: string;
+  readonly currentWindow?: {
+    readonly opensAt: string;
+    readonly closesAt: string;
+    readonly source?: "onchain" | "api" | "config";
+  };
+  readonly nextWindow?: {
+    readonly opensAt: string;
+    readonly closesAt: string;
+    readonly source?: "onchain" | "api" | "config";
+  };
+  readonly settlement: SettlementSpecDto;
+  readonly accrual: AccrualSpecDto;
+  readonly limits?: PathLimitsDto;
+  readonly fee?: PathFeeDto;
+};
+export const SchedulePathDto = Schema.Struct({
+  kind: Schema.Literals(["instant", "standard"]).annotate({
+    description:
+      "instant = atomic same-tx, liquidity/limit-bounded; standard = windowed / off-chain settled",
+  }),
+  cadence: Schema.Literals([
+    "continuous",
+    "daily_cutoff",
+    "periodic",
+    "scheduled",
+  ]).annotate({ description: "How the path recurs" }),
+  status: Schema.Literals(["open", "closed", "settling"]).annotate({
+    description: "Live status, refreshed by cron / on-chain read",
+  }),
+  businessDaysOnly: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description:
+        "false/omitted = 24/7/365 (instant DeFi paths); true = market days only",
+    })
+  ),
+  cutoffTime: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        'For daily_cutoff: local cutoff time orders must be in by, e.g. "16:00"',
+      examples: ["16:00"],
+    })
+  ),
+  currentWindow: Schema.optionalKey(
+    Schema.Struct({
+      opensAt: Schema.String.annotate({
+        description: "Window open time (ISO 8601)",
+        examples: ["2026-07-21T08:00:00Z"],
+      }),
+      closesAt: Schema.String.annotate({
+        description:
+          "Window close / cutoff time (ISO 8601); orders after this roll to nextWindow",
+        examples: ["2026-07-27T20:00:00Z"],
+      }),
+      source: Schema.optionalKey(
+        Schema.Literals(["onchain", "api", "config"]).annotate({
+          description:
+            "Provenance of this window (on-chain read, issuer API, or hardcoded config)",
+        })
+      ),
+    }).annotate({
+      description:
+        "The window the user is acting into right now (null when continuous)",
+    })
+  ),
+  nextWindow: Schema.optionalKey(
+    Schema.Struct({
+      opensAt: Schema.String.annotate({
+        description: "Window open time (ISO 8601)",
+        examples: ["2026-07-21T08:00:00Z"],
+      }),
+      closesAt: Schema.String.annotate({
+        description:
+          "Window close / cutoff time (ISO 8601); orders after this roll to nextWindow",
+        examples: ["2026-07-27T20:00:00Z"],
+      }),
+      source: Schema.optionalKey(
+        Schema.Literals(["onchain", "api", "config"]).annotate({
+          description:
+            "Provenance of this window (on-chain read, issuer API, or hardcoded config)",
+        })
+      ),
+    }).annotate({
+      description:
+        "The next window after the current one closes; what a UI counts down to",
+    })
+  ),
+  settlement: Schema.suspend(
+    (): Schema.Codec<SettlementSpecDto> => SettlementSpecDto
+  ).annotate({ description: "When the order is actually processed" }),
+  accrual: Schema.suspend(
+    (): Schema.Codec<AccrualSpecDto> => AccrualSpecDto
+  ).annotate({
+    description: "When earning starts/stops relative to the order",
+  }),
+  limits: Schema.optionalKey(
+    Schema.suspend((): Schema.Codec<PathLimitsDto> => PathLimitsDto).annotate({
+      description:
+        "Caps that gate an instant path or an on-demand liquidity pool",
+    })
+  ),
+  fee: Schema.optionalKey(
+    Schema.suspend((): Schema.Codec<PathFeeDto> => PathFeeDto).annotate({
+      description:
+        "Fee this path charges on the amount (e.g. instant redemption fee)",
+    })
+  ),
+}).annotate({ identifier: "SchedulePathDto" });
+export type CreateActionDto = {
+  readonly yieldId: string;
+  readonly address: string;
+  readonly arguments?: ActionArgumentsDto;
+};
+export const CreateActionDto = Schema.Struct({
+  yieldId: Schema.String.annotate({
+    description: "Yield ID to perform the action on",
+    examples: ["ethereum-eth-lido-staking"],
+  }),
+  address: Schema.String.annotate({
+    description: "User wallet address",
+    examples: ["0x1234..."],
+  }),
+  arguments: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<ActionArgumentsDto> => ActionArgumentsDto
+    ).annotate({ description: "Arguments for the action" })
+  ),
+}).annotate({ identifier: "CreateActionDto" });
+export type CreateManageActionDto = {
+  readonly yieldId: string;
+  readonly address: string;
+  readonly arguments?: ActionArgumentsDto;
+  readonly action:
+    | "STAKE"
+    | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
+    | "CLAIM_REWARDS"
+    | "AUTO_SWEEP_UNSTAKE_REWARDS"
+    | "AUTO_SWEEP_WITHDRAW_REWARDS"
+    | "RESTAKE_REWARDS"
+    | "WITHDRAW"
+    | "WITHDRAW_ALL"
+    | "RESTAKE"
+    | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
+    | "UNLOCK_LOCKED"
+    | "STAKE_LOCKED"
+    | "VOTE"
+    | "REVOKE"
+    | "VOTE_LOCKED"
+    | "REVOTE"
+    | "REBOND"
+    | "MIGRATE"
+    | "VERIFY_WITHDRAW_CREDENTIALS"
+    | "DELEGATE"
+    | "MERGE"
+    | "CANCEL_PENDING";
+  readonly passthrough: string;
+};
+export const CreateManageActionDto = Schema.Struct({
+  yieldId: Schema.String.annotate({
+    description: "Yield ID to perform the action on",
+    examples: ["ethereum-eth-lido-staking"],
+  }),
+  address: Schema.String.annotate({
+    description: "User wallet address",
+    examples: ["0x1234..."],
+  }),
+  arguments: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<ActionArgumentsDto> => ActionArgumentsDto
+    ).annotate({ description: "Arguments for the action" })
+  ),
+  action: Schema.Literals([
+    "STAKE",
+    "UNSTAKE",
+    "WITHDRAW_REQUEST",
+    "INSTANT_WITHDRAW",
+    "CLAIM_REWARDS",
+    "AUTO_SWEEP_UNSTAKE_REWARDS",
+    "AUTO_SWEEP_WITHDRAW_REWARDS",
+    "RESTAKE_REWARDS",
+    "WITHDRAW",
+    "WITHDRAW_ALL",
+    "RESTAKE",
+    "CLAIM_UNSTAKED",
+    "REFUND_REQUEST",
+    "UNLOCK_LOCKED",
+    "STAKE_LOCKED",
+    "VOTE",
+    "REVOKE",
+    "VOTE_LOCKED",
+    "REVOTE",
+    "REBOND",
+    "MIGRATE",
+    "VERIFY_WITHDRAW_CREDENTIALS",
+    "DELEGATE",
+    "MERGE",
+    "CANCEL_PENDING",
+  ]).annotate({
+    description: "Pending action type (required for manage actions)",
+    examples: ["CLAIM_REWARDS"],
+  }),
+  passthrough: Schema.String.annotate({
+    description:
+      "Server-generated passthrough from the balances endpoint (required for manage actions)",
+    examples: ["eyJhZGRyZXNzZXMiOnsiYWRkcmVzcyI6ImNvc21vczF5ZXk..."],
+  }),
+}).annotate({ identifier: "CreateManageActionDto" });
+export type KycMetadataDto = {
+  readonly kycMode:
+    | "none"
+    | "oauth_redirect"
+    | "external_redirect"
+    | "iframe"
+    | "deeplink"
+    | "native_sdk";
+  readonly iframeAllowed: boolean;
+  readonly authorizeUrl?: string;
+  readonly notes?: string;
+  readonly eligibility: KycEligibilityDto;
+  readonly requiredForRoutes?: ReadonlyArray<YieldRoute>;
+  readonly selfAttestation?: SelfAttestationDto;
+  readonly mandatoryDisclosureUrl?: string;
+};
+export const KycMetadataDto = Schema.Struct({
+  kycMode: Schema.Literals([
+    "none",
+    "oauth_redirect",
+    "external_redirect",
+    "iframe",
+    "deeplink",
+    "native_sdk",
+  ]).annotate({
+    description: "How the issuer KYC flow is delivered",
+    examples: ["oauth_redirect"],
+  }),
+  iframeAllowed: Schema.Boolean.annotate({
+    description: "Whether the issuer KYC page may be embedded in an iframe",
+  }),
+  authorizeUrl: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "URL of the issuer-hosted KYC page (HTTPS)",
+    })
+  ),
+  notes: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Human-readable notes about the KYC requirement",
+    })
+  ),
+  eligibility: KycEligibilityDto,
+  requiredForRoutes: Schema.optionalKey(
+    Schema.Array(YieldRoute).annotate({
+      description:
+        "Routes that require issuer identity verification (KYC/KYB). Absent means every route. Covers identity verification only: eligibility (geo, US person, investor tier) applies to every route",
+      examples: [["primary"]],
+    })
+  ),
+  selfAttestation: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<SelfAttestationDto> => SelfAttestationDto
+    ).annotate({
+      description:
+        "Issuer-enforced self-attestation the user must complete before entering",
+    })
+  ),
+  mandatoryDisclosureUrl: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "URL of a regulator-mandated disclosure document (HTTPS)",
+    })
+  ),
+}).annotate({ identifier: "KycMetadataDto" });
+export type CampaignRewardsResponseDto = {
+  readonly items: ReadonlyArray<CampaignRewardsDto>;
+};
+export const CampaignRewardsResponseDto = Schema.Struct({
+  items: Schema.Array(CampaignRewardsDto),
+}).annotate({ identifier: "CampaignRewardsResponseDto" });
+export type ConfirmedOutcomeDto = {
+  readonly incoming: ConfirmedOutcomeIncomingDto;
+  readonly outgoing: ConfirmedOutcomeOutgoingDto;
+};
+export const ConfirmedOutcomeDto = Schema.Struct({
+  incoming: ConfirmedOutcomeIncomingDto,
+  outgoing: ConfirmedOutcomeOutgoingDto,
+}).annotate({ identifier: "ConfirmedOutcomeDto" });
+export type SimulationGasDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
+  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
+};
+export const SimulationGasDto = Schema.Struct({
+  amount: Schema.Union([Schema.String, Schema.Null]),
+  token: TokenDto,
+  gasLimit: Schema.optionalKey(Schema.String),
+  transactions: Schema.Array(TransactionGasEstimateDto),
+}).annotate({ identifier: "SimulationGasDto" });
+export type YieldFeeConfigurationDto = {
+  readonly id: string;
+  readonly default: boolean;
+  readonly managementFeeBps?: number | null;
+  readonly performanceFeeBps?: number | null;
+  readonly depositFeeBps?: number | null;
+  readonly allocatorVaultContractAddress?: string | null;
+  readonly merklRewardsClaiming: boolean;
+  readonly rewardRate: RewardRateDto;
+  readonly statistics?: YieldStatisticsDto;
+};
+export const YieldFeeConfigurationDto = Schema.Struct({
+  id: Schema.String.annotate({
+    description: "Fee configuration identifier",
+    examples: ["66f299cd-aaaa-bbbb-cccc-d1f26e3a02db"],
+  }),
+  default: Schema.Boolean.annotate({
+    description:
+      "Whether this is the default fee configuration for the integration",
+    examples: [true],
+  }),
+  managementFeeBps: Schema.optionalKey(
+    Schema.Union([Schema.Finite, Schema.Null]).annotate({
+      description: "Management fee in basis points",
+      examples: [100],
+    })
+  ),
+  performanceFeeBps: Schema.optionalKey(
+    Schema.Union([Schema.Finite, Schema.Null]).annotate({
+      description: "Performance fee in basis points",
+      examples: [1000],
+    })
+  ),
+  depositFeeBps: Schema.optionalKey(
+    Schema.Union([Schema.Finite, Schema.Null]).annotate({
+      description: "Deposit fee in basis points",
+      examples: [0],
+    })
+  ),
+  allocatorVaultContractAddress: Schema.optionalKey(
+    Schema.Union([Schema.String, Schema.Null]).annotate({
+      description: "Partner allocator vault contract address",
+      examples: ["0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b"],
+    })
+  ),
+  merklRewardsClaiming: Schema.Boolean.annotate({
+    description:
+      "Whether Yield collects unclaimed Merkl rewards for this allocator vault",
+    examples: [true],
+  }),
+  rewardRate: Schema.suspend(
+    (): Schema.Codec<RewardRateDto> => RewardRateDto
+  ).annotate({
+    description:
+      "Base yield reward rate net of this configuration's performance fee. Same shape and decimal scale as the yield rewardRate, without campaign components.",
+  }),
+  statistics: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<YieldStatisticsDto> => YieldStatisticsDto
+    ).annotate({
+      description:
+        "Partner-scoped metrics for assets that entered through this fee configuration allocator vault",
+    })
+  ),
+}).annotate({ identifier: "YieldFeeConfigurationDto" });
+export type ValidatorDto = {
+  readonly address: string;
+  readonly name?: string;
+  readonly logoURI?: string;
+  readonly website?: string;
+  readonly rewardRate?: RewardRateDto;
+  readonly provider?: ValidatorProviderDto;
+  readonly commission?: number;
+  readonly tvlUsd?: string;
+  readonly tvl?: string;
+  readonly tvlRaw?: string;
+  readonly votingPower?: number;
+  readonly preferred?: boolean;
+  readonly minimumStake?: string;
+  readonly remainingPossibleStake?: string;
+  readonly remainingSlots?: number;
+  readonly nominatorCount?: number;
+  readonly status?: string;
+  readonly providerId?: string;
+  readonly subnet?: ValidatorSubnetDto;
+};
+export const ValidatorDto = Schema.Struct({
+  address: Schema.String.annotate({
+    description: "Validator address or ID",
+    examples: ["cosmosvaloper1abc..."],
+  }),
+  name: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Validator display name",
+      examples: ["Example Validator"],
+    })
+  ),
+  logoURI: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Validator logo URI",
+      examples: ["https://example.com/logo.png"],
+    })
+  ),
+  website: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Link to validator website",
+      examples: ["https://example.com"],
+    })
+  ),
+  rewardRate: Schema.optionalKey(
+    Schema.suspend((): Schema.Codec<RewardRateDto> => RewardRateDto).annotate({
+      description:
+        "Detailed reward rate breakdown by source (emissions, MEV, fees, etc.)",
+    })
+  ),
+  provider: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<ValidatorProviderDto> => ValidatorProviderDto
+    ).annotate({ description: "Provider information for this validator" })
+  ),
+  commission: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Commission rate charged by validator",
+      examples: [0.05],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+  ),
+  tvlUsd: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Total value locked with this validator in USD",
+      examples: ["18,340,000"],
+    })
+  ),
+  tvl: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Total value locked with this validator in native token",
+      examples: ["8250.45"],
+    })
+  ),
+  tvlRaw: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Raw total value locked with this validator (full precision)",
+      examples: ["8250450000000000000000"],
+    })
+  ),
+  votingPower: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Validator's voting power share (0–1)",
+      examples: [0.013],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+  ),
+  preferred: Schema.optionalKey(
+    Schema.Boolean.annotate({
+      description: "Whether this validator is flagged as preferred",
+      examples: [true],
+    })
+  ),
+  minimumStake: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Minimum stake allowed in native token",
+      examples: ["1.0"],
+    })
+  ),
+  remainingPossibleStake: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "Maximum available stake before hitting cap in native token",
+      examples: ["285,714.28"],
+    })
+  ),
+  remainingSlots: Schema.optionalKey(
+    Schema.Number.annotate({
+      description:
+        "Number of remaining nominator/delegator slots (for capped chains)",
+      examples: [8],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+  ),
+  nominatorCount: Schema.optionalKey(
+    Schema.Number.annotate({
+      description: "Number of current nominators",
+      examples: [321],
+    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
+  ),
+  status: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Validator status: active, jailed, deactivating, inactive, full or not_found",
+      examples: ["active"],
+    })
+  ),
+  providerId: Schema.optionalKey(
+    Schema.String.annotate({
+      description: "ID of the provider backing this validator",
+      examples: ["provider-1"],
+    })
+  ),
+  subnet: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<ValidatorSubnetDto> => ValidatorSubnetDto
+    ).annotate({
+      description:
+        "Subnet metadata when the validator operates within a subnet (Bittensor)",
+    })
+  ),
+}).annotate({ identifier: "ValidatorDto" });
+export type SideScheduleDto = {
+  readonly paths: ReadonlyArray<SchedulePathDto>;
+};
+export const SideScheduleDto = Schema.Struct({
+  paths: Schema.Array(SchedulePathDto).annotate({
+    description:
+      "Ways to act on this side (e.g. instant + standard); paths[0] is the default",
+  }),
+}).annotate({ identifier: "SideScheduleDto" });
+export type YieldRequirementsDto = {
+  readonly kycRequired: boolean;
+  readonly kyc?: KycMetadataDto;
+};
+export const YieldRequirementsDto = Schema.Struct({
+  kycRequired: Schema.Boolean.annotate({
+    description: "Whether off-chain KYC is required before transacting",
+  }),
+  kyc: Schema.optionalKey(
+    Schema.suspend((): Schema.Codec<KycMetadataDto> => KycMetadataDto).annotate(
+      {
+        description:
+          "Public KYC criteria for rendering verification UI per opportunity",
+      }
+    )
+  ),
+}).annotate({ identifier: "YieldRequirementsDto" });
 export type ActionDto = {
   readonly id: string;
   readonly intent: "enter" | "manage" | "exit";
@@ -4303,6 +5159,7 @@ export type ActionDto = {
     | "WITHDRAW_ALL"
     | "RESTAKE"
     | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
     | "UNLOCK_LOCKED"
     | "STAKE_LOCKED"
     | "VOTE"
@@ -4325,6 +5182,7 @@ export type ActionDto = {
   readonly entryReserveEstimate?: string;
   readonly transactions: ReadonlyArray<TransactionDto>;
   readonly events?: ReadonlyArray<ActionEventDto>;
+  readonly outcome?: ConfirmedOutcomeDto;
   readonly executionPattern: "synchronous" | "asynchronous" | "batch";
   readonly rawArguments: {
     readonly amount?: string;
@@ -4562,6 +5420,7 @@ export type ActionDto = {
     readonly cAddressBech?: string;
     readonly pAddressBech?: string;
     readonly executionMode?: "individual" | "batched";
+    readonly route?: YieldRoute;
     readonly ledgerWalletApiCompatible?: boolean;
     readonly useMaxAmount?: boolean;
     readonly useInstantExecution?: boolean;
@@ -4615,6 +5474,7 @@ export const ActionDto = Schema.Struct({
     "WITHDRAW_ALL",
     "RESTAKE",
     "CLAIM_UNSTAKED",
+    "REFUND_REQUEST",
     "UNLOCK_LOCKED",
     "STAKE_LOCKED",
     "VOTE",
@@ -4680,6 +5540,14 @@ export const ActionDto = Schema.Struct({
     Schema.Array(ActionEventDto).annotate({
       description:
         "Protocol-side events associated with this action, such as a redemption settlement executed by the protocol after the action completed. Omitted when there are none.",
+    })
+  ),
+  outcome: Schema.optionalKey(
+    Schema.suspend(
+      (): Schema.Codec<ConfirmedOutcomeDto> => ConfirmedOutcomeDto
+    ).annotate({
+      description:
+        "On-chain amounts from the action's confirmed enter/exit transaction, relative to the user's wallet. Enter: outgoing is the assets amount of the vault's deposit event, in the vault's own asset token (after any fee-wrapper fee, which is taken before the deposit; a fee charged by the vault itself is included and reflected in the shares), incoming the shares minted. Exit: outgoing is the shares burned, incoming the asset the vault released. Incoming carries status confirmed. Protocol source metadata stays internal. Present only after confirmation for supported yields.",
     })
   ),
   executionPattern: Schema.Literals([
@@ -5038,6 +5906,13 @@ export const ActionDto = Schema.Struct({
         examples: ["individual"],
       })
     ),
+    route: Schema.optionalKey(
+      Schema.suspend((): Schema.Codec<YieldRoute> => YieldRoute).annotate({
+        description:
+          "Execution route: primary (issuer mint/redeem) or secondary (market swap). Only for yields that list it in their arguments schema. Defaults to primary",
+        examples: ["primary"],
+      })
+    ),
     ledgerWalletApiCompatible: Schema.optionalKey(
       Schema.Boolean.annotate({
         description:
@@ -5205,747 +6080,10 @@ export const ActionDto = Schema.Struct({
     "STALE",
   ]).annotate({ description: "Current status of the action" }),
 }).annotate({ identifier: "ActionDto" });
-export type CreateActionDto = {
-  readonly yieldId: string;
-  readonly address: string;
-  readonly arguments?: ActionArgumentsDto;
-};
-export const CreateActionDto = Schema.Struct({
-  yieldId: Schema.String.annotate({
-    description: "Yield ID to perform the action on",
-    examples: ["ethereum-eth-lido-staking"],
-  }),
-  address: Schema.String.annotate({
-    description: "User wallet address",
-    examples: ["0x1234..."],
-  }),
-  arguments: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<ActionArgumentsDto> => ActionArgumentsDto
-    ).annotate({ description: "Arguments for the action" })
-  ),
-}).annotate({ identifier: "CreateActionDto" });
-export type CreateManageActionDto = {
-  readonly yieldId: string;
-  readonly address: string;
-  readonly arguments?: ActionArgumentsDto;
-  readonly action:
-    | "STAKE"
-    | "UNSTAKE"
-    | "WITHDRAW_REQUEST"
-    | "INSTANT_WITHDRAW"
-    | "CLAIM_REWARDS"
-    | "AUTO_SWEEP_UNSTAKE_REWARDS"
-    | "AUTO_SWEEP_WITHDRAW_REWARDS"
-    | "RESTAKE_REWARDS"
-    | "WITHDRAW"
-    | "WITHDRAW_ALL"
-    | "RESTAKE"
-    | "CLAIM_UNSTAKED"
-    | "UNLOCK_LOCKED"
-    | "STAKE_LOCKED"
-    | "VOTE"
-    | "REVOKE"
-    | "VOTE_LOCKED"
-    | "REVOTE"
-    | "REBOND"
-    | "MIGRATE"
-    | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE"
-    | "MERGE"
-    | "CANCEL_PENDING";
-  readonly passthrough: string;
-};
-export const CreateManageActionDto = Schema.Struct({
-  yieldId: Schema.String.annotate({
-    description: "Yield ID to perform the action on",
-    examples: ["ethereum-eth-lido-staking"],
-  }),
-  address: Schema.String.annotate({
-    description: "User wallet address",
-    examples: ["0x1234..."],
-  }),
-  arguments: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<ActionArgumentsDto> => ActionArgumentsDto
-    ).annotate({ description: "Arguments for the action" })
-  ),
-  action: Schema.Literals([
-    "STAKE",
-    "UNSTAKE",
-    "WITHDRAW_REQUEST",
-    "INSTANT_WITHDRAW",
-    "CLAIM_REWARDS",
-    "AUTO_SWEEP_UNSTAKE_REWARDS",
-    "AUTO_SWEEP_WITHDRAW_REWARDS",
-    "RESTAKE_REWARDS",
-    "WITHDRAW",
-    "WITHDRAW_ALL",
-    "RESTAKE",
-    "CLAIM_UNSTAKED",
-    "UNLOCK_LOCKED",
-    "STAKE_LOCKED",
-    "VOTE",
-    "REVOKE",
-    "VOTE_LOCKED",
-    "REVOTE",
-    "REBOND",
-    "MIGRATE",
-    "VERIFY_WITHDRAW_CREDENTIALS",
-    "DELEGATE",
-    "MERGE",
-    "CANCEL_PENDING",
-  ]).annotate({
-    description: "Pending action type (required for manage actions)",
-    examples: ["CLAIM_REWARDS"],
-  }),
-  passthrough: Schema.String.annotate({
-    description:
-      "Server-generated passthrough from the balances endpoint (required for manage actions)",
-    examples: ["eyJhZGRyZXNzZXMiOnsiYWRkcmVzcyI6ImNvc21vczF5ZXk..."],
-  }),
-}).annotate({ identifier: "CreateManageActionDto" });
-export type TransactionGasEstimateDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly stepIndex: number;
-  readonly type: TransactionType | null;
-};
-export const TransactionGasEstimateDto = Schema.Struct({
-  amount: Schema.Union([Schema.String, Schema.Null]),
-  token: TokenDto,
-  gasLimit: Schema.optionalKey(Schema.String),
-  stepIndex: Schema.Finite,
-  type: Schema.Union([TransactionType, Schema.Null]),
-}).annotate({ identifier: "TransactionGasEstimateDto" });
-export type HealthStatusDto = {
-  readonly status: HealthStatus;
-  readonly timestamp: string;
-};
-export const HealthStatusDto = Schema.Struct({
-  status: Schema.suspend(
-    (): Schema.Codec<HealthStatus> => HealthStatus
-  ).annotate({
-    description: "The health status of the service",
-    examples: ["OK"],
-  }),
-  timestamp: Schema.String.annotate({
-    description: "Timestamp when the health check was performed",
-    examples: ["2024-01-15T10:30:00.000Z"],
-    format: "date-time",
-  }),
-}).annotate({ identifier: "HealthStatusDto" });
-export type BalancesRequestDto = {
-  readonly queries: ReadonlyArray<BalancesQueryDto>;
-};
-export const BalancesRequestDto = Schema.Struct({
-  queries: Schema.Array(BalancesQueryDto)
-    .annotate({
-      description: "Array of balance queries (maximum 25 queries per request)",
-      examples: [
-        [
-          {
-            yieldId: "ethereum-eth-lido-staking",
-            address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-            network: "ethereum",
-          },
-        ],
-      ],
-    })
-    .check(
-      Schema.isMinLength(1).annotate({
-        expected: "a value with a length of at least 1",
-      })
-    )
-    .check(
-      Schema.isMaxLength(25).annotate({
-        expected: "a value with a length of at most 25",
-      })
-    ),
-}).annotate({ identifier: "BalancesRequestDto" });
-export type YieldMechanicsArgumentsDto = {
-  readonly enter?: ArgumentSchemaDto;
-  readonly exit?: ArgumentSchemaDto;
-  readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
-  readonly balance?: ArgumentSchemaDto;
-};
-export const YieldMechanicsArgumentsDto = Schema.Struct({
-  enter: Schema.optionalKey(ArgumentSchemaDto),
-  exit: Schema.optionalKey(ArgumentSchemaDto),
-  manage: Schema.optionalKey(
-    Schema.Record(Schema.String, ArgumentSchemaDto).annotate({
-      description:
-        "Manage action schemas. Each yield supports different ActionTypes (CLAIM_UNSTAKED, CLAIM_REWARDS, etc.). Keys are ActionTypes enum values.",
-    })
-  ),
-  balance: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<ArgumentSchemaDto> => ArgumentSchemaDto
-    ).annotate({
-      description:
-        "Arguments for the balances endpoint (e.g., alternative addresses, chain-specific fields)",
-    })
-  ),
-}).annotate({ identifier: "YieldMechanicsArgumentsDto" });
-export type RewardRateDto = {
-  readonly total: number;
-  readonly rateType: string;
-  readonly components: ReadonlyArray<RewardDto>;
-};
-export const RewardRateDto = Schema.Struct({
-  total: Schema.Number.annotate({
-    description:
-      "Estimated underlying integration reward rate across all sources. May include an additional campaign component when an active campaign applies to this project.",
-    examples: [6.5],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  rateType: Schema.String.annotate({
-    description: "Whether this reward rate is APR or APY",
-    examples: ["APR"],
-  }),
-  components: Schema.Array(RewardDto).annotate({
-    description: "Breakdown of reward rates by source",
-  }),
-}).annotate({ identifier: "RewardRateDto" });
-export type YieldStateDto = {
-  readonly pricePerShareState?: PricePerShareStateDto;
-  readonly concentratedLiquidityPoolState?: ConcentratedLiquidityPoolStateDto;
-  readonly capacityState?: CapacityDto;
-  readonly liquidityState?: LiquidityStateDto;
-  readonly allocations?: ReadonlyArray<AllocationDto>;
-};
-export const YieldStateDto = Schema.Struct({
-  pricePerShareState: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<PricePerShareStateDto> => PricePerShareStateDto
-    ).annotate({ description: "Price per share state metadata" })
-  ),
-  concentratedLiquidityPoolState: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<ConcentratedLiquidityPoolStateDto> =>
-        ConcentratedLiquidityPoolStateDto
-    ).annotate({ description: "Concentrated liquidity pool state metadata" })
-  ),
-  capacityState: Schema.optionalKey(
-    Schema.suspend((): Schema.Codec<CapacityDto> => CapacityDto).annotate({
-      description: "Capacity state metadata",
-    })
-  ),
-  liquidityState: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<LiquidityStateDto> => LiquidityStateDto
-    ).annotate({
-      description: "Liquidity state (available liquidity, utilization rate)",
-    })
-  ),
-  allocations: Schema.optionalKey(
-    Schema.Array(AllocationDto).annotate({
-      description:
-        "Allocations to underlying strategies for vault yields (e.g., OAV, Morpho). Includes allocation, APY, TVL, and capacity per strategy.",
-    })
-  ),
-}).annotate({ identifier: "YieldStateDto" });
-export type ValidatorProviderDto = {
-  readonly name: string;
-  readonly id: string;
-  readonly logoURI: string;
-  readonly description: string;
-  readonly website: string;
-  readonly tvlUsd: string | null;
-  readonly type: "protocol" | "validator_provider";
-  readonly references?: ReadonlyArray<string> | null;
-  readonly rank: number;
-  readonly preferred: boolean;
-  readonly revshare?: RevShareTiersDto | null;
-  readonly uniqueId?: string;
-  readonly createdAt?: string;
-  readonly updatedAt?: string;
-};
-export const ValidatorProviderDto = Schema.Struct({
-  name: Schema.String.annotate({
-    description: "Provider name",
-    examples: ["Morpho"],
-  }),
-  id: Schema.String.annotate({
-    description: "Provider ID",
-    examples: ["morpho"],
-  }),
-  logoURI: Schema.String.annotate({
-    description: "Provider logo URI",
-    examples: ["https://morpho.xyz/logo.png"],
-  }),
-  description: Schema.String.annotate({
-    description: "Short description of the provider",
-    examples: ["A peer-to-peer DeFi lending protocol"],
-  }),
-  website: Schema.String.annotate({
-    description: "Provider website",
-    examples: ["https://morpho.xyz"],
-  }),
-  tvlUsd: Schema.Union([Schema.String, Schema.Null]).annotate({
-    description: "Total TVL across the entire provider in USD",
-    examples: ["10,200,000"],
-  }),
-  type: Schema.Literals(["protocol", "validator_provider"]).annotate({
-    description: "Type of provider (protocol or validator provider)",
-    examples: ["protocol"],
-  }),
-  references: Schema.optionalKey(
-    Schema.Union([Schema.Array(Schema.String), Schema.Null]).annotate({
-      description: "Optional social/media references or audit links",
-    })
-  ),
-  rank: Schema.Number.annotate({
-    description: "Provider ranking (lower numbers indicate higher preference)",
-    examples: [1],
-  }).check(Schema.isFinite().annotate({ expected: "a finite number" })),
-  preferred: Schema.Boolean.annotate({
-    description: "Whether this provider is marked as preferred",
-    examples: [true],
-  }),
-  revshare: Schema.optionalKey(
-    Schema.Union([RevShareTiersDto, Schema.Null], { mode: "oneOf" }).annotate({
-      description: "Revenue sharing details by tier",
-    })
-  ),
-  uniqueId: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Provider ID (deprecated, use `id` instead)",
-      examples: ["luganodes"],
-    })
-  ),
-  createdAt: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Creation timestamp (deprecated)",
-      format: "date-time",
-    })
-  ),
-  updatedAt: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Last update timestamp (deprecated)",
-      format: "date-time",
-    })
-  ),
-}).annotate({ identifier: "ValidatorProviderDto" });
-export type SchedulePathDto = {
-  readonly kind: "instant" | "standard";
-  readonly cadence: "continuous" | "daily_cutoff" | "periodic" | "scheduled";
-  readonly status: "open" | "closed" | "settling";
-  readonly businessDaysOnly?: boolean;
-  readonly cutoffTime?: string;
-  readonly currentWindow?: {
-    readonly opensAt: string;
-    readonly closesAt: string;
-    readonly source?: "onchain" | "api" | "config";
-  };
-  readonly nextWindow?: {
-    readonly opensAt: string;
-    readonly closesAt: string;
-    readonly source?: "onchain" | "api" | "config";
-  };
-  readonly settlement: SettlementSpecDto;
-  readonly accrual: AccrualSpecDto;
-  readonly limits?: PathLimitsDto;
-  readonly fee?: PathFeeDto;
-};
-export const SchedulePathDto = Schema.Struct({
-  kind: Schema.Literals(["instant", "standard"]).annotate({
-    description:
-      "instant = atomic same-tx, liquidity/limit-bounded; standard = windowed / off-chain settled",
-  }),
-  cadence: Schema.Literals([
-    "continuous",
-    "daily_cutoff",
-    "periodic",
-    "scheduled",
-  ]).annotate({ description: "How the path recurs" }),
-  status: Schema.Literals(["open", "closed", "settling"]).annotate({
-    description: "Live status, refreshed by cron / on-chain read",
-  }),
-  businessDaysOnly: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description:
-        "false/omitted = 24/7/365 (instant DeFi paths); true = market days only",
-    })
-  ),
-  cutoffTime: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        'For daily_cutoff: local cutoff time orders must be in by, e.g. "16:00"',
-      examples: ["16:00"],
-    })
-  ),
-  currentWindow: Schema.optionalKey(
-    Schema.Struct({
-      opensAt: Schema.String.annotate({
-        description: "Window open time (ISO 8601)",
-        examples: ["2026-07-21T08:00:00Z"],
-      }),
-      closesAt: Schema.String.annotate({
-        description:
-          "Window close / cutoff time (ISO 8601); orders after this roll to nextWindow",
-        examples: ["2026-07-27T20:00:00Z"],
-      }),
-      source: Schema.optionalKey(
-        Schema.Literals(["onchain", "api", "config"]).annotate({
-          description:
-            "Provenance of this window (on-chain read, issuer API, or hardcoded config)",
-        })
-      ),
-    }).annotate({
-      description:
-        "The window the user is acting into right now (null when continuous)",
-    })
-  ),
-  nextWindow: Schema.optionalKey(
-    Schema.Struct({
-      opensAt: Schema.String.annotate({
-        description: "Window open time (ISO 8601)",
-        examples: ["2026-07-21T08:00:00Z"],
-      }),
-      closesAt: Schema.String.annotate({
-        description:
-          "Window close / cutoff time (ISO 8601); orders after this roll to nextWindow",
-        examples: ["2026-07-27T20:00:00Z"],
-      }),
-      source: Schema.optionalKey(
-        Schema.Literals(["onchain", "api", "config"]).annotate({
-          description:
-            "Provenance of this window (on-chain read, issuer API, or hardcoded config)",
-        })
-      ),
-    }).annotate({
-      description:
-        "The next window after the current one closes; what a UI counts down to",
-    })
-  ),
-  settlement: Schema.suspend(
-    (): Schema.Codec<SettlementSpecDto> => SettlementSpecDto
-  ).annotate({ description: "When the order is actually processed" }),
-  accrual: Schema.suspend(
-    (): Schema.Codec<AccrualSpecDto> => AccrualSpecDto
-  ).annotate({
-    description: "When earning starts/stops relative to the order",
-  }),
-  limits: Schema.optionalKey(
-    Schema.suspend((): Schema.Codec<PathLimitsDto> => PathLimitsDto).annotate({
-      description:
-        "Caps that gate an instant path or an on-demand liquidity pool",
-    })
-  ),
-  fee: Schema.optionalKey(
-    Schema.suspend((): Schema.Codec<PathFeeDto> => PathFeeDto).annotate({
-      description:
-        "Fee this path charges on the amount (e.g. instant redemption fee)",
-    })
-  ),
-}).annotate({ identifier: "SchedulePathDto" });
-export type KycMetadataDto = {
-  readonly kycMode:
-    | "none"
-    | "oauth_redirect"
-    | "external_redirect"
-    | "iframe"
-    | "deeplink"
-    | "native_sdk";
-  readonly iframeAllowed: boolean;
-  readonly authorizeUrl?: string;
-  readonly notes?: string;
-  readonly eligibility: KycEligibilityDto;
-  readonly selfAttestation?: SelfAttestationDto;
-  readonly mandatoryDisclosureUrl?: string;
-};
-export const KycMetadataDto = Schema.Struct({
-  kycMode: Schema.Literals([
-    "none",
-    "oauth_redirect",
-    "external_redirect",
-    "iframe",
-    "deeplink",
-    "native_sdk",
-  ]).annotate({
-    description: "How the issuer KYC flow is delivered",
-    examples: ["oauth_redirect"],
-  }),
-  iframeAllowed: Schema.Boolean.annotate({
-    description: "Whether the issuer KYC page may be embedded in an iframe",
-  }),
-  authorizeUrl: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "URL of the issuer-hosted KYC page (HTTPS)",
-    })
-  ),
-  notes: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Human-readable notes about the KYC requirement",
-    })
-  ),
-  eligibility: KycEligibilityDto,
-  selfAttestation: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<SelfAttestationDto> => SelfAttestationDto
-    ).annotate({
-      description:
-        "Issuer-enforced self-attestation the user must complete before entering",
-    })
-  ),
-  mandatoryDisclosureUrl: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "URL of a regulator-mandated disclosure document (HTTPS)",
-    })
-  ),
-}).annotate({ identifier: "KycMetadataDto" });
-export type CampaignRewardsResponseDto = {
-  readonly items: ReadonlyArray<CampaignRewardsDto>;
-};
-export const CampaignRewardsResponseDto = Schema.Struct({
-  items: Schema.Array(CampaignRewardsDto),
-}).annotate({ identifier: "CampaignRewardsResponseDto" });
-export type SimulationGasDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
-};
-export const SimulationGasDto = Schema.Struct({
-  amount: Schema.Union([Schema.String, Schema.Null]),
-  token: TokenDto,
-  gasLimit: Schema.optionalKey(Schema.String),
-  transactions: Schema.Array(TransactionGasEstimateDto),
-}).annotate({ identifier: "SimulationGasDto" });
-export type YieldFeeConfigurationDto = {
-  readonly id: string;
-  readonly default: boolean;
-  readonly managementFeeBps?: number | null;
-  readonly performanceFeeBps?: number | null;
-  readonly depositFeeBps?: number | null;
-  readonly allocatorVaultContractAddress?: string | null;
-  readonly merklRewardsClaiming: boolean;
-  readonly rewardRate: RewardRateDto;
-  readonly statistics?: YieldStatisticsDto;
-};
-export const YieldFeeConfigurationDto = Schema.Struct({
-  id: Schema.String.annotate({
-    description: "Fee configuration identifier",
-    examples: ["66f299cd-aaaa-bbbb-cccc-d1f26e3a02db"],
-  }),
-  default: Schema.Boolean.annotate({
-    description:
-      "Whether this is the default fee configuration for the integration",
-    examples: [true],
-  }),
-  managementFeeBps: Schema.optionalKey(
-    Schema.Union([Schema.Finite, Schema.Null]).annotate({
-      description: "Management fee in basis points",
-      examples: [100],
-    })
-  ),
-  performanceFeeBps: Schema.optionalKey(
-    Schema.Union([Schema.Finite, Schema.Null]).annotate({
-      description: "Performance fee in basis points",
-      examples: [1000],
-    })
-  ),
-  depositFeeBps: Schema.optionalKey(
-    Schema.Union([Schema.Finite, Schema.Null]).annotate({
-      description: "Deposit fee in basis points",
-      examples: [0],
-    })
-  ),
-  allocatorVaultContractAddress: Schema.optionalKey(
-    Schema.Union([Schema.String, Schema.Null]).annotate({
-      description: "Partner allocator vault contract address",
-      examples: ["0x80ac24aa929eaf5013f6436cda2a7ba190f5cc0b"],
-    })
-  ),
-  merklRewardsClaiming: Schema.Boolean.annotate({
-    description:
-      "Whether Yield collects unclaimed Merkl rewards for this allocator vault",
-    examples: [true],
-  }),
-  rewardRate: Schema.suspend(
-    (): Schema.Codec<RewardRateDto> => RewardRateDto
-  ).annotate({
-    description:
-      "Base yield reward rate net of this configuration's performance fee. Same shape and decimal scale as the yield rewardRate, without campaign components.",
-  }),
-  statistics: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<YieldStatisticsDto> => YieldStatisticsDto
-    ).annotate({
-      description:
-        "Partner-scoped metrics for assets that entered through this fee configuration allocator vault",
-    })
-  ),
-}).annotate({ identifier: "YieldFeeConfigurationDto" });
-export type ValidatorDto = {
-  readonly address: string;
-  readonly name?: string;
-  readonly logoURI?: string;
-  readonly website?: string;
-  readonly rewardRate?: RewardRateDto;
-  readonly provider?: ValidatorProviderDto;
-  readonly commission?: number;
-  readonly tvlUsd?: string;
-  readonly tvl?: string;
-  readonly tvlRaw?: string;
-  readonly votingPower?: number;
-  readonly preferred?: boolean;
-  readonly minimumStake?: string;
-  readonly remainingPossibleStake?: string;
-  readonly remainingSlots?: number;
-  readonly nominatorCount?: number;
-  readonly status?: string;
-  readonly providerId?: string;
-  readonly subnet?: ValidatorSubnetDto;
-};
-export const ValidatorDto = Schema.Struct({
-  address: Schema.String.annotate({
-    description: "Validator address or ID",
-    examples: ["cosmosvaloper1abc..."],
-  }),
-  name: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Validator display name",
-      examples: ["Example Validator"],
-    })
-  ),
-  logoURI: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Validator logo URI",
-      examples: ["https://example.com/logo.png"],
-    })
-  ),
-  website: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Link to validator website",
-      examples: ["https://example.com"],
-    })
-  ),
-  rewardRate: Schema.optionalKey(
-    Schema.suspend((): Schema.Codec<RewardRateDto> => RewardRateDto).annotate({
-      description:
-        "Detailed reward rate breakdown by source (emissions, MEV, fees, etc.)",
-    })
-  ),
-  provider: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<ValidatorProviderDto> => ValidatorProviderDto
-    ).annotate({ description: "Provider information for this validator" })
-  ),
-  commission: Schema.optionalKey(
-    Schema.Number.annotate({
-      description: "Commission rate charged by validator",
-      examples: [0.05],
-    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
-  ),
-  tvlUsd: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Total value locked with this validator in USD",
-      examples: ["18,340,000"],
-    })
-  ),
-  tvl: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Total value locked with this validator in native token",
-      examples: ["8250.45"],
-    })
-  ),
-  tvlRaw: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Raw total value locked with this validator (full precision)",
-      examples: ["8250450000000000000000"],
-    })
-  ),
-  votingPower: Schema.optionalKey(
-    Schema.Number.annotate({
-      description: "Validator's voting power share (0–1)",
-      examples: [0.013],
-    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
-  ),
-  preferred: Schema.optionalKey(
-    Schema.Boolean.annotate({
-      description: "Whether this validator is flagged as preferred",
-      examples: [true],
-    })
-  ),
-  minimumStake: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Minimum stake allowed in native token",
-      examples: ["1.0"],
-    })
-  ),
-  remainingPossibleStake: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "Maximum available stake before hitting cap in native token",
-      examples: ["285,714.28"],
-    })
-  ),
-  remainingSlots: Schema.optionalKey(
-    Schema.Number.annotate({
-      description:
-        "Number of remaining nominator/delegator slots (for capped chains)",
-      examples: [8],
-    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
-  ),
-  nominatorCount: Schema.optionalKey(
-    Schema.Number.annotate({
-      description: "Number of current nominators",
-      examples: [321],
-    }).check(Schema.isFinite().annotate({ expected: "a finite number" }))
-  ),
-  status: Schema.optionalKey(
-    Schema.String.annotate({
-      description:
-        "Validator status: active, jailed, deactivating, inactive, full or not_found",
-      examples: ["active"],
-    })
-  ),
-  providerId: Schema.optionalKey(
-    Schema.String.annotate({
-      description: "ID of the provider backing this validator",
-      examples: ["provider-1"],
-    })
-  ),
-  subnet: Schema.optionalKey(
-    Schema.suspend(
-      (): Schema.Codec<ValidatorSubnetDto> => ValidatorSubnetDto
-    ).annotate({
-      description:
-        "Subnet metadata when the validator operates within a subnet (Bittensor)",
-    })
-  ),
-}).annotate({ identifier: "ValidatorDto" });
-export type SideScheduleDto = {
-  readonly paths: ReadonlyArray<SchedulePathDto>;
-};
-export const SideScheduleDto = Schema.Struct({
-  paths: Schema.Array(SchedulePathDto).annotate({
-    description:
-      "Ways to act on this side (e.g. instant + standard); paths[0] is the default",
-  }),
-}).annotate({ identifier: "SideScheduleDto" });
-export type YieldRequirementsDto = {
-  readonly kycRequired: boolean;
-  readonly kyc?: KycMetadataDto;
-};
-export const YieldRequirementsDto = Schema.Struct({
-  kycRequired: Schema.Boolean.annotate({
-    description: "Whether off-chain KYC is required before transacting",
-  }),
-  kyc: Schema.optionalKey(
-    Schema.suspend((): Schema.Codec<KycMetadataDto> => KycMetadataDto).annotate(
-      {
-        description:
-          "Public KYC criteria for rendering verification UI per opportunity",
-      }
-    )
-  ),
-}).annotate({ identifier: "YieldRequirementsDto" });
 export type ActionSimulationDto = {
   readonly gas: SimulationGasDto;
   readonly entryReserveEstimate?: string;
+  readonly outcome?: OutcomeDto;
 };
 export const ActionSimulationDto = Schema.Struct({
   gas: Schema.suspend(
@@ -5958,6 +6096,12 @@ export const ActionSimulationDto = Schema.Struct({
     Schema.String.annotate({
       description:
         "Total SOL side-reserve required for enter validation: account rent plus ~0.005 SOL priority-fee buffer. For max native-SOL deposit use balance minus this value; do not also subtract the gas amount. Only returned on enter simulations; omitted for exits and when unavailable.",
+    })
+  ),
+  outcome: Schema.optionalKey(
+    Schema.suspend((): Schema.Codec<OutcomeDto> => OutcomeDto).annotate({
+      description:
+        "Proposed incoming/outgoing token outcome for enter simulations when the yield supports quoting.",
     })
   ),
 }).annotate({ identifier: "ActionSimulationDto" });
@@ -8610,6 +8754,7 @@ export type ActionsControllerGetActionsParams = {
     | "WITHDRAW_ALL"
     | "RESTAKE"
     | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
     | "UNLOCK_LOCKED"
     | "STAKE_LOCKED"
     | "VOTE"
@@ -8809,6 +8954,7 @@ export const ActionsControllerGetActionsParams = Schema.Struct({
       "WITHDRAW_ALL",
       "RESTAKE",
       "CLAIM_UNSTAKED",
+      "REFUND_REQUEST",
       "UNLOCK_LOCKED",
       "STAKE_LOCKED",
       "VOTE",

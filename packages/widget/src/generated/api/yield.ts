@@ -152,6 +152,7 @@ export type ArgumentFieldDto = {
     | "cAddressBech"
     | "pAddressBech"
     | "executionMode"
+    | "route"
     | "ledgerWalletApiCompatible"
     | "useMaxAmount"
     | "useInstantExecution"
@@ -395,6 +396,7 @@ export type InvestorEligibilityEntryDto = {
     | "third_party_attestation";
   readonly expiresAfterDays?: number;
 };
+export type YieldRoute = "primary" | "secondary";
 export type SelfAttestationDocumentDto = {
   readonly name: string;
   readonly url: string;
@@ -826,6 +828,7 @@ export type TransactionDto = {
     | "STAKE"
     | "SET_OPERATOR"
     | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
     | "CLAIM_REWARDS"
     | "RESTAKE_REWARDS"
     | "UNSTAKE"
@@ -904,6 +907,349 @@ export type ActionEventDto = {
     | "DEPOSIT_CANCELLED";
   readonly transactionHash: string | null;
   readonly occurredAt: string;
+};
+export type ShareTokenDto = {
+  readonly address: string;
+  readonly symbol: string;
+  readonly decimals: number;
+  readonly network: string;
+};
+export type TransactionType =
+  | "SWAP"
+  | "DEPOSIT"
+  | "APPROVAL"
+  | "STAKE"
+  | "SET_OPERATOR"
+  | "CLAIM_UNSTAKED"
+  | "REFUND_REQUEST"
+  | "CLAIM_REWARDS"
+  | "RESTAKE_REWARDS"
+  | "UNSTAKE"
+  | "SPLIT"
+  | "MERGE"
+  | "LOCK"
+  | "UNLOCK"
+  | "SUPPLY"
+  | "ADD_LIQUIDITY"
+  | "REMOVE_LIQUIDITY"
+  | "BRIDGE"
+  | "VOTE"
+  | "REVOKE"
+  | "RESTAKE"
+  | "REBOND"
+  | "WITHDRAW"
+  | "WITHDRAW_ALL"
+  | "CREATE_ACCOUNT"
+  | "REVEAL"
+  | "MIGRATE"
+  | "DELEGATE"
+  | "UNDELEGATE"
+  | "UTXO_P_TO_C_IMPORT"
+  | "UTXO_C_TO_P_IMPORT"
+  | "WRAP"
+  | "UNWRAP"
+  | "UNFREEZE_LEGACY"
+  | "UNFREEZE_LEGACY_BANDWIDTH"
+  | "UNFREEZE_LEGACY_ENERGY"
+  | "UNFREEZE_BANDWIDTH"
+  | "UNFREEZE_ENERGY"
+  | "FREEZE_BANDWIDTH"
+  | "FREEZE_ENERGY"
+  | "UNDELEGATE_BANDWIDTH"
+  | "UNDELEGATE_ENERGY"
+  | "P2P_NODE_REQUEST"
+  | "CREATE_EIGENPOD"
+  | "VERIFY_WITHDRAW_CREDENTIALS"
+  | "START_CHECKPOINT"
+  | "VERIFY_CHECKPOINT_PROOFS"
+  | "QUEUE_WITHDRAWALS"
+  | "COMPLETE_QUEUED_WITHDRAWALS"
+  | "LZ_DEPOSIT"
+  | "LZ_WITHDRAW"
+  | "LUGANODES_PROVISION"
+  | "LUGANODES_EXIT_REQUEST"
+  | "INFSTONES_PROVISION"
+  | "INFSTONES_EXIT_REQUEST"
+  | "INFSTONES_CLAIM_REQUEST"
+  | "BATCH"
+  | "REDEEM"
+  | "CANCEL_PENDING";
+export type ShareAmountValueDto = {
+  readonly amount: string | null;
+  readonly amountRaw: string | null;
+  readonly token: {
+    readonly address: string;
+    readonly symbol: string;
+    readonly decimals: number;
+    readonly network: string;
+  };
+  readonly status: "available" | "estimated" | "unavailable";
+  readonly reason: string | null;
+};
+export type SubmitHashDto = { readonly hash: string };
+export type SubmitTransactionDto = { readonly signedTransaction: string };
+export type KycStatusResponseDto = {
+  readonly kycStatus:
+    | "not_required"
+    | "not_started"
+    | "pending"
+    | "approved"
+    | "rejected";
+  readonly authorizeUrl?: string;
+};
+export type NetworkDto = {
+  readonly id:
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "plume"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood"
+    | "robinhood-testnet"
+    | "arc-testnet"
+    | "arc"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "pharos"
+    | "xlayer"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid";
+  readonly name: string;
+  readonly category: "evm" | "cosmos" | "substrate" | "misc";
+  readonly logoURI: string;
+};
+export type HealthStatus = "OK" | "FAIL";
+export type BalancesQueryDto = {
+  readonly yieldId?: string;
+  readonly address: string;
+  readonly network: Networks;
+  readonly arguments?: GetBalancesArgumentsDto;
+};
+export type YieldBalancesRequestDto = {
+  readonly address: string;
+  readonly arguments?: GetBalancesArgumentsDto;
+};
+export type PendingActionDto = {
+  readonly intent: "enter" | "manage" | "exit";
+  readonly type:
+    | "STAKE"
+    | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
+    | "CLAIM_REWARDS"
+    | "AUTO_SWEEP_UNSTAKE_REWARDS"
+    | "AUTO_SWEEP_WITHDRAW_REWARDS"
+    | "RESTAKE_REWARDS"
+    | "WITHDRAW"
+    | "WITHDRAW_ALL"
+    | "RESTAKE"
+    | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
+    | "UNLOCK_LOCKED"
+    | "STAKE_LOCKED"
+    | "VOTE"
+    | "REVOKE"
+    | "VOTE_LOCKED"
+    | "REVOTE"
+    | "REBOND"
+    | "MIGRATE"
+    | "VERIFY_WITHDRAW_CREDENTIALS"
+    | "DELEGATE"
+    | "MERGE"
+    | "CANCEL_PENDING";
+  readonly passthrough: string;
+  readonly arguments?: {
+    readonly fields: ReadonlyArray<ArgumentFieldDto>;
+    readonly notes?: string;
+  };
+  readonly amount?: string | null;
+};
+export type ArgumentSchemaDto = {
+  readonly fields: ReadonlyArray<ArgumentFieldDto>;
+  readonly notes?: string;
+};
+export type RewardDto = {
+  readonly rate: number;
+  readonly rateType: string;
+  readonly token: TokenDto;
+  readonly yieldSource:
+    | "staking"
+    | "liquid_staking"
+    | "restaking"
+    | "protocol_incentive"
+    | "campaign_incentive"
+    | "points"
+    | "lending"
+    | "mev"
+    | "real_world_asset_yield"
+    | "vault";
+  readonly description?: string;
+};
+export type PricePerShareStateDto = {
+  readonly price: number;
+  readonly shareToken: TokenDto;
+  readonly quoteToken: TokenDto;
+};
+export type ConcentratedLiquidityPoolStateDto = {
+  readonly baseApr: number;
+  readonly price: number;
+  readonly tickSpacing: number;
+  readonly minTick: number;
+  readonly maxTick: number;
+  readonly volume24hUsd: number | null;
+  readonly fee24hUsd: number | null;
+  readonly tvlUsd: number | null;
+  readonly feeTier: number;
+  readonly baseToken: TokenDto;
+  readonly quoteToken: TokenDto;
+};
+export type ConfirmedOutcomeOutgoingDto = {
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly token: TokenDto;
+};
+export type OutcomeOutgoingDto = {
+  readonly amount: string | null;
+  readonly amountRaw: string | null;
+  readonly token: TokenDto;
+};
+export type RevShareTiersDto = {
+  readonly trial?: RevShareDetailsDto;
+  readonly standard?: RevShareDetailsDto;
+  readonly pro?: RevShareDetailsDto;
+};
+export type YieldRiskSummaryDto = {
+  readonly ratings: ReadonlyArray<YieldRiskEntryDto>;
+};
+export type YieldMetadataDto = {
+  readonly name: string;
+  readonly logoURI: string;
+  readonly description: string;
+  readonly documentation: string;
+  readonly underMaintenance: boolean;
+  readonly deprecated: boolean;
+  readonly supportedStandards: ReadonlyArray<ERCStandards>;
+  readonly supportsCampaigns: boolean;
+};
+export type SettlementSpecDto = {
+  readonly type: "atomic" | "next_business_day" | "cohort" | "cooldown";
+  readonly marketDays?: number;
+  readonly estimatedDuration?: TimePeriodDto;
+  readonly estimatedSettlementAt?: string;
+  readonly claimRequired?: boolean;
+  readonly instantPortion?: number;
+  readonly deferredDeliveryAt?: string;
+};
+export type AccrualSpecDto = {
+  readonly startsAt:
+    | "immediate"
+    | "next_business_day"
+    | "on_cycle_start"
+    | "on_settlement";
+  readonly startsAtDate?: string;
+  readonly minimumHold?: TimePeriodDto;
+};
+export type KycEligibilityDto = {
+  readonly defaultPolicy: "deny" | "allow";
+  readonly countries: ReadonlyArray<string>;
+  readonly blockedCountries: ReadonlyArray<string>;
+  readonly blockedSubdivisions: ReadonlyArray<string>;
+  readonly usPersonAllowed: boolean;
+  readonly geoBlockingEnforced?: boolean;
+  readonly investorEligibility: ReadonlyArray<InvestorEligibilityEntryDto>;
+  readonly subjectTypes: ReadonlyArray<"KYC" | "KYB">;
 };
 export type ActionArgumentsDto = {
   readonly amount?: string;
@@ -1141,6 +1487,7 @@ export type ActionArgumentsDto = {
   readonly cAddressBech?: string;
   readonly pAddressBech?: string;
   readonly executionMode?: "individual" | "batched";
+  readonly route?: YieldRoute;
   readonly ledgerWalletApiCompatible?: boolean;
   readonly useMaxAmount?: boolean;
   readonly useInstantExecution?: boolean;
@@ -1160,319 +1507,6 @@ export type ActionArgumentsDto = {
   readonly rangeMax?: string;
   readonly percentage?: number;
   readonly tokenId?: string;
-};
-export type TransactionType =
-  | "SWAP"
-  | "DEPOSIT"
-  | "APPROVAL"
-  | "STAKE"
-  | "SET_OPERATOR"
-  | "CLAIM_UNSTAKED"
-  | "CLAIM_REWARDS"
-  | "RESTAKE_REWARDS"
-  | "UNSTAKE"
-  | "SPLIT"
-  | "MERGE"
-  | "LOCK"
-  | "UNLOCK"
-  | "SUPPLY"
-  | "ADD_LIQUIDITY"
-  | "REMOVE_LIQUIDITY"
-  | "BRIDGE"
-  | "VOTE"
-  | "REVOKE"
-  | "RESTAKE"
-  | "REBOND"
-  | "WITHDRAW"
-  | "WITHDRAW_ALL"
-  | "CREATE_ACCOUNT"
-  | "REVEAL"
-  | "MIGRATE"
-  | "DELEGATE"
-  | "UNDELEGATE"
-  | "UTXO_P_TO_C_IMPORT"
-  | "UTXO_C_TO_P_IMPORT"
-  | "WRAP"
-  | "UNWRAP"
-  | "UNFREEZE_LEGACY"
-  | "UNFREEZE_LEGACY_BANDWIDTH"
-  | "UNFREEZE_LEGACY_ENERGY"
-  | "UNFREEZE_BANDWIDTH"
-  | "UNFREEZE_ENERGY"
-  | "FREEZE_BANDWIDTH"
-  | "FREEZE_ENERGY"
-  | "UNDELEGATE_BANDWIDTH"
-  | "UNDELEGATE_ENERGY"
-  | "P2P_NODE_REQUEST"
-  | "CREATE_EIGENPOD"
-  | "VERIFY_WITHDRAW_CREDENTIALS"
-  | "START_CHECKPOINT"
-  | "VERIFY_CHECKPOINT_PROOFS"
-  | "QUEUE_WITHDRAWALS"
-  | "COMPLETE_QUEUED_WITHDRAWALS"
-  | "LZ_DEPOSIT"
-  | "LZ_WITHDRAW"
-  | "LUGANODES_PROVISION"
-  | "LUGANODES_EXIT_REQUEST"
-  | "INFSTONES_PROVISION"
-  | "INFSTONES_EXIT_REQUEST"
-  | "INFSTONES_CLAIM_REQUEST"
-  | "BATCH"
-  | "REDEEM"
-  | "CANCEL_PENDING";
-export type SubmitHashDto = { readonly hash: string };
-export type SubmitTransactionDto = { readonly signedTransaction: string };
-export type KycStatusResponseDto = {
-  readonly kycStatus:
-    | "not_required"
-    | "not_started"
-    | "pending"
-    | "approved"
-    | "rejected";
-  readonly authorizeUrl?: string;
-};
-export type NetworkDto = {
-  readonly id:
-    | "ethereum"
-    | "ethereum-goerli"
-    | "ethereum-holesky"
-    | "ethereum-sepolia"
-    | "ethereum-hoodi"
-    | "arbitrum"
-    | "base"
-    | "base-sepolia"
-    | "gnosis"
-    | "optimism"
-    | "polygon"
-    | "polygon-amoy"
-    | "starknet"
-    | "zksync"
-    | "linea"
-    | "unichain"
-    | "plume"
-    | "monad-testnet"
-    | "monad"
-    | "robinhood"
-    | "robinhood-testnet"
-    | "arc-testnet"
-    | "arc"
-    | "avalanche-c"
-    | "avalanche-c-atomic"
-    | "avalanche-p"
-    | "binance"
-    | "celo"
-    | "fantom"
-    | "harmony"
-    | "moonriver"
-    | "okc"
-    | "viction"
-    | "core"
-    | "sonic"
-    | "plasma"
-    | "katana"
-    | "hyperevm"
-    | "tempo"
-    | "pharos"
-    | "xlayer"
-    | "agoric"
-    | "akash"
-    | "axelar"
-    | "band-protocol"
-    | "bitsong"
-    | "canto"
-    | "chihuahua"
-    | "comdex"
-    | "coreum"
-    | "cosmos"
-    | "crescent"
-    | "cronos"
-    | "cudos"
-    | "desmos"
-    | "dydx"
-    | "evmos"
-    | "fetch-ai"
-    | "gravity-bridge"
-    | "injective"
-    | "irisnet"
-    | "juno"
-    | "kava"
-    | "ki-network"
-    | "mars-protocol"
-    | "nym"
-    | "okex-chain"
-    | "onomy"
-    | "osmosis"
-    | "persistence"
-    | "quicksilver"
-    | "regen"
-    | "secret"
-    | "sentinel"
-    | "sommelier"
-    | "stafi"
-    | "stargaze"
-    | "stride"
-    | "teritori"
-    | "tgrade"
-    | "umee"
-    | "sei"
-    | "mantra"
-    | "celestia"
-    | "saga"
-    | "zetachain"
-    | "dymension"
-    | "humansai"
-    | "neutron"
-    | "polkadot"
-    | "kusama"
-    | "westend"
-    | "bittensor"
-    | "aptos"
-    | "binancebeacon"
-    | "cardano"
-    | "near"
-    | "solana"
-    | "solana-devnet"
-    | "stellar"
-    | "stellar-testnet"
-    | "sui"
-    | "tezos"
-    | "tron"
-    | "ton"
-    | "ton-testnet"
-    | "hyperliquid";
-  readonly name: string;
-  readonly category: "evm" | "cosmos" | "substrate" | "misc";
-  readonly logoURI: string;
-};
-export type HealthStatus = "OK" | "FAIL";
-export type BalancesQueryDto = {
-  readonly yieldId?: string;
-  readonly address: string;
-  readonly network: Networks;
-  readonly arguments?: GetBalancesArgumentsDto;
-};
-export type YieldBalancesRequestDto = {
-  readonly address: string;
-  readonly arguments?: GetBalancesArgumentsDto;
-};
-export type PendingActionDto = {
-  readonly intent: "enter" | "manage" | "exit";
-  readonly type:
-    | "STAKE"
-    | "UNSTAKE"
-    | "WITHDRAW_REQUEST"
-    | "INSTANT_WITHDRAW"
-    | "CLAIM_REWARDS"
-    | "AUTO_SWEEP_UNSTAKE_REWARDS"
-    | "AUTO_SWEEP_WITHDRAW_REWARDS"
-    | "RESTAKE_REWARDS"
-    | "WITHDRAW"
-    | "WITHDRAW_ALL"
-    | "RESTAKE"
-    | "CLAIM_UNSTAKED"
-    | "UNLOCK_LOCKED"
-    | "STAKE_LOCKED"
-    | "VOTE"
-    | "REVOKE"
-    | "VOTE_LOCKED"
-    | "REVOTE"
-    | "REBOND"
-    | "MIGRATE"
-    | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE"
-    | "MERGE"
-    | "CANCEL_PENDING";
-  readonly passthrough: string;
-  readonly arguments?: {
-    readonly fields: ReadonlyArray<ArgumentFieldDto>;
-    readonly notes?: string;
-  };
-  readonly amount?: string | null;
-};
-export type ArgumentSchemaDto = {
-  readonly fields: ReadonlyArray<ArgumentFieldDto>;
-  readonly notes?: string;
-};
-export type RewardDto = {
-  readonly rate: number;
-  readonly rateType: string;
-  readonly token: TokenDto;
-  readonly yieldSource:
-    | "staking"
-    | "liquid_staking"
-    | "restaking"
-    | "protocol_incentive"
-    | "campaign_incentive"
-    | "points"
-    | "lending"
-    | "mev"
-    | "real_world_asset_yield"
-    | "vault";
-  readonly description?: string;
-};
-export type PricePerShareStateDto = {
-  readonly price: number;
-  readonly shareToken: TokenDto;
-  readonly quoteToken: TokenDto;
-};
-export type ConcentratedLiquidityPoolStateDto = {
-  readonly baseApr: number;
-  readonly price: number;
-  readonly tickSpacing: number;
-  readonly minTick: number;
-  readonly maxTick: number;
-  readonly volume24hUsd: number | null;
-  readonly fee24hUsd: number | null;
-  readonly tvlUsd: number | null;
-  readonly feeTier: number;
-  readonly baseToken: TokenDto;
-  readonly quoteToken: TokenDto;
-};
-export type RevShareTiersDto = {
-  readonly trial?: RevShareDetailsDto;
-  readonly standard?: RevShareDetailsDto;
-  readonly pro?: RevShareDetailsDto;
-};
-export type YieldRiskSummaryDto = {
-  readonly ratings: ReadonlyArray<YieldRiskEntryDto>;
-};
-export type YieldMetadataDto = {
-  readonly name: string;
-  readonly logoURI: string;
-  readonly description: string;
-  readonly documentation: string;
-  readonly underMaintenance: boolean;
-  readonly deprecated: boolean;
-  readonly supportedStandards: ReadonlyArray<ERCStandards>;
-  readonly supportsCampaigns: boolean;
-};
-export type SettlementSpecDto = {
-  readonly type: "atomic" | "next_business_day" | "cohort" | "cooldown";
-  readonly marketDays?: number;
-  readonly estimatedDuration?: TimePeriodDto;
-  readonly estimatedSettlementAt?: string;
-  readonly claimRequired?: boolean;
-  readonly instantPortion?: number;
-  readonly deferredDeliveryAt?: string;
-};
-export type AccrualSpecDto = {
-  readonly startsAt:
-    | "immediate"
-    | "next_business_day"
-    | "on_cycle_start"
-    | "on_settlement";
-  readonly startsAtDate?: string;
-  readonly minimumHold?: TimePeriodDto;
-};
-export type KycEligibilityDto = {
-  readonly defaultPolicy: "deny" | "allow";
-  readonly countries: ReadonlyArray<string>;
-  readonly blockedCountries: ReadonlyArray<string>;
-  readonly blockedSubdivisions: ReadonlyArray<string>;
-  readonly usPersonAllowed: boolean;
-  readonly geoBlockingEnforced?: boolean;
-  readonly investorEligibility: ReadonlyArray<InvestorEligibilityEntryDto>;
-  readonly subjectTypes: ReadonlyArray<"KYC" | "KYB">;
 };
 export type SelfAttestationDto = {
   readonly documents: ReadonlyArray<SelfAttestationDocumentDto>;
@@ -1518,6 +1552,191 @@ export type CampaignRewardsDto = {
     readonly incentivizedBalance: string;
   };
 };
+export type ConfirmedOutcomeIncomingDto = {
+  readonly amount: string;
+  readonly amountRaw: string;
+  readonly token: ShareTokenDto;
+  readonly status: "confirmed";
+  readonly reason: string | null;
+};
+export type TransactionGasEstimateDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
+  readonly stepIndex: number;
+  readonly type: TransactionType | null;
+};
+export type HealthStatusDto = {
+  readonly status: HealthStatus;
+  readonly timestamp: string;
+};
+export type BalancesRequestDto = {
+  readonly queries: ReadonlyArray<BalancesQueryDto>;
+};
+export type YieldMechanicsArgumentsDto = {
+  readonly enter?: ArgumentSchemaDto;
+  readonly exit?: ArgumentSchemaDto;
+  readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
+  readonly balance?: ArgumentSchemaDto;
+};
+export type RewardRateDto = {
+  readonly total: number;
+  readonly rateType: string;
+  readonly components: ReadonlyArray<RewardDto>;
+};
+export type YieldStateDto = {
+  readonly pricePerShareState?: PricePerShareStateDto;
+  readonly concentratedLiquidityPoolState?: ConcentratedLiquidityPoolStateDto;
+  readonly capacityState?: CapacityDto;
+  readonly liquidityState?: LiquidityStateDto;
+  readonly allocations?: ReadonlyArray<AllocationDto>;
+};
+export type OutcomeDto = {
+  readonly incoming: ShareAmountValueDto;
+  readonly outgoing: OutcomeOutgoingDto;
+};
+export type ValidatorProviderDto = {
+  readonly name: string;
+  readonly id: string;
+  readonly logoURI: string;
+  readonly description: string;
+  readonly website: string;
+  readonly tvlUsd: string | null;
+  readonly type: "protocol" | "validator_provider";
+  readonly references?: ReadonlyArray<string> | null;
+  readonly rank: number;
+  readonly preferred: boolean;
+  readonly revshare?: RevShareTiersDto | null;
+  readonly uniqueId?: string;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+};
+export type SchedulePathDto = {
+  readonly kind: "instant" | "standard";
+  readonly cadence: "continuous" | "daily_cutoff" | "periodic" | "scheduled";
+  readonly status: "open" | "closed" | "settling";
+  readonly businessDaysOnly?: boolean;
+  readonly cutoffTime?: string;
+  readonly currentWindow?: {
+    readonly opensAt: string;
+    readonly closesAt: string;
+    readonly source?: "onchain" | "api" | "config";
+  };
+  readonly nextWindow?: {
+    readonly opensAt: string;
+    readonly closesAt: string;
+    readonly source?: "onchain" | "api" | "config";
+  };
+  readonly settlement: SettlementSpecDto;
+  readonly accrual: AccrualSpecDto;
+  readonly limits?: PathLimitsDto;
+  readonly fee?: PathFeeDto;
+};
+export type CreateActionDto = {
+  readonly yieldId: string;
+  readonly address: string;
+  readonly arguments?: ActionArgumentsDto;
+};
+export type CreateManageActionDto = {
+  readonly yieldId: string;
+  readonly address: string;
+  readonly arguments?: ActionArgumentsDto;
+  readonly action:
+    | "STAKE"
+    | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
+    | "CLAIM_REWARDS"
+    | "AUTO_SWEEP_UNSTAKE_REWARDS"
+    | "AUTO_SWEEP_WITHDRAW_REWARDS"
+    | "RESTAKE_REWARDS"
+    | "WITHDRAW"
+    | "WITHDRAW_ALL"
+    | "RESTAKE"
+    | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
+    | "UNLOCK_LOCKED"
+    | "STAKE_LOCKED"
+    | "VOTE"
+    | "REVOKE"
+    | "VOTE_LOCKED"
+    | "REVOTE"
+    | "REBOND"
+    | "MIGRATE"
+    | "VERIFY_WITHDRAW_CREDENTIALS"
+    | "DELEGATE"
+    | "MERGE"
+    | "CANCEL_PENDING";
+  readonly passthrough: string;
+};
+export type KycMetadataDto = {
+  readonly kycMode:
+    | "none"
+    | "oauth_redirect"
+    | "external_redirect"
+    | "iframe"
+    | "deeplink"
+    | "native_sdk";
+  readonly iframeAllowed: boolean;
+  readonly authorizeUrl?: string;
+  readonly notes?: string;
+  readonly eligibility: KycEligibilityDto;
+  readonly requiredForRoutes?: ReadonlyArray<YieldRoute>;
+  readonly selfAttestation?: SelfAttestationDto;
+  readonly mandatoryDisclosureUrl?: string;
+};
+export type CampaignRewardsResponseDto = {
+  readonly items: ReadonlyArray<CampaignRewardsDto>;
+};
+export type ConfirmedOutcomeDto = {
+  readonly incoming: ConfirmedOutcomeIncomingDto;
+  readonly outgoing: ConfirmedOutcomeOutgoingDto;
+};
+export type SimulationGasDto = {
+  readonly amount: string | null;
+  readonly token: TokenDto;
+  readonly gasLimit?: string;
+  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
+};
+export type YieldFeeConfigurationDto = {
+  readonly id: string;
+  readonly default: boolean;
+  readonly managementFeeBps?: number | null;
+  readonly performanceFeeBps?: number | null;
+  readonly depositFeeBps?: number | null;
+  readonly allocatorVaultContractAddress?: string | null;
+  readonly merklRewardsClaiming: boolean;
+  readonly rewardRate: RewardRateDto;
+  readonly statistics?: YieldStatisticsDto;
+};
+export type ValidatorDto = {
+  readonly address: string;
+  readonly name?: string;
+  readonly logoURI?: string;
+  readonly website?: string;
+  readonly rewardRate?: RewardRateDto;
+  readonly provider?: ValidatorProviderDto;
+  readonly commission?: number;
+  readonly tvlUsd?: string;
+  readonly tvl?: string;
+  readonly tvlRaw?: string;
+  readonly votingPower?: number;
+  readonly preferred?: boolean;
+  readonly minimumStake?: string;
+  readonly remainingPossibleStake?: string;
+  readonly remainingSlots?: number;
+  readonly nominatorCount?: number;
+  readonly status?: string;
+  readonly providerId?: string;
+  readonly subnet?: ValidatorSubnetDto;
+};
+export type SideScheduleDto = {
+  readonly paths: ReadonlyArray<SchedulePathDto>;
+};
+export type YieldRequirementsDto = {
+  readonly kycRequired: boolean;
+  readonly kyc?: KycMetadataDto;
+};
 export type ActionDto = {
   readonly id: string;
   readonly intent: "enter" | "manage" | "exit";
@@ -1534,6 +1753,7 @@ export type ActionDto = {
     | "WITHDRAW_ALL"
     | "RESTAKE"
     | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
     | "UNLOCK_LOCKED"
     | "STAKE_LOCKED"
     | "VOTE"
@@ -1556,6 +1776,7 @@ export type ActionDto = {
   readonly entryReserveEstimate?: string;
   readonly transactions: ReadonlyArray<TransactionDto>;
   readonly events?: ReadonlyArray<ActionEventDto>;
+  readonly outcome?: ConfirmedOutcomeDto;
   readonly executionPattern: "synchronous" | "asynchronous" | "batch";
   readonly rawArguments: {
     readonly amount?: string;
@@ -1793,6 +2014,7 @@ export type ActionDto = {
     readonly cAddressBech?: string;
     readonly pAddressBech?: string;
     readonly executionMode?: "individual" | "batched";
+    readonly route?: YieldRoute;
     readonly ledgerWalletApiCompatible?: boolean;
     readonly useMaxAmount?: boolean;
     readonly useInstantExecution?: boolean;
@@ -1824,177 +2046,10 @@ export type ActionDto = {
     | "SUCCESS"
     | "STALE";
 };
-export type CreateActionDto = {
-  readonly yieldId: string;
-  readonly address: string;
-  readonly arguments?: ActionArgumentsDto;
-};
-export type CreateManageActionDto = {
-  readonly yieldId: string;
-  readonly address: string;
-  readonly arguments?: ActionArgumentsDto;
-  readonly action:
-    | "STAKE"
-    | "UNSTAKE"
-    | "WITHDRAW_REQUEST"
-    | "INSTANT_WITHDRAW"
-    | "CLAIM_REWARDS"
-    | "AUTO_SWEEP_UNSTAKE_REWARDS"
-    | "AUTO_SWEEP_WITHDRAW_REWARDS"
-    | "RESTAKE_REWARDS"
-    | "WITHDRAW"
-    | "WITHDRAW_ALL"
-    | "RESTAKE"
-    | "CLAIM_UNSTAKED"
-    | "UNLOCK_LOCKED"
-    | "STAKE_LOCKED"
-    | "VOTE"
-    | "REVOKE"
-    | "VOTE_LOCKED"
-    | "REVOTE"
-    | "REBOND"
-    | "MIGRATE"
-    | "VERIFY_WITHDRAW_CREDENTIALS"
-    | "DELEGATE"
-    | "MERGE"
-    | "CANCEL_PENDING";
-  readonly passthrough: string;
-};
-export type TransactionGasEstimateDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly stepIndex: number;
-  readonly type: TransactionType | null;
-};
-export type HealthStatusDto = {
-  readonly status: HealthStatus;
-  readonly timestamp: string;
-};
-export type BalancesRequestDto = {
-  readonly queries: ReadonlyArray<BalancesQueryDto>;
-};
-export type YieldMechanicsArgumentsDto = {
-  readonly enter?: ArgumentSchemaDto;
-  readonly exit?: ArgumentSchemaDto;
-  readonly manage?: { readonly [x: string]: ArgumentSchemaDto };
-  readonly balance?: ArgumentSchemaDto;
-};
-export type RewardRateDto = {
-  readonly total: number;
-  readonly rateType: string;
-  readonly components: ReadonlyArray<RewardDto>;
-};
-export type YieldStateDto = {
-  readonly pricePerShareState?: PricePerShareStateDto;
-  readonly concentratedLiquidityPoolState?: ConcentratedLiquidityPoolStateDto;
-  readonly capacityState?: CapacityDto;
-  readonly liquidityState?: LiquidityStateDto;
-  readonly allocations?: ReadonlyArray<AllocationDto>;
-};
-export type ValidatorProviderDto = {
-  readonly name: string;
-  readonly id: string;
-  readonly logoURI: string;
-  readonly description: string;
-  readonly website: string;
-  readonly tvlUsd: string | null;
-  readonly type: "protocol" | "validator_provider";
-  readonly references?: ReadonlyArray<string> | null;
-  readonly rank: number;
-  readonly preferred: boolean;
-  readonly revshare?: RevShareTiersDto | null;
-  readonly uniqueId?: string;
-  readonly createdAt?: string;
-  readonly updatedAt?: string;
-};
-export type SchedulePathDto = {
-  readonly kind: "instant" | "standard";
-  readonly cadence: "continuous" | "daily_cutoff" | "periodic" | "scheduled";
-  readonly status: "open" | "closed" | "settling";
-  readonly businessDaysOnly?: boolean;
-  readonly cutoffTime?: string;
-  readonly currentWindow?: {
-    readonly opensAt: string;
-    readonly closesAt: string;
-    readonly source?: "onchain" | "api" | "config";
-  };
-  readonly nextWindow?: {
-    readonly opensAt: string;
-    readonly closesAt: string;
-    readonly source?: "onchain" | "api" | "config";
-  };
-  readonly settlement: SettlementSpecDto;
-  readonly accrual: AccrualSpecDto;
-  readonly limits?: PathLimitsDto;
-  readonly fee?: PathFeeDto;
-};
-export type KycMetadataDto = {
-  readonly kycMode:
-    | "none"
-    | "oauth_redirect"
-    | "external_redirect"
-    | "iframe"
-    | "deeplink"
-    | "native_sdk";
-  readonly iframeAllowed: boolean;
-  readonly authorizeUrl?: string;
-  readonly notes?: string;
-  readonly eligibility: KycEligibilityDto;
-  readonly selfAttestation?: SelfAttestationDto;
-  readonly mandatoryDisclosureUrl?: string;
-};
-export type CampaignRewardsResponseDto = {
-  readonly items: ReadonlyArray<CampaignRewardsDto>;
-};
-export type SimulationGasDto = {
-  readonly amount: string | null;
-  readonly token: TokenDto;
-  readonly gasLimit?: string;
-  readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
-};
-export type YieldFeeConfigurationDto = {
-  readonly id: string;
-  readonly default: boolean;
-  readonly managementFeeBps?: number | null;
-  readonly performanceFeeBps?: number | null;
-  readonly depositFeeBps?: number | null;
-  readonly allocatorVaultContractAddress?: string | null;
-  readonly merklRewardsClaiming: boolean;
-  readonly rewardRate: RewardRateDto;
-  readonly statistics?: YieldStatisticsDto;
-};
-export type ValidatorDto = {
-  readonly address: string;
-  readonly name?: string;
-  readonly logoURI?: string;
-  readonly website?: string;
-  readonly rewardRate?: RewardRateDto;
-  readonly provider?: ValidatorProviderDto;
-  readonly commission?: number;
-  readonly tvlUsd?: string;
-  readonly tvl?: string;
-  readonly tvlRaw?: string;
-  readonly votingPower?: number;
-  readonly preferred?: boolean;
-  readonly minimumStake?: string;
-  readonly remainingPossibleStake?: string;
-  readonly remainingSlots?: number;
-  readonly nominatorCount?: number;
-  readonly status?: string;
-  readonly providerId?: string;
-  readonly subnet?: ValidatorSubnetDto;
-};
-export type SideScheduleDto = {
-  readonly paths: ReadonlyArray<SchedulePathDto>;
-};
-export type YieldRequirementsDto = {
-  readonly kycRequired: boolean;
-  readonly kyc?: KycMetadataDto;
-};
 export type ActionSimulationDto = {
   readonly gas: SimulationGasDto;
   readonly entryReserveEstimate?: string;
+  readonly outcome?: OutcomeDto;
 };
 export type BalanceDto = {
   readonly address: string;
@@ -2747,6 +2802,7 @@ export type ActionsControllerGetActionsParams = {
     | "WITHDRAW_ALL"
     | "RESTAKE"
     | "CLAIM_UNSTAKED"
+    | "REFUND_REQUEST"
     | "UNLOCK_LOCKED"
     | "STAKE_LOCKED"
     | "VOTE"
@@ -4944,7 +5000,7 @@ export interface YieldApi<E = HttpClientError.HttpClientError, R = never> {
     >;
   };
   /**
-   * Simulates an enter action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas` (and `entryReserveEstimate` for Solana enters); fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
+   * Simulates an enter action without creating or persisting an action or transactions. The response includes gas and may include an expected receipt/share amount when the yield exposes a quote capability. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
    */
   readonly ActionsControllerSimulateEnter: {
     <Config extends OperationConfig | undefined = undefined>(options: {
@@ -5014,7 +5070,7 @@ export interface YieldApi<E = HttpClientError.HttpClientError, R = never> {
     >;
   };
   /**
-   * Simulates an exit action without creating or persisting an action or transactions. The response is sectioned so it can grow additively: v1 returns `gas`; fee and execution-outcome sections will be added as further optional keys. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
+   * Simulates an exit action without creating or persisting an action or transactions. This phase returns gas only; receipt/share quotes are available only for enter simulations. A 200 does not guarantee the action would succeed on-chain — construction-level prechecks may be skipped during simulation.
    */
   readonly ActionsControllerSimulateExit: {
     <Config extends OperationConfig | undefined = undefined>(options: {

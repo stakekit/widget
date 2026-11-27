@@ -1064,6 +1064,7 @@
       "verify_withdraw_credentials": "identifiants de retrait vérifiés",
       "delegate": "délégué",
       "cancel_pending": "demande en attente annulée",
+      "refund_request": "demande expirée remboursée",
       "cancel_pending_deposit": "dépôt annulé",
       "cancel_pending_withdrawal": "retrait annulé",
       "undelegate": "délégation annulée",
@@ -1365,6 +1366,7 @@
       "verify_withdraw_credentials": "Vérifier identifiants de retrait",
       "delegate": "Déléguer",
       "cancel_pending": "Annuler la demande en attente",
+      "refund_request": "Rembourser la demande expirée",
       "cancel_pending_deposit": "Annuler le dépôt",
       "cancel_pending_withdrawal": "Annuler le retrait",
       "undelegate": "Annuler délégation",
@@ -1401,6 +1403,7 @@
       "verify_withdraw_credentials": "Vérifier identifiants de retrait",
       "delegate": "Déléguer",
       "cancel_pending": "Annuler la demande en attente",
+      "refund_request": "Rembourser la demande expirée",
       "cancel_pending_deposit": "Annuler le dépôt",
       "cancel_pending_withdrawal": "Annuler le retrait"
     },

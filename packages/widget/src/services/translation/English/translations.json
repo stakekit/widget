@@ -1265,6 +1265,7 @@
       "verify_withdraw_credentials": "Verify withdraw credentials",
       "delegate": "Delegate",
       "cancel_pending": "Cancel pending request",
+      "refund_request": "Refund expired request",
       "cancel_pending_deposit": "Cancel deposit",
       "cancel_pending_withdrawal": "Cancel withdrawal",
       "undelegate": "Undelegate",
@@ -1301,6 +1302,7 @@
       "verify_withdraw_credentials": "Verify withdraw credentials",
       "delegate": "Delegate",
       "cancel_pending": "Cancel pending request",
+      "refund_request": "Refund expired request",
       "cancel_pending_deposit": "Cancel deposit",
       "cancel_pending_withdrawal": "Cancel withdrawal"
     },
@@ -1588,6 +1590,7 @@
       "verify_withdraw_credentials": "verified withdraw credentials",
       "delegate": "delegated",
       "cancel_pending": "cancelled pending request",
+      "refund_request": "refunded expired request",
       "cancel_pending_deposit": "cancelled deposit",
       "cancel_pending_withdrawal": "cancelled withdrawal",
       "undelegate": "undelegated",

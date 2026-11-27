@@ -236,6 +236,8 @@ const getActivityDirection = (type: ActionType): ActivityDirection => {
     case "VERIFY_WITHDRAW_CREDENTIALS":
     case "DELEGATE":
     case "CANCEL_PENDING":
+    // Hands back an expired request's tokens.
+    case "REFUND_REQUEST":
       return "neutral";
   }
 };
