@@ -1,5 +1,20 @@
 # @stakekit/widget
 
+## [0.0.301](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.300...@stakekit/widget@0.0.301) (2026-11-27)
+
+
+### Features
+
+* **widget:** look up a Validator Policy's validators in batches and sort yields by the API's Risk Score ([#640](https://github.com/stakekit/widget/issues/640)) ([b560c11](https://github.com/stakekit/widget/commit/b560c11f902a105eaba00455c394910f732ac708))
+* **widget:** rank a Validator Policy's preferred validators and list them beyond the first page ([#636](https://github.com/stakekit/widget/issues/636)) ([9f649eb](https://github.com/stakekit/widget/commit/9f649eb2bf0735b604bce01308942a09e32ffc1f))
+* **widget:** show the Campaign Minimum before a deposit ([#634](https://github.com/stakekit/widget/issues/634)) ([f31eb52](https://github.com/stakekit/widget/commit/f31eb52db420212a90e8230745a26dbdbdde29b0))
+* **widget:** sort the yield selector and name a risk rating's rater ([#639](https://github.com/stakekit/widget/issues/639)) ([4dc582b](https://github.com/stakekit/widget/commit/4dc582be3a271c5a625d35a3560c1a45f3d1dfce))
+
+
+### Bug Fixes
+
+* **widget:** split the Dashboard by the frame's measured width, not a container query ([#637](https://github.com/stakekit/widget/issues/637)) ([8ed1796](https://github.com/stakekit/widget/commit/8ed17963f02f140ab28201a7496defc138e47f79))
+
 ## [0.0.300](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.299...@stakekit/widget@0.0.300) (2026-11-20)
 
 
