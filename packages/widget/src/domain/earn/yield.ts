@@ -40,6 +40,8 @@ type KnownYieldRiskRatingSource = YieldRiskEntry["source"];
 type YieldRiskRatingSource = KnownYieldRiskRatingSource | (string & {});
 export type YieldRiskDisplay = {
   rating: string;
+  /** Its Risk Score: 1 is the least risky; null when the API sends none. */
+  score: number | null;
   source: YieldRiskRatingSource;
 };
 export type YieldMetadata = Pick<
@@ -387,7 +389,11 @@ export const getYieldRiskDisplay = (
 
   if (!firstRating || !rating) return null;
 
-  return { rating, source: firstRating.source };
+  return {
+    rating,
+    score: firstRating.score ?? null,
+    source: firstRating.source,
+  };
 };
 
 export const hasYieldFeeConfigurationEnabled = (

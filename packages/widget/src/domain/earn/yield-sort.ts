@@ -15,63 +15,6 @@ export const yieldSorts = ["recommended", "rewardRate", "tvl", "risk"] as const;
 export type YieldSort = (typeof yieldSorts)[number];
 
 /**
- * Each rater's grades on one 1 (least risky) to 5 scale, so ratings from
- * different raters compare. A copy of the backend's risk score map, until the
- * API sends the score.
- */
-const riskScores: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  credora: {
-    "A+": 1,
-    A: 1,
-    "A-": 2,
-    "B+": 2,
-    B: 3,
-    "B-": 3,
-    "C+": 4,
-    C: 4,
-    "C-": 5,
-    D: 5,
-    F: 5,
-  },
-  stakingRewards: {
-    AAA: 1,
-    "AA+": 1,
-    AA: 1,
-    "AA-": 1,
-    "A+": 1,
-    A: 1,
-    "A-": 2,
-    "BBB+": 2,
-    BBB: 2,
-    "BBB-": 3,
-    "BB+": 3,
-    BB: 3,
-    "BB-": 4,
-    "B+": 4,
-    B: 4,
-    "B-": 5,
-    "CCC+": 5,
-    CCC: 5,
-    "CCC-": 5,
-    "CC+": 5,
-    CC: 5,
-    "CC-": 5,
-    "C+": 5,
-    C: 5,
-    "C-": 5,
-    D: 5,
-    F: 5,
-  },
-};
-
-/** The score of the rating the yield shows; null when unrated or unscored. */
-const getYieldRiskScore = (yieldDto: EarnYieldWithProvider): number | null => {
-  const risk = getYieldRiskDisplay(yieldDto);
-  if (!risk) return null;
-  return riskScores[risk.source]?.[risk.rating.toUpperCase()] ?? null;
-};
-
-/**
  * The reward rate the yield shows; null where it shows none, as for a zero
  * rate outside the yields known to pay one.
  */
@@ -120,11 +63,11 @@ const comparators: Record<
       getShownTvlUsd(right),
       (leftTvl, rightTvl) => rightTvl.comparedTo(leftTvl) ?? 0
     ),
-  // A lower score is less risky.
+  // A lower Risk Score is less risky; the unrated and unscored go last.
   risk: (left, right) =>
     missingLast(
-      getYieldRiskScore(left),
-      getYieldRiskScore(right),
+      getYieldRiskDisplay(left)?.score ?? null,
+      getYieldRiskDisplay(right)?.score ?? null,
       (leftScore, rightScore) => leftScore - rightScore
     ),
 };

@@ -97,6 +97,8 @@ const EarnYieldRisk = Schema.Struct({
   ratings: Schema.Array(
     Schema.Struct({
       ...Struct.pick(YieldApi.YieldRiskEntryDto.fields, ["rating"]),
+      // Optional: an API from before Risk Scores leaves it out.
+      score: Schema.optionalKey(YieldApi.YieldRiskEntryDto.fields.score),
       source: Schema.String,
     })
   ),
