@@ -1,9 +1,17 @@
 /**
  * Design System rules: Features and application composition compose Design
- * System parts instead of markup and styles, and Design System styles read
- * colors and design values from tokens (docs/design-system.md, Enforcement).
+ * System parts instead of markup and styles, Design System styles read
+ * colors and design values from tokens, and `data-sk-*` attributes come
+ * from `skAttributes` (docs/design-system.md, Enforcement).
  */
 import {
+  isKnownSkAttributeReference,
+  skAttributeMarker,
+  skAttributeReferences,
+  unknownSkAttributeReferences,
+} from "../styles/sk-attribute-references.ts";
+import {
+  excluding,
   type FileScope,
   hasAncestor,
   isMemberPath,
@@ -11,6 +19,7 @@ import {
   type Node,
   type Rule,
   scopedRule,
+  sourceAndTestFiles,
 } from "./rule.ts";
 
 /** Features and application composition. */
@@ -270,13 +279,94 @@ const noRawDesignValue: Rule = scopedRule(designSystemStyleFiles, (context) => {
   return { Literal: check, TemplateLiteral: check };
 });
 
+/**
+ * Source and tests outside these rules' own tests, whose snippets misspell
+ * attributes on purpose.
+ */
+const skAttributeFiles: FileScope = excluding(sourceAndTestFiles, [
+  "tests/scripts/oxlint/design-system-plugin.test.ts",
+]);
+
+/** A string, or a template literal with no substitutions, as its text. */
+const staticText = (node: Node): string | undefined => {
+  if (isString(node)) return node.value;
+  return node.type === "TemplateLiteral" && node.expressions.length === 0
+    ? literalTexts(node)[0]
+    : undefined;
+};
+
+/** A JSX attribute's static string value, quoted or in braces. */
+const jsxStringValue = (value: Node | null): string | undefined => {
+  if (value === null) return undefined;
+  return value.type === "JSXExpressionContainer"
+    ? staticText(value.expression)
+    : staticText(value);
+};
+
+/** Every `data-sk-*` name and value written comes from `skAttributes`. */
+const knownSkAttribute: Rule = scopedRule(skAttributeFiles, (context) => {
+  const message =
+    "`data-sk-*` attributes and their values come from `skAttributes` (`ui/sk-attributes.ts`), and this one is not there. Fix the name or value, or add it to the list.";
+  const checkText = (node: Node) => {
+    if (
+      literalTexts(node).some(
+        (text) => unknownSkAttributeReferences(text).length > 0
+      )
+    ) {
+      context.report({ node, message });
+    }
+  };
+  return {
+    Literal: checkText,
+    TemplateLiteral: checkText,
+    // `data-sk-frame=""` or `data-sk-tabs-indicator="pill"` on an element.
+    JSXAttribute(node) {
+      if (
+        node.name.type !== "JSXIdentifier" ||
+        !node.name.name.startsWith("data-sk-")
+      ) {
+        return;
+      }
+      const value = jsxStringValue(node.value);
+      if (!isKnownSkAttributeReference({ name: node.name.name, value })) {
+        context.report({ node, message });
+      }
+    },
+  };
+});
+
+/**
+ * A `stylex.when` condition on a `data-sk-*` attribute names the marker of
+ * the element that carries it.
+ */
+const skAttributeMarkerRule: Rule = scopedRule(skAttributeFiles, (context) => {
+  const message =
+    "A `stylex.when` condition on a `data-sk-*` attribute names the marker of the element that carries it, as `skAttributes` lists (`ui/sk-attributes.ts`); any other marker never matches.";
+  return {
+    CallExpression(node) {
+      if (!isStylexWhen(node)) return;
+      const [selector, marker] = node.arguments;
+      if (selector === undefined) return;
+      const markers = literalTexts(selector)
+        .flatMap(skAttributeReferences)
+        .flatMap((found) => skAttributeMarker(found) ?? []);
+      const named = marker?.type === "Identifier" ? marker.name : undefined;
+      if (markers.some((expected) => expected !== named)) {
+        context.report({ node, message });
+      }
+    },
+  };
+});
+
 export default {
   meta: { name: "design-system" },
   rules: {
+    "known-sk-attribute": knownSkAttribute,
     "no-class-name-or-style-outside-design-system":
       noClassNameOrStyleOutsideDesignSystem,
     "no-color-literal-in-design-system": noColorLiteralInDesignSystem,
     "no-html-element-outside-design-system": noHtmlElementOutsideDesignSystem,
     "no-raw-design-value": noRawDesignValue,
+    "sk-attribute-marker": skAttributeMarkerRule,
   },
 };

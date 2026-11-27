@@ -205,3 +205,89 @@ tester.run(
     ],
   }
 );
+
+const test = `${widget}tests/ui/theme/theme-root.browser.test.tsx`;
+
+run("known-sk-attribute", {
+  filename: part,
+  message:
+    "`data-sk-*` attributes and their values come from `skAttributes` (`ui/sk-attributes.ts`), and this one is not there. Fix the name or value, or add it to the list.",
+  valid: [
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-surface-style=\"elevated\"]', presentationMarker)]: color.muted } } })",
+    "const styles = stylex.create({ root: { flexDirection: { default: 'column', [stylex.when.ancestor('[data-sk-split]', splitMarker)]: 'row' } } })",
+    'const frame = <div data-sk-frame="" />',
+    'const root = <div data-sk-root="" data-sk-tabs-indicator={tabsIndicator} />',
+    'const attributes = { "data-sk-surface-style": surfaceStyle }',
+    'element.toggleAttribute("data-sk-split", true)',
+    "const boundary = '[role=\"dialog\"], [data-sk-frame]'",
+    "const selector = `:scope > [data-sk-portal]`",
+    "const pill = '[data-sk-tabs-indicator=\"pill\"]'",
+    'const label = "data-skip"',
+    'const note = "Filter data-sk-* attributes"',
+    'const root = <div data-sk-tabs-indicator={"pill"} />',
+    "const root = <div data-sk-tabs-indicator={`pill`} />",
+    "const root = <div data-sk-tabs-indicator={`${tabsIndicator}`} />",
+  ],
+  invalid: [
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-surface-styles=\"elevated\"]', presentationMarker)]: color.muted } } })",
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-surface-style=\"elevate\"]', presentationMarker)]: color.muted } } })",
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-tabs-indicator=pil]', presentationMarker)]: color.muted } } })",
+    'const frame = <div data-sk-frames="" />',
+    'const frame = <div data-sk-frame="yes" />',
+    'const root = <div data-sk-surface-style="raised" />',
+    'const attributes = { "data-sk-surface": surfaceStyle }',
+    'element.toggleAttribute("data-sk-spilt", true)',
+    'const root = anchor.closest("[data-sk-rot]")',
+    "const selector = `:scope > [data-sk-portals]`",
+    "const selector = `[data-sk-${name}]`",
+    "const split = '[data-sk-split=\"true\"]'",
+    "const root = anchor.closest('[data-sk-root_typo]')",
+    "const root = anchor.closest('[data-sk-Root]')",
+    'const root = <div data-sk-tabs-indicator={"pil"} />',
+    "const pill = '[data-sk-tabs-indicator~=pil]'",
+    "const portal = anchor.closest('[data-sk-portl*=\"x\"]')",
+    "const root = <div data-sk-tabs-indicator={`pil`} />",
+  ],
+  outOfScope: [
+    `${widget}src/generated/api.tsx`,
+    {
+      code: 'element.toggleAttribute("data-sk-spilt", true)',
+      filename: `${widget}tests/scripts/oxlint/design-system-plugin.test.ts`,
+    },
+  ],
+});
+
+tester.run("known-sk-attribute in tests", plugin.rules["known-sk-attribute"], {
+  valid: [
+    {
+      code: 'expect(root?.getAttribute("data-sk-tabs-indicator")).toBe("pill")',
+      filename: test,
+    },
+  ],
+  invalid: [
+    {
+      code: 'expect(root?.getAttribute("data-sk-tab-indicator")).toBe("pill")',
+      filename: test,
+      errors: 1,
+    },
+  ],
+});
+
+run("sk-attribute-marker", {
+  filename: part,
+  message:
+    "A `stylex.when` condition on a `data-sk-*` attribute names the marker of the element that carries it, as `skAttributes` lists (`ui/sk-attributes.ts`); any other marker never matches.",
+  valid: [
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-tabs-indicator=\"pill\"]', presentationMarker)]: color.muted } } })",
+    "const styles = stylex.create({ root: { flexDirection: { default: 'column', [stylex.when.ancestor('[data-sk-split]', splitMarker)]: 'row' } } })",
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor(':hover')]: color.muted } } })",
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-open]', disclosureMarker)]: color.muted } } })",
+  ],
+  invalid: [
+    "const styles = stylex.create({ root: { flexDirection: { default: 'column', [stylex.when.ancestor('[data-sk-split]', presentationMarker)]: 'row' } } })",
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-surface-style=\"outlined\"]', splitMarker)]: color.muted } } })",
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.ancestor('[data-sk-tabs-indicator=\"pill\"]')]: color.muted } } })",
+    "const styles = stylex.create({ root: { color: { default: color.text, [stylex.when.descendant('[data-sk-split]', markers.split)]: color.muted } } })",
+  ],
+  outOfScope: [`${widget}tests/scripts/oxlint/design-system-plugin.test.ts`],
+});

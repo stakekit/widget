@@ -1,11 +1,27 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ComponentProps } from "react";
 import { expect, within } from "storybook/test";
 
 import { Card } from "../components/card";
 import { Grid } from "../primitives/grid";
 import { Text } from "../primitives/text";
-import { ContainerFrame } from "../storybook/container-frame";
 import { SplitView } from "./split-view";
+import { WidgetFrame } from "./widget-frame";
+
+// Renders the view in a wide frame of the given width, which decides whether
+// the view splits.
+const inFrame = (width: number) => (args: ComponentProps<typeof SplitView>) => (
+  <div style={{ width }}>
+    <WidgetFrame
+      width="wide"
+      poweredByLabel="Powered by"
+      brandName="Yield"
+      hostHook="widget-container"
+    >
+      <SplitView {...args} />
+    </WidgetFrame>
+  </div>
+);
 
 const meta = {
   title: "Patterns/SplitView",
@@ -27,11 +43,7 @@ const meta = {
       </div>
     ),
   },
-  render: (args) => (
-    <ContainerFrame width={900}>
-      <SplitView {...args} />
-    </ContainerFrame>
-  ),
+  render: inFrame(900),
 } satisfies Meta<typeof SplitView>;
 export default meta;
 
@@ -46,19 +58,18 @@ const panes = (canvasElement: HTMLElement) => {
 };
 
 /**
- * Narrower than the `split` container size, as at a 900px Dashboard, the
- * panes stack in one column centred in the view and no wider than the `md`
- * container size: the secondary under the primary, both as wide, and no
- * control swaps them.
+ * In a frame narrower than the `split` container size, as at a 900px
+ * Dashboard, the panes stack in one column centred in the view and no wider
+ * than the `md` container size: the secondary under the primary, both as
+ * wide, and no control swaps them.
  */
 export const Stacked: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const { primary, secondary } = panes(canvasElement);
-    // The story's 900px container frame.
-    const frame = canvas
-      .getByTestId("primary-pane")
-      .closest('[style*="container-type"]')
+    // The story's 900px frame.
+    const frame = canvasElement
+      .querySelector('[data-rk="widget-container"]')
       ?.getBoundingClientRect();
 
     await expect(secondary.top).toBeGreaterThanOrEqual(primary.bottom);
@@ -74,13 +85,9 @@ export const Stacked: Story = {
   },
 };
 
-/** From the `split` container size up, the panes sit side by side. */
+/** In a frame from the `split` container size up, the panes sit side by side. */
 export const Split: Story = {
-  render: (args) => (
-    <ContainerFrame width={1000}>
-      <SplitView {...args} />
-    </ContainerFrame>
-  ),
+  render: inFrame(1000),
   play: async ({ canvasElement }) => {
     const { primary, secondary } = panes(canvasElement);
 
@@ -103,13 +110,14 @@ export const SecondaryOnly: Story = {
 
 /**
  * Each pane is a size container: inside one, a layout reads the pane's
- * width, so a grid that waits for the `split` size for two columns keeps one
- * in a pane narrower than it, though the frame is wider.
+ * width, so a grid that waits for the `sm` size for two columns keeps one in
+ * the primary pane, narrower than it, though the frame is wider. (A grid's
+ * `split` columns follow the frame instead.)
  */
 export const PanesAreSizeContainers: Story = {
   args: {
-    secondary: (
-      <Grid columns={{ base: 1, split: 2 }} gap={8}>
+    primary: (
+      <Grid columns={{ base: 1, sm: 2 }} gap={8}>
         <div data-testid="first-item">
           <Text>Reward rate</Text>
         </div>
@@ -119,20 +127,18 @@ export const PanesAreSizeContainers: Story = {
       </Grid>
     ),
   },
-  render: (args) => (
-    <ContainerFrame width={1000}>
-      <SplitView {...args} />
-    </ContainerFrame>
-  ),
+  render: inFrame(1000),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const first = canvas.getByTestId("first-item").getBoundingClientRect();
     const second = canvas.getByTestId("second-item").getBoundingClientRect();
-    const primary = canvas.getByTestId("primary-pane").getBoundingClientRect();
+    const secondary = canvas
+      .getByTestId("secondary-pane")
+      .getBoundingClientRect();
 
     // Split, as the frame is past the `split` size.
-    await expect(primary.right).toBeLessThan(first.left);
-    // The pane is narrower than the `split` size, so its items stack.
+    await expect(first.right).toBeLessThan(secondary.left);
+    // The primary pane is narrower than the `sm` size, so its items stack.
     await expect(second.top).toBeGreaterThanOrEqual(first.bottom);
     await expect(second.left).toBe(first.left);
   },

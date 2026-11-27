@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { page } from "vitest/browser";
 
+import { skSelector } from "../../../src/ui/sk-attributes";
 import { yieldApiActionDtoFixture } from "../../fixtures";
 import { yieldApiRoute } from "../../mocks/api-routes";
 import { mockWalletListFactory } from "../../utils/mock-connector";
@@ -61,7 +62,7 @@ describe("Dashboard Layout height", () => {
       Math.abs(cta.element().getBoundingClientRect().bottom - pane.bottom)
     ).toBeLessThan(1);
 
-    const root = app.container.querySelector("[data-sk-root]");
+    const root = app.container.querySelector(skSelector("data-sk-root"));
     expect(root?.getBoundingClientRect().height).toBeLessThan(1000);
 
     await app.unmount();

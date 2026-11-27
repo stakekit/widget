@@ -2,6 +2,7 @@ import "./reset.css";
 import * as stylex from "@stylexjs/stylex";
 import type { PropsWithChildren } from "react";
 
+import type { SkAttributeProps, SkAttributeValue } from "../sk-attributes";
 import {
   callToAction,
   gutter as gutterVars,
@@ -29,13 +30,13 @@ type GutterSize = "md" | "lg";
  * How the selected tab is marked: a line under it, a raised pill in a track,
  * or a flat tint behind it with no track.
  */
-export type TabsIndicator = "underline" | "pill" | "tint";
+export type TabsIndicator = SkAttributeValue<"data-sk-tabs-indicator">;
 
 /**
  * How surfaces sit on the canvas: as fills, lifted off it with a shadow, or
  * as fills edged in the `border` role.
  */
-export type SurfaceStyle = "filled" | "elevated" | "outlined";
+export type SurfaceStyle = SkAttributeValue<"data-sk-surface-style">;
 
 /** Every Presentation Setting the theme root applies. */
 export type PresentationSettings = Readonly<{
@@ -131,7 +132,7 @@ export const ThemeRoot = ({
   const attributes = {
     "data-sk-surface-style": surfaceStyle,
     "data-sk-tabs-indicator": tabsIndicator,
-  };
+  } satisfies SkAttributeProps;
 
   return (
     <div

@@ -427,7 +427,14 @@ and sets figures too.
   thresholds for in-Widget layout, which responds to container width only.
   Each query reads the nearest size container: the Widget root and each
   `SplitView` pane are size containers, so a part inside a pane lays out by
-  the pane's width, and whether a `SplitView` splits reads the frame's.
+  the pane's width. Whether the Dashboard splits reads the frame's width,
+  which the `WidgetFrame` measures rather than queries: from `split` up it
+  carries `data-sk-split`, which a `SplitView`, a `Grid`'s `split` columns
+  and a `wide` frame's column read through `splitMarker`. Safari's page zoom
+  scales the width a container query compares (WebKit bug 319197), so a
+  query stacked a zoomed-out frame wide enough to split and split a
+  zoomed-in one too narrow for it; the measured width is the frame's CSS
+  width at any zoom.
   Below `split` the Dashboard stacks in one column: a `SplitView` puts its
   secondary pane under the primary one; and a `wide` `WidgetFrame` holds its
   header in the same centred column as the page. A property that reads a value at more
@@ -501,6 +508,13 @@ no gap, to the host's flex or grid layout.
   `presentationMarker`, and a component reads one with
   `stylex.when.ancestor('[data-sk-tabs-indicator="pill"]', presentationMarker)`
   in its own style map. Components never take them as props.
+- Every `data-sk-*` attribute, its values and the marker a StyleX condition
+  on it names are listed once, in `skAttributes` (`src/ui/sk-attributes.ts`);
+  the Presentation Setting types derive from it. StyleX reads a condition's
+  selector in the file that writes it, so conditions spell theirs as
+  literals; scripts and tests build theirs with `skSelector`, and element
+  props are typed by `SkAttributeProps`. A new attribute or value joins the
+  list first.
 - Under `elevated`, filled cards and rows lift off the canvas as
   `surfaceRaised` with the `raised` elevation, so parts inside them (the picker
   trigger) stay flat on `surface` and soft badges fill from `surfaceRaised`:
@@ -533,8 +547,9 @@ props, so the compiler lists the looks that exist.
 
 A `Grid`'s `columns` can vary with the container's width: pass
 `{ base, sm, md, split }` instead of a single value, for example
-`<Grid columns={{ base: 1, split: 2 }} />`. `base` applies at every width and
-each other key from its container size up. Every other layout prop takes a
+`<Grid columns={{ base: 1, split: 2 }} />`. `base` applies at every width,
+`sm` and `md` from their container size up, and `split` while the frame
+splits, whatever a container query reads. Every other layout prop takes a
 single value. The Widget root and each `SplitView` pane are size containers,
 so in-Widget layout never reads the viewport.
 
@@ -695,6 +710,12 @@ deliberate exception and states its reason after `--`, for example
   raw font sizes, weights, line heights, radii, shadows, z-indices, durations
   and px, rem, em, ch, vw and vh lengths in StyleX definitions
   (`no-raw-design-value`; `1em`, `100vw` and `100vh` stay allowed).
+  Across `src` and `tests` it rejects a `data-sk-*` name or value that
+  `skAttributes` does not list, in strings, template literals and JSX
+  attributes (`known-sk-attribute`), and a `stylex.when` condition on one
+  that names a marker other than the one listed (`sk-attribute-marker`);
+  `tests/ui/theme/reset.test.ts` checks the reset stylesheet's selectors
+  against the same list, since oxlint reads no stylesheets.
   `widget/no-blanket-disable` fails any oxlint suppression, of these rules or
   any other, that names no rule or gives no reason after `--`.
 - oxlint runs StyleX's lint rules (valid styles, unused styles, valid

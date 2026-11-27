@@ -8,6 +8,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
+import type { SkAttributeProps } from "../sk-attributes";
+
 /**
  * Where Design System popups render. `undefined` outside a theme root (Base UI
  * then portals into `document.body`); `null` while the portal container has
@@ -87,7 +89,7 @@ export const PortalContainerProvider = ({
   /** Whether the theme root is inline: no box and no size container. */
   readonly inline: boolean;
   /** The Presentation Setting attributes the theme root carries. */
-  readonly themeAttributes: Readonly<Record<`data-sk-${string}`, string>>;
+  readonly themeAttributes: SkAttributeProps;
   readonly themeClassName: string;
   readonly themeProperties: Readonly<Record<string, string>>;
 }>) => {

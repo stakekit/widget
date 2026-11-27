@@ -4,6 +4,7 @@ import type {
 } from "../../../src/public-api/types";
 import { legacyThemeDefaults } from "../../../src/services/config/legacy-theme-defaults";
 import { widgetStorageKeys } from "../../../src/services/persistence/widget-persistence";
+import { skSelector } from "../../../src/ui/sk-attributes";
 import { describe, expect, it } from "../../utils/test-extend";
 import { type RenderResult, renderApp } from "../../utils/test-utils";
 
@@ -70,7 +71,7 @@ const renderEarnCallToAction = async (props: HostProps) => {
     colorScheme: style.colorScheme,
     height: style.height,
     tabsIndicator: document
-      .querySelector("[data-sk-root]")
+      .querySelector(skSelector("data-sk-root"))
       ?.getAttribute("data-sk-tabs-indicator"),
     text: style.color,
     triggerRadius: getComputedStyle(trigger).borderTopLeftRadius,

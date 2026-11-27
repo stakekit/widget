@@ -22,12 +22,14 @@ const cells = (count: number) =>
   ));
 
 describe("Grid", () => {
+  // `split` follows a splitting WidgetFrame, not a container query: see
+  // "Grid split columns" in split-view.browser.test.tsx.
   it.each([
     { width: 380, columns: 1 },
     { width: 600, columns: 1 },
-    { width: 1000, columns: 2 },
+    { width: 1000, columns: 1 },
   ])(
-    "takes $columns column(s) in a $width px container from { base: 1, split: 2 }",
+    "takes $columns column(s) in a $width px container outside a WidgetFrame from { base: 1, split: 2 }",
     async ({ width, columns }) => {
       const screen = await render(
         <Frame width={width}>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 
 import { Text } from "../primitives/text";
+import { skSelector } from "../sk-attributes";
 import { Button } from "./button";
 import { EmbeddedPage } from "./embedded-page";
 import { Modal } from "./modal";
@@ -199,8 +200,8 @@ export const InsideThemeRoot: Story = {
       within(canvasElement).getByRole("button", { name: "Learn more" })
     );
     const popup = await dialog();
-    await expect(popup.closest("[data-sk-root]")).not.toBeNull();
-    await expect(popup.closest("[data-sk-portal]")).not.toBeNull();
+    await expect(popup.closest(skSelector("data-sk-root"))).not.toBeNull();
+    await expect(popup.closest(skSelector("data-sk-portal"))).not.toBeNull();
   },
 };
 

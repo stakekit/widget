@@ -1,6 +1,7 @@
 import { userEvent } from "vitest/browser";
 
 import { HelpModal } from "../../../src/index.package";
+import { skSelector } from "../../../src/ui/sk-attributes";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 
@@ -40,13 +41,17 @@ describe("HelpModal as SKApp children", () => {
     expect(triggerBox.width).toBeGreaterThan(0);
     expect(triggerBox.left).toBeGreaterThanOrEqual(termsBox.right);
     expect(privacyBox.left).toBeGreaterThanOrEqual(triggerBox.right);
-    expect(trigger.element().closest("[data-sk-root]")).not.toBeNull();
+    expect(
+      trigger.element().closest(skSelector("data-sk-root"))
+    ).not.toBeNull();
 
     await trigger.click();
 
     const dialog = app.getByRole("dialog");
     await expect.element(dialog).toBeVisible();
-    expect(dialog.element().closest("[data-sk-portal]")).not.toBeNull();
+    expect(
+      dialog.element().closest(skSelector("data-sk-portal"))
+    ).not.toBeNull();
     expect(footer.element().contains(dialog.element())).toBe(true);
     // Translated though it renders outside the Widget's frame, while the
     // host chrome beside it stays mounted.
