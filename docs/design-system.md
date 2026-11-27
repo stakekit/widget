@@ -92,6 +92,10 @@ One look per concept:
   hidden fields do not need a visible highlight. Search matches use an accent
   tint and accent text, with no padding or weight change; unlike `Text.Mark`'s
   emphasis of a phrase in copy, marking a substring never shifts its line.
+  A sheet that sorts its options puts the sort at the end of the search
+  field's row (`search.action`): a `Select` with an `iconTrigger`, a square
+  button whose name says the sort and whose dot marks a sort other than the
+  default, never a second field under the search.
 - **Overlays.** A bottom sheet (below the 520px viewport) shows a grab
   handle: dragging it or the header down past a third of the sheet, or
   flicking it, closes the sheet; a shorter drag settles back, at once under

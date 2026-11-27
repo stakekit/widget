@@ -53,6 +53,7 @@ import {
   selectEarnCategoryAtom,
   selectEarnYieldAtom,
   setEarnYieldSearchAtom,
+  setEarnYieldSortAtom,
 } from "../state/yield-selection";
 
 export const useEarnTokenSelection = () => ({
@@ -65,6 +66,7 @@ export const useEarnYieldSelection = () => ({
   select: useAtomSet(selectEarnYieldAtom),
   selectCategory: useAtomSet(selectEarnCategoryAtom),
   setSearch: useAtomSet(setEarnYieldSearchAtom),
+  setSort: useAtomSet(setEarnYieldSortAtom),
   view: useAtomValue(earnYieldSelectionViewAtom),
 });
 

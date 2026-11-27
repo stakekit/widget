@@ -4,6 +4,7 @@ import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 
 import { Avatar } from "../components/avatar";
 import { Button } from "../components/button";
+import { Select } from "../components/select";
 import {
   isWithin,
   outlineWithin,
@@ -1459,5 +1460,163 @@ export const AnnouncedBadge: Story = {
       "Confirm in wallet"
     );
     await expect(within(sheet).getAllByRole("status")).toHaveLength(1);
+  },
+};
+
+/** A yield sheet with a sort over its options, as a Feature would hold it. */
+const SortedYieldSheet = ({
+  onSelect,
+}: {
+  readonly onSelect: (id: string) => void;
+}) => {
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"recommended" | "rate">("recommended");
+
+  return (
+    <SelectSheet
+      open
+      title="Select a yield"
+      closeLabel="Close"
+      listLabel="Yields"
+      onSelect={onSelect}
+      search={{
+        value: query,
+        onValueChange: setQuery,
+        label: "Search yields",
+        clearLabel: "Clear search",
+        action: (
+          <Select
+            label="Sort yields"
+            iconTrigger={{ icon: "SortIcon", marked: sort !== "recommended" }}
+            options={[
+              { value: "recommended", label: "Recommended" },
+              { value: "rate", label: "Highest rate" },
+            ]}
+            value={sort}
+            onValueChange={setSort}
+          />
+        ),
+      }}
+      options={sort === "rate" ? yieldsByRate : yieldsRecommended}
+    />
+  );
+};
+
+const morphoYield = {
+  id: "morpho",
+  title: "Morpho USDC Vault",
+  subtitle: "via Morpho",
+  value: "5.10%",
+  badges: [
+    { label: "Risk A", tone: "info" as const, hint: "Rated by Credora" },
+  ],
+};
+const aaveYield = {
+  id: "aave",
+  title: "Aave USDC",
+  subtitle: "via Aave",
+  value: "4.20%",
+};
+const yieldsRecommended = [aaveYield, morphoYield];
+const yieldsByRate = [morphoYield, aaveYield];
+
+/**
+ * A sort beside the search field, as its action, and a badge whose hint,
+ * such as who issued a rating, is read with its row and shown on hover.
+ */
+export const SearchActionAndBadgeHint: Story = {
+  render: (args) => <SortedYieldSheet onSelect={args.onSelect} />,
+  play: async () => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a yield" });
+    await waitFor(() => expect(sheet).toBeVisible());
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search yields",
+    });
+    const sort = within(sheet).getByRole("combobox", {
+      name: "Sort yields: Recommended",
+    });
+    await expect(shareLine(search, sort)).toBe(true);
+
+    await userEvent.click(sort);
+    await userEvent.click(
+      await screen.findByRole("option", { name: "Highest rate" })
+    );
+    await waitFor(() =>
+      expect(
+        within(sheet).getByRole("combobox", {
+          name: "Sort yields: Highest rate",
+        })
+      ).toHaveFocus()
+    );
+
+    const row = within(sheet).getByRole("option", { name: /Morpho/ });
+    await expect(row).toHaveTextContent("Rated by Credora");
+    await userEvent.hover(within(row).getByText("Risk A"));
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByText("Rated by Credora")
+          .some((hint) => !row.contains(hint) && hint.checkVisibility())
+      ).toBe(true)
+    );
+  },
+};
+
+export const SearchActionAndBadgeHintDark: Story = {
+  ...SearchActionAndBadgeHint,
+  globals: { colorScheme: "dark" },
+};
+
+/** Whether `text` shows outside `row`, as its badge's hint. */
+const hintShown = (row: HTMLElement, text: string) =>
+  screen
+    .queryAllByText(text)
+    .some((hint) => !row.contains(hint) && hint.checkVisibility());
+
+/**
+ * A badge hint opens sooner than a lone tooltip, as a row's badges are read
+ * one after another: within half a second of the pointer reaching it.
+ */
+export const BadgeHintOpensSoon: Story = {
+  render: (args) => <SortedYieldSheet onSelect={args.onSelect} />,
+  play: async () => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a yield" });
+    await waitFor(() => expect(sheet).toBeVisible());
+    const row = within(sheet).getByRole("option", { name: /Morpho/ });
+
+    await userEvent.hover(within(row).getByText("Risk A"));
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    await expect(hintShown(row, "Rated by Credora")).toBe(true);
+  },
+};
+
+/**
+ * The option the arrow keys reached stays active as a sort reorders the
+ * options, so Enter in the search field chooses it, not what took its place.
+ */
+export const ActiveOptionFollowsReorder: Story = {
+  render: (args) => <SortedYieldSheet onSelect={args.onSelect} />,
+  play: async ({ args }) => {
+    const sheet = await screen.findByRole("dialog", { name: "Select a yield" });
+    const search = within(sheet).getByRole("combobox", {
+      name: "Search yields",
+    });
+    await waitFor(() => expect(search).toHaveFocus());
+
+    await userEvent.keyboard("{ArrowDown}");
+    await expect(
+      within(sheet).getByRole("option", { name: /Aave/ })
+    ).toHaveAttribute("id", search.getAttribute("aria-activedescendant"));
+
+    await userEvent.click(
+      within(sheet).getByRole("combobox", { name: "Sort yields: Recommended" })
+    );
+    await userEvent.click(
+      await screen.findByRole("option", { name: "Highest rate" })
+    );
+    await userEvent.click(search);
+    await userEvent.keyboard("{Enter}");
+
+    await expect(args.onSelect).toHaveBeenCalledWith("aave");
   },
 };

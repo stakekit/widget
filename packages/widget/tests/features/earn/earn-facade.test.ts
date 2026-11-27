@@ -26,6 +26,7 @@ import {
 import {
   earnYieldSelectionViewAtom,
   setEarnYieldSearchAtom,
+  setEarnYieldSortAtom,
 } from "../../../src/features/earn/state/yield-selection";
 import { appRuntime } from "../../../src/runtime/app-runtime";
 import { LegacyResourceSource } from "../../../src/services/api/resource-sources";
@@ -265,6 +266,53 @@ describe("Earn facade", () => {
       expect(registry.get(earnYieldSelectionViewAtom).filtered).toEqual([
         selectedYield,
       ]);
+    } finally {
+      registry.dispose();
+    }
+  });
+
+  it("sorts the matching yields and keeps the sort as the search clears", () => {
+    const yieldOf = (id: string, name: string, rate: number) => ({
+      ...yieldApiYieldFixture({
+        id,
+        rewardRate: { rateType: "APY", total: rate },
+      }),
+      metadata: { ...yieldApiYieldFixture().metadata, name },
+    });
+    const low = yieldOf("low", "Aave USDC", 0.02);
+    const high = yieldOf("high", "Morpho USDC", 0.08);
+    const other = yieldOf("other", "Lido ETH", 0.05);
+    const registry = AtomRegistry.make({
+      initialValues: [
+        applicationRuntimeInitInitialValue(),
+        ...tokenSelectionInitialValues([]),
+        Atom.initialValue(earnSelectionYieldOptionsViewAtom, {
+          availableCategories: [],
+          canSelect: true,
+          items: [low, other, high],
+          selected: low,
+          selectedCategory: null,
+          waiting: false,
+        }),
+      ],
+    });
+    const filteredIds = () =>
+      registry.get(earnYieldSelectionViewAtom).filtered.map((item) => item.id);
+
+    try {
+      expect(registry.get(earnYieldSelectionViewAtom).sort).toBe("recommended");
+      expect(filteredIds()).toEqual(["low", "other", "high"]);
+
+      registry.set(setEarnYieldSortAtom, "rewardRate");
+      registry.set(setEarnYieldSearchAtom, "USDC");
+      expect(filteredIds()).toEqual(["high", "low"]);
+
+      registry.set(setEarnYieldSearchAtom, "");
+      expect(registry.get(earnYieldSelectionViewAtom).sort).toBe("rewardRate");
+      expect(filteredIds()).toEqual(["high", "other", "low"]);
+
+      registry.set(setEarnYieldSortAtom, "recommended");
+      expect(filteredIds()).toEqual(["low", "other", "high"]);
     } finally {
       registry.dispose();
     }

@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import {
   type ComponentProps,
+  Fragment,
   type ReactElement,
   type ReactNode,
   useEffect,
@@ -17,6 +18,7 @@ import { ListRow } from "../components/list-row";
 import { Modal } from "../components/modal";
 import { SearchInput } from "../components/search-input";
 import { Spinner } from "../components/spinner";
+import { Tooltip, TooltipGroup } from "../components/tooltip";
 import { useCoarsePointer } from "../components/use-media-query";
 import { VirtualList } from "../components/virtual-list";
 import { Box } from "../primitives/box";
@@ -53,6 +55,11 @@ type SelectSheetOption = {
         readonly tone?: Tone;
         /** Announces the badge as it appears, such as a pending state. */
         readonly announce?: boolean;
+        /**
+         * Says more about the badge, such as who issued a rating: read with
+         * the row, and shown on hover.
+         */
+        readonly hint?: string;
       }>
     | undefined;
   /**
@@ -166,6 +173,11 @@ type SelectSheetProps = OptionsOrGroups &
           /** Says what the field searches, such as "Search tokens"; unset, `label`. */
           readonly placeholder?: string | undefined;
           readonly clearLabel: string;
+          /**
+           * A control at the end of the field's row, such as a `Select` with
+           * an `iconTrigger` that sorts the options.
+           */
+          readonly action?: ReactNode;
         }
       | undefined;
     /**
@@ -276,13 +288,15 @@ export const SelectSheet = ({
   const [ownOpen, setOwnOpen] = useState(false);
   const shown = open ?? ownOpen;
   // Unset until the keys or the query move it, the active option is the
-  // current choice.
-  const [movedIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  // current choice; a query leaves none (null). The keys hold the option they
+  // reached by its id, so it stays active as the options reorder, such as
+  // under a sort.
+  const [movedId, setMovedId] = useState<string | null | undefined>(undefined);
   // A sheet its owner reopens starts on the current choice again.
   const [wasShown, setWasShown] = useState(shown);
   if (shown !== wasShown) {
     setWasShown(shown);
-    setActiveIndex(undefined);
+    setMovedId(undefined);
   }
   // However it closes, by its own controls or by its owner, it reopens with
   // every option listed.
@@ -308,17 +322,20 @@ export const SelectSheet = ({
     multiple === undefined
       ? option.id === selectedId
       : multiple.selectedIds.has(option.id);
-  const activeIndex =
-    movedIndex ??
-    flat.findIndex((option) => isSelected(option) && option.disabled !== true);
-  const active = activeIndex < flat.length ? activeIndex : -1;
+  const active =
+    movedId === undefined
+      ? flat.findIndex(
+          (option) => isSelected(option) && option.disabled !== true
+        )
+      : flat.findIndex((option) => option.id === movedId);
+  const moveActive = (index: number) => setMovedId(flat[index]?.id ?? null);
   const optionId = (index: number) => `${baseId}-option-${index}`;
   const showsOptions = error === undefined && flat.length > 0;
   const showsEmpty = !loading && error === undefined && flat.length === 0;
 
   const setOpen = (next: boolean) => {
     setOwnOpen(next);
-    setActiveIndex(undefined);
+    setMovedId(undefined);
     onOpenChange?.(next);
   };
 
@@ -346,15 +363,29 @@ export const SelectSheet = ({
       details: option.details,
       testId: option.testId,
       leading,
-      badges: option.badges?.map((badge) => (
-        <Badge
-          key={badge.label}
-          tone={badge.tone ?? "neutral"}
-          {...(badge.announce === true ? { role: "status" } : {})}
-        >
-          {badge.label}
-        </Badge>
-      )),
+      badges: option.badges?.map((badge) => {
+        const chip = (
+          <Badge
+            tone={badge.tone ?? "neutral"}
+            {...(badge.announce === true ? { role: "status" } : {})}
+          >
+            {badge.label}
+          </Badge>
+        );
+        if (badge.hint === undefined) {
+          return <Fragment key={badge.label}>{chip}</Fragment>;
+        }
+        // The tooltip only repeats the hint the row already reads, as touch
+        // never opens it.
+        return (
+          <Fragment key={badge.label}>
+            <Tooltip label={badge.hint}>
+              <span>{chip}</span>
+            </Tooltip>
+            <VisuallyHidden>{badge.hint}</VisuallyHidden>
+          </Fragment>
+        );
+      }),
     };
     const selected = isSelected(option);
     const check = multiple !== undefined;
@@ -382,7 +413,7 @@ export const SelectSheet = ({
               // The focus ring follows the keys: on open, the current choice
               // is active but reads by its selection ring alone, so the
               // search field's is the only focus ring.
-              active: index === active && movedIndex !== undefined,
+              active: index === active && movedId !== undefined,
               onSelect: () => choose(option),
               disabled: option.disabled === true,
               position: hasMore ? { index } : { index, count: flat.length },
@@ -463,12 +494,47 @@ export const SelectSheet = ({
           }))}
         />
       );
-    return <div {...stylex.props(styles.list)}>{list}</div>;
+    // The options' badge hints open as a group, sooner than a lone tooltip.
+    return (
+      <div {...stylex.props(styles.list)}>
+        <TooltipGroup>{list}</TooltipGroup>
+      </div>
+    );
   };
   const replacing = loading && flat.length > 0 && error === undefined;
   // A touch keyboard would cover the options, so a coarse pointer focuses
   // the dialog rather than the search field.
   const searchFocus = coarsePointer ? "dialog" : searchRef;
+
+  const searchField = search !== undefined && (
+    <SearchInput
+      inputRef={searchRef}
+      value={search.value}
+      onValueChange={(next) => {
+        setMovedId(null);
+        search.onValueChange(next);
+      }}
+      label={search.label}
+      testId={testIds?.search}
+      clearLabel={search.clearLabel}
+      placeholder={search.placeholder}
+      listbox={{
+        id: listId,
+        expanded: showsOptions,
+        ...(active === -1 ? {} : { activeOptionId: optionId(active) }),
+        onKey: (key) => {
+          if (key === "ArrowDown") {
+            moveActive(nextEnabled(flat, active, 1));
+          } else if (key === "ArrowUp") {
+            moveActive(nextEnabled(flat, active, -1));
+          } else if (showsOptions) {
+            const option = flat[active];
+            if (option !== undefined) choose(option);
+          }
+        },
+      }}
+    />
+  );
 
   return (
     <Modal
@@ -501,34 +567,13 @@ export const SelectSheet = ({
       }
     >
       {notice}
-      {search !== undefined && (
-        <SearchInput
-          inputRef={searchRef}
-          value={search.value}
-          onValueChange={(next) => {
-            setActiveIndex(-1);
-            search.onValueChange(next);
-          }}
-          label={search.label}
-          testId={testIds?.search}
-          clearLabel={search.clearLabel}
-          placeholder={search.placeholder}
-          listbox={{
-            id: listId,
-            expanded: showsOptions,
-            ...(active === -1 ? {} : { activeOptionId: optionId(active) }),
-            onKey: (key) => {
-              if (key === "ArrowDown") {
-                setActiveIndex(nextEnabled(flat, active, 1));
-              } else if (key === "ArrowUp") {
-                setActiveIndex(nextEnabled(flat, active, -1));
-              } else if (showsOptions) {
-                const option = flat[active];
-                if (option !== undefined) choose(option);
-              }
-            },
-          }}
-        />
+      {search?.action === undefined ? (
+        searchField
+      ) : (
+        <Stack direction="row" align="center" gap={8}>
+          <Box grow>{searchField}</Box>
+          {search.action}
+        </Stack>
       )}
       {search !== undefined && (
         // Focus stays in the field as the listbox goes, so a search with no

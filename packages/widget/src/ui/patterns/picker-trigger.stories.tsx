@@ -121,6 +121,15 @@ export const HeaderSizes: Story = {
     ]) {
       const logo = trigger.firstElementChild?.getBoundingClientRect();
       await expect(logo?.height).toBe(24);
+      // The logo and the caret sit 8px in from the pill's edges, one inset
+      // each side.
+      const box = trigger.getBoundingClientRect();
+      const caret = trigger.lastElementChild?.getBoundingClientRect();
+      await expect(getComputedStyle(trigger).paddingInlineStart).toBe("8px");
+      await expect(getComputedStyle(trigger).paddingInlineEnd).toBe("8px");
+      await expect((logo?.left ?? 0) - box.left).toBe(
+        box.right - (caret?.right ?? 0)
+      );
       await expect(
         getComputedStyle(within(trigger).getByText("ETH")).fontSize
       ).toBe("14px");
