@@ -10,23 +10,19 @@ import {
   getValidatorPolicyListing,
   rankedEligibleValidators,
 } from "../../../domain/earn/yield";
-import type {
-  ValidatorAddress,
-  YieldId,
-} from "../../../domain/identity/identifiers";
+import type { YieldId } from "../../../domain/identity/identifiers";
 import type { Network } from "../../../domain/network/network";
 import {
   preferredValidatorsResourceAtom,
   type ValidatorsError,
-  ValidatorsAtAddressesKey,
   ValidatorsKey,
   validatorsAtAddressesAtom,
+  validatorsAtAddressesKeys,
   validatorsPullAtom,
 } from "../../../resources/validator-directory/validator-directory";
 import { appRuntime } from "../../../runtime/app-runtime";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import {
-  API_MAX_VALIDATOR_ADDRESSES,
   type PullPage,
   withPullPageDone,
 } from "../../../shared/effect/pagination";
@@ -45,25 +41,6 @@ export type PolicyValidators = {
 };
 
 /**
- * Validators in the order of the addresses they are at; each address's
- * validators once, at its first appearance.
- */
-const inAddressOrder = (
-  addresses: ReadonlyArray<ValidatorAddress>,
-  validators: ReadonlyArray<EarnValidator>
-) => {
-  const atAddress = Map.groupBy(validators, (validator) =>
-    validatorAddressIdentity(validator.address)
-  );
-  return addresses.flatMap((address) => {
-    const identity = validatorAddressIdentity(address);
-    const found = atAddress.get(identity) ?? [];
-    atAddress.delete(identity);
-    return found;
-  });
-};
-
-/**
  * The active validators a network's Validator Policy names, in the policy's
  * order, looked up by address because the directory's pages may not reach
  * them. A failed batch of lookups leaves its validators out and the result
@@ -76,38 +53,32 @@ export const policyValidatorsAtom = Atom.family((key: PolicyValidatorsKey) =>
         network: key.network,
         validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
       });
-      // Sorted before batching, so reordering the policy keeps its batches.
-      const batches = EArray.chunksOf(
-        EArray.dedupeWith(
-          named.toSorted(),
-          (left, right) =>
-            validatorAddressIdentity(left) === validatorAddressIdentity(right)
-        ),
-        API_MAX_VALIDATOR_ADDRESSES
-      );
       return Effect.forEach(
-        batches,
-        (addresses) =>
+        validatorsAtAddressesKeys({
+          addresses: named,
+          status: "active",
+          yieldId: key.yieldId,
+        }),
+        (batch) =>
           context
-            .result(
-              validatorsAtAddressesAtom.local(
-                new ValidatorsAtAddressesKey({
-                  addresses,
-                  status: "active",
-                  yieldId: key.yieldId,
-                })
-              )
-            )
+            .result(validatorsAtAddressesAtom.local(batch))
             .pipe(Effect.orElseSucceed(() => null)),
         { concurrency: POLICY_LOOKUP_CONCURRENCY }
       ).pipe(
-        Effect.map((lookups): PolicyValidators => ({
-          complete: lookups.every((lookup) => lookup !== null),
-          validators: inAddressOrder(
-            named,
-            lookups.flatMap((lookup) => lookup ?? [])
-          ),
-        }))
+        Effect.map((lookups): PolicyValidators => {
+          const atAddress = Map.groupBy(
+            lookups.flatMap((lookup) => lookup ?? []),
+            (validator) => validatorAddressIdentity(validator.address)
+          );
+          return {
+            complete: lookups.every((lookup) => lookup !== null),
+            // Back in the policy's order; its addresses are unique.
+            validators: named.flatMap(
+              (address) =>
+                atAddress.get(validatorAddressIdentity(address)) ?? []
+            ),
+          };
+        })
       );
     })
     .pipe(Atom.withLabel("policyValidatorsAtom"))

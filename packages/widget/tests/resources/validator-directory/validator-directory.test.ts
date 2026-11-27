@@ -4,11 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   preferredValidatorsResourceAtom,
-  ValidatorsAtAddressesKey,
   ValidatorsAtAddressKey,
   ValidatorsKey,
   validatorsAtAddressAtom,
   validatorsAtAddressesAtom,
+  validatorsAtAddressesKeys,
   validatorsPullAtom,
 } from "../../../src/resources/validator-directory/validator-directory";
 import { appRuntime } from "../../../src/runtime/app-runtime";
@@ -340,15 +340,15 @@ describe("Validator resources", () => {
       })
     );
 
+    const [batch] = validatorsAtAddressesKeys({
+      addresses: ["validator-b" as never, "validator-a" as never],
+      status: "active",
+      yieldId,
+    });
+    if (!batch) throw new Error("No batch");
     const keys = AsyncResult.getOrThrow(
       makeRegistry(listValidators as never).get(
-        validatorsAtAddressesAtom(
-          new ValidatorsAtAddressesKey({
-            addresses: ["validator-b" as never, "validator-a" as never],
-            status: "active",
-            yieldId,
-          })
-        )
+        validatorsAtAddressesAtom(batch)
       )
     ).map((validator) => validator.key);
 

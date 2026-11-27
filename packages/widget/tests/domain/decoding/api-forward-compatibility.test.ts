@@ -76,6 +76,20 @@ describe("API responses with values added after client generation", () => {
     })
   );
 
+  it.effect("keeps a yield whose Risk Score it cannot read, unscored", () =>
+    Effect.gen(function* () {
+      const yieldDto = yieldApiYieldDtoFixture();
+      const result = yield* decode(EarnYield, {
+        ...yieldDto,
+        risk: { ratings: [{ rating: "A", score: "low", source: "credora" }] },
+      });
+
+      expect(result.risk?.ratings).toEqual([
+        { rating: "A", score: null, source: "credora" },
+      ]);
+    })
+  );
+
   it.effect(
     "drops only the reward components and secondary tokens it cannot represent",
     () =>
