@@ -5,7 +5,11 @@ import type {
   EarnValidator,
   EarnValidatorKey,
 } from "../../../domain/earn/validator";
-import { exactZero } from "../../../domain/finance/exact";
+import {
+  rankedByRewardRate,
+  type ValidatorsConfig,
+} from "../../../domain/earn/yield";
+import type { Network } from "../../../domain/network/network";
 import { appRuntime } from "../../../runtime/app-runtime";
 import { widgetConfigAtom } from "../../../runtime/widget-config";
 import { TrackingService } from "../../../services/tracking/tracking-service";
@@ -33,22 +37,19 @@ export const selectedEarnValidatorsAtom = Atom.make(
 ).pipe(Atom.withLabel("selectedEarnValidatorsAtom"));
 
 const resolveValidatorsData = ({
-  enabled,
-  shouldSort,
+  byRewardRate,
+  network,
   validators,
+  validatorsConfig,
 }: {
-  readonly enabled: boolean;
-  readonly shouldSort: boolean;
+  readonly byRewardRate: boolean;
+  readonly network: Network | null;
   readonly validators: ReadonlyArray<EarnValidator>;
+  readonly validatorsConfig: ValidatorsConfig;
 }) => {
-  if (!enabled) return null;
-  if (!shouldSort) return [...validators];
-  return [...validators].sort(
-    (left, right) =>
-      (right.rewardRate?.total ?? exactZero()).comparedTo(
-        left.rewardRate?.total ?? exactZero()
-      ) ?? 0
-  );
+  if (!network) return null;
+  if (!byRewardRate) return [...validators];
+  return rankedByRewardRate({ network, validators, validatorsConfig });
 };
 
 export const earnValidatorSelectionViewAtom = Atom.make((get) => {
@@ -58,11 +59,12 @@ export const earnValidatorSelectionViewAtom = Atom.make((get) => {
   const validatorOptions = get(earnSelectionValidatorOptionsViewAtom);
   const yieldOptions = get(earnSelectionYieldOptionsViewAtom);
   const data = resolveValidatorsData({
-    enabled: Boolean(
-      validatorOptions.selectedYield && validatorOptions.enabled
-    ),
-    shouldSort: config.hostProfile.earnPresentation.condensed,
+    byRewardRate: config.hostProfile.earnPresentation.condensed,
+    network: validatorOptions.enabled
+      ? (validatorOptions.selectedYield?.token.network ?? null)
+      : null,
     validators: validatorOptions.items,
+    validatorsConfig: config.validatorsConfig,
   });
   const tokenOptionsLoading =
     tokenOptions.waiting && tokenOptions.items.length === 0;

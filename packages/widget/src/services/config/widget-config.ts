@@ -222,13 +222,10 @@ const normalizeWidgetConfig = (
           : {}),
         mergePreferredWithDefault: validators.mergePreferredWithDefault ?? true,
         ...(validators.preferred
-          ? {
-              preferred: new Set(
-                validatorAddressIdentities(validators.preferred)
-              ),
-            }
+          ? { preferred: validatorAddressIdentities(validators.preferred) }
           : {}),
         preferredOnly: validators.preferredOnly ?? false,
+        preferredOrder: validators.preferredOrder ?? "rewardRate",
       };
       return [[network, policy] as const];
     })

@@ -7,8 +7,13 @@ import {
   Schema,
 } from "effect";
 
+import { exactZero } from "../finance/exact";
 import type { PriceRequest } from "../finance/prices";
-import { type ProviderOption, YieldId } from "../identity/identifiers";
+import {
+  type ProviderOption,
+  ValidatorAddress,
+  YieldId,
+} from "../identity/identifiers";
 import type { Network } from "../network/network";
 import {
   equalTokens,
@@ -85,9 +90,11 @@ export type ValidatorsConfig = ReadonlyMap<
   Readonly<{
     allowed?: ReadonlySet<string>;
     blocked?: ReadonlySet<string>;
-    preferred?: ReadonlySet<string>;
+    /** In rank order when `preferredOrder` is `"listed"`. */
+    preferred?: ReadonlyArray<string>;
     mergePreferredWithDefault: boolean;
     preferredOnly: boolean;
+    preferredOrder: "rewardRate" | "listed";
   }>
 >;
 
@@ -138,6 +145,12 @@ export const getYieldCategory = (
   return null;
 };
 
+/** A network's own Validator Policy, else the wildcard one. */
+const validatorPolicyFor = (
+  validatorsConfig: ValidatorsConfig,
+  network: Network
+) => validatorsConfig.get(network) ?? validatorsConfig.get("*") ?? null;
+
 export const filterValidators = <T extends ValidatorDto>({
   validatorsConfig,
   validators,
@@ -149,8 +162,7 @@ export const filterValidators = <T extends ValidatorDto>({
   network: EarnYieldWithProvider["token"]["network"];
   yieldId?: EarnYieldWithProvider["id"];
 }): T[] => {
-  const valConfig =
-    validatorsConfig.get(network) ?? validatorsConfig.get("*") ?? null;
+  const valConfig = validatorPolicyFor(validatorsConfig, network);
 
   const filtered = !valConfig
     ? [...validators]
@@ -163,9 +175,8 @@ export const filterValidators = <T extends ValidatorDto>({
           preferredOnly,
         } = valConfig;
         // A wildcard policy must be normalized against the concrete network.
-        const toAddressIdentities = (
-          addresses: ReadonlySet<string> | undefined
-        ) => addresses && new Set(validatorAddressIdentities(addresses));
+        const toAddressIdentities = (addresses: Iterable<string> | undefined) =>
+          addresses && new Set(validatorAddressIdentities(addresses));
         const allowedIdentities = toAddressIdentities(allowed);
         const blockedIdentities = toAddressIdentities(blocked);
         const preferredIdentities = toAddressIdentities(preferred);
@@ -195,6 +206,131 @@ export const filterValidators = <T extends ValidatorDto>({
   }
 
   return filtered;
+};
+
+/**
+ * Compares validators by where the Validator Policy ranks them: ranked ones
+ * first, in its order; unranked ones tie. A policy ranks only the Preferred
+ * Validators it names, and only when it lists them in rank order.
+ */
+const comparePolicyRank = (
+  validatorsConfig: ValidatorsConfig,
+  network: Network
+): ((first: ValidatorDto, second: ValidatorDto) => number) => {
+  const policy = validatorPolicyFor(validatorsConfig, network);
+  if (policy?.preferredOrder !== "listed") return () => 0;
+  const ranks = new Map(
+    validatorAddressIdentities(policy.preferred ?? []).map(
+      (addressIdentity, rank) => [addressIdentity, rank]
+    )
+  );
+  const rankOf = (validator: ValidatorDto) =>
+    validator.preferred
+      ? ranks.get(validatorAddressIdentity(validator.address))
+      : undefined;
+
+  return (first, second) => {
+    const firstRank = rankOf(first);
+    const secondRank = rankOf(second);
+    if (firstRank === undefined) return secondRank === undefined ? 0 : 1;
+    if (secondRank === undefined) return -1;
+    return firstRank - secondRank;
+  };
+};
+
+/**
+ * The Eligible Validators among these, Preferred Validators first: those the
+ * Validator Policy ranks, in its order, then the others, each group otherwise
+ * in its given order.
+ */
+export const rankedEligibleValidators = <T extends ValidatorDto>({
+  network,
+  validators,
+  validatorsConfig,
+  yieldId,
+}: {
+  readonly network: Network;
+  readonly validators: ReadonlyArray<T>;
+  readonly validatorsConfig: ValidatorsConfig;
+  readonly yieldId: EarnYieldWithProvider["id"];
+}): T[] => {
+  const byPolicyRank = comparePolicyRank(validatorsConfig, network);
+
+  return filterValidators({
+    network,
+    validators,
+    validatorsConfig,
+    yieldId,
+  }).sort(
+    (first, second) =>
+      Number(!!second.preferred) - Number(!!first.preferred) ||
+      byPolicyRank(first, second)
+  );
+};
+
+/**
+ * Validators ranked by the Validator Policy first, in its order, then by
+ * Validator Reward Rate, highest first.
+ */
+export const rankedByRewardRate = <
+  T extends ValidatorDto & {
+    readonly rewardRate?: { readonly total: BigNumber } | null;
+  },
+>({
+  network,
+  validators,
+  validatorsConfig,
+}: {
+  readonly network: Network;
+  readonly validators: ReadonlyArray<T>;
+  readonly validatorsConfig: ValidatorsConfig;
+}): T[] => {
+  const byPolicyRank = comparePolicyRank(validatorsConfig, network);
+
+  return validators.toSorted(
+    (first, second) =>
+      byPolicyRank(first, second) ||
+      ((second.rewardRate?.total ?? exactZero()).comparedTo(
+        first.rewardRate?.total ?? exactZero()
+      ) ??
+        0)
+  );
+};
+
+const isValidatorAddress = Schema.is(ValidatorAddress);
+
+/**
+ * How a validator list meets a network's Validator Policy. `named` holds the
+ * addresses the policy names, which the directory's pages may never reach;
+ * `fromDirectory` says which directory validators join them: every one, only
+ * the API's Preferred Validators, or none when the named ones are the whole
+ * list.
+ */
+export type ValidatorPolicyListing = {
+  readonly fromDirectory: "all" | "preferred" | "none";
+  readonly named: ReadonlyArray<ValidatorAddress>;
+};
+
+export const getValidatorPolicyListing = ({
+  network,
+  validatorsConfig,
+}: {
+  readonly network: Network;
+  readonly validatorsConfig: ValidatorsConfig;
+}): ValidatorPolicyListing => {
+  const policy = validatorPolicyFor(validatorsConfig, network);
+  if (!policy) return { fromDirectory: "all", named: [] };
+
+  // Allowed addresses hold every preferred one that is eligible.
+  const named = [...(policy.allowed ?? policy.preferred ?? [])]
+    .filter((address) => !policy.blocked?.has(address))
+    .filter(isValidatorAddress);
+  if (policy.allowed) return { fromDirectory: "none", named };
+  if (!policy.preferredOnly) return { fromDirectory: "all", named };
+  return {
+    fromDirectory: policy.mergePreferredWithDefault ? "preferred" : "none",
+    named,
+  };
 };
 
 const secondsToDays = (seconds: number | undefined) => {

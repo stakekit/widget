@@ -4,7 +4,11 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
 import type { EarnValidator } from "../../../../../domain/earn/validator";
-import { filterValidators } from "../../../../../domain/earn/yield";
+import {
+  getValidatorPolicyListing,
+  rankedEligibleValidators,
+  type ValidatorsConfig,
+} from "../../../../../domain/earn/yield";
 import { exactZero } from "../../../../../domain/finance/exact";
 import { isFundedBalance } from "../../../../../domain/finance/funded-balance";
 import type { Prices } from "../../../../../domain/finance/prices";
@@ -33,6 +37,13 @@ import { widgetConfigAtom } from "../../../../../runtime/widget-config";
 import { config } from "../../../../../shared/config/widget-defaults";
 import { mapAsyncResultError } from "../../../../../shared/effect/async-result";
 import type { PullPage } from "../../../../../shared/effect/pagination";
+import {
+  PolicyValidatorsKey,
+  type PolicyValidators,
+  policyBoundValidatorsAtom,
+  policyValidatorsAtom,
+  uniqueValidators,
+} from "../../../../yield-entry/index";
 import type {
   PositionsDataKey,
   TokenOptionsKey,
@@ -292,23 +303,16 @@ const projectValidators = ({
   readonly network: YieldValidatorsKey["network"];
   readonly selectedYieldId: YieldValidatorsKey["selectedYieldId"];
   readonly validators: ReadonlyArray<EarnValidator>;
-  readonly validatorsConfig: Parameters<
-    typeof filterValidators
-  >[0]["validatorsConfig"];
-}) => {
-  const eligible = network
-    ? filterValidators({
+  readonly validatorsConfig: ValidatorsConfig;
+}) =>
+  network
+    ? rankedEligibleValidators({
         network,
         validators,
         validatorsConfig,
         yieldId: selectedYieldId,
       })
     : [...validators];
-
-  return eligible.sort(
-    (first, second) => Number(!!second.preferred) - Number(!!first.preferred)
-  );
-};
 
 export const yieldValidatorsAtom = Atom.family(
   ({ network, selectedYieldId }: YieldValidatorsKey) => {
@@ -334,23 +338,44 @@ export const yieldValidatorsAtom = Atom.family(
       );
     const initialValidatorsResultAtom = Atom.make((get) => {
       const validatorsConfig = get(widgetConfigAtom).validatorsConfig;
-      return AsyncResult.all({
-        defaults: get(defaultValidatorsResultAtom),
-        preferred: get(preferredValidatorsAtom),
-      }).pipe(
-        AsyncResult.map(({ defaults, preferred }) => ({
-          complete: defaults.complete,
+      const policyKey = network
+        ? new PolicyValidatorsKey({ network, yieldId: selectedYieldId })
+        : null;
+      const listed = (): AsyncResult.AsyncResult<
+        PolicyValidators,
+        EarnCatalogError
+      > => {
+        const bounded = policyKey
+          ? get(policyBoundValidatorsAtom(policyKey))
+          : null;
+        if (bounded) {
+          return bounded.pipe(
+            mapAsyncResultError(toCatalogError("validators"))
+          );
+        }
+        const named: AsyncResult.AsyncResult<PolicyValidators> = policyKey
+          ? get(policyValidatorsAtom(policyKey))
+          : AsyncResult.success({ complete: true, validators: [] });
+        return AsyncResult.all({
+          defaults: get(defaultValidatorsResultAtom),
+          named,
+          preferred: get(preferredValidatorsAtom),
+        }).pipe(
+          AsyncResult.map(({ defaults, named, preferred }) => ({
+            complete: defaults.complete,
+            // Looked-up validators join after the directory's, keeping its order.
+            validators: [...preferred, ...defaults.items, ...named.validators],
+          }))
+        );
+      };
+
+      return listed().pipe(
+        AsyncResult.map(({ complete, validators }) => ({
+          complete,
           items: projectValidators({
             network,
             selectedYieldId,
-            validators: [
-              ...new Map(
-                [...preferred, ...defaults.items].map((validator) => [
-                  validator.key,
-                  validator,
-                ])
-              ).values(),
-            ],
+            validators: uniqueValidators(validators),
             validatorsConfig,
           }),
         }))
@@ -367,23 +392,41 @@ export const yieldValidatorsAtom = Atom.family(
           })
         );
 
-        return Atom.transform(source, (get) =>
-          get(source).pipe(
+        return Atom.transform(source, (get) => {
+          const validatorsConfig = get(widgetConfigAtom).validatorsConfig;
+          // A bounded list is whole in the initial validators.
+          if (
+            !search &&
+            network &&
+            getValidatorPolicyListing({ network, validatorsConfig })
+              .fromDirectory !== "all"
+          ) {
+            return AsyncResult.success({
+              done: true,
+              items: EArray.of({
+                hasNextPage: false,
+                items: EArray.empty<EarnValidator>(),
+              }),
+            });
+          }
+          return get(source).pipe(
+            // Ranked as one list, so a validator the policy ranks first leads
+            // even when it arrives on a later page.
             AsyncResult.map(({ done, items }) => ({
               done,
-              items: EArray.map(items, (page) => ({
-                ...page,
+              items: EArray.of({
+                hasNextPage: !done,
                 items: projectValidators({
                   network,
                   selectedYieldId,
-                  validators: page.items,
-                  validatorsConfig: get(widgetConfigAtom).validatorsConfig,
+                  validators: items.flatMap((page) => page.items),
+                  validatorsConfig,
                 }),
-              })),
+              }),
             })),
             mapAsyncResultError(toCatalogError("validators"))
-          )
-        );
+          );
+        });
       }
     );
 

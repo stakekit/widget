@@ -18,8 +18,8 @@ import {
   borrowMarketsResourceAtom,
 } from "../../../resources/borrow-markets/borrow-markets";
 import {
-  ValidatorByAddressKey,
-  validatorByAddressAtom,
+  ValidatorsAtAddressKey,
+  validatorsAtAddressAtom,
 } from "../../../resources/validator-directory/validator-directory";
 import { enrichedYieldOpportunityResourceAtom } from "../../../resources/yield-opportunity/yield-opportunity";
 import { appRuntime } from "../../../runtime/app-runtime";
@@ -33,11 +33,11 @@ const ACTIVITY_ENRICHMENT_CONCURRENCY = 5;
 /** The yield, validator, market, and integration facts a set of Activity rows needs. */
 export class ActivityEnrichmentKey extends Data.Class<{
   readonly borrowNetworks: ReadonlyArray<BorrowNetwork>;
-  readonly validatorKeys: ReadonlyArray<ValidatorByAddressKey>;
+  readonly validatorKeys: ReadonlyArray<ValidatorsAtAddressKey>;
   readonly yieldIds: ReadonlyArray<YieldId>;
 }> {
   constructor(entries: ReadonlyArray<ActivityHistoryEntry>) {
-    const validatorKeys = new Map<string, ValidatorByAddressKey>();
+    const validatorKeys = new Map<string, ValidatorsAtAddressKey>();
     const yieldActions: Array<YieldAction> = [];
     const borrowNetworks = new Set<BorrowNetwork>();
 
@@ -50,8 +50,10 @@ export class ActivityEnrichmentKey extends Data.Class<{
       const action = entry.action;
       yieldActions.push(action);
       for (const address of getActionValidatorAddresses(action) ?? []) {
-        const key = new ValidatorByAddressKey({
+        // A past action can name a validator that is no longer active.
+        const key = new ValidatorsAtAddressKey({
           address,
+          status: null,
           yieldId: action.yieldId,
         });
         validatorKeys.set(validatorFactKey(key), key);
@@ -81,7 +83,7 @@ type ActivityEnrichmentFact =
     }
   | {
       readonly _tag: "validator";
-      readonly key: ValidatorByAddressKey;
+      readonly key: ValidatorsAtAddressKey;
       readonly value: EarnValidator | null;
     }
   | {
@@ -93,7 +95,10 @@ type ActivityEnrichmentFact =
 type ActivityEnrichmentRequest =
   | { readonly _tag: "borrowIntegrations" }
   | { readonly _tag: "borrowMarkets"; readonly network: BorrowNetwork }
-  | { readonly _tag: "validator"; readonly validatorKey: ValidatorByAddressKey }
+  | {
+      readonly _tag: "validator";
+      readonly validatorKey: ValidatorsAtAddressKey;
+    }
   | { readonly _tag: "yield"; readonly yieldId: YieldId };
 
 type ResourceRead = <A, E>(
@@ -144,7 +149,9 @@ export const loadActivityEnrichmentFacts = (
           }))
         );
       case "validator":
-        return read(validatorByAddressAtom.local(request.validatorKey)).pipe(
+        // An action names an address; its first listing stands for it.
+        return read(validatorsAtAddressAtom.local(request.validatorKey)).pipe(
+          Effect.map((validators) => validators[0] ?? null),
           Effect.orElseSucceed(() => null),
           Effect.map((value) => ({
             _tag: "validator" as const,

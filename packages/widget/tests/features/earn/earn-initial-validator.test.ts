@@ -44,8 +44,17 @@ const requested = validator(
   "0x2222222222222222222222222222222222222222",
   "Requested"
 );
+const hostFirst = validator(
+  "0x3333333333333333333333333333333333333333",
+  "Host first"
+);
+const apiPreferred = {
+  ...validator("0x4444444444444444444444444444444444444444", "API preferred"),
+  preferred: true,
+};
+const unlisted = "0x5555555555555555555555555555555555555555";
 
-const entry = (requestedValidator: string): EarnEntry => ({
+const entry = (requestedValidator: string | null): EarnEntry => ({
   categoryOrder: ["stake", "defi", "rwa"],
   categoryGrouping: false,
   initParams: {
@@ -55,7 +64,10 @@ const entry = (requestedValidator: string): EarnEntry => ({
     pendingaction: null,
     tab: "earn",
     token: null,
-    validator: Schema.decodeSync(ValidatorAddress)(requestedValidator),
+    validator:
+      requestedValidator === null
+        ? null
+        : Schema.decodeSync(ValidatorAddress)(requestedValidator),
     yieldId: validatorYield.id,
   },
   preferredTokenYieldsPerNetwork: null,
@@ -82,16 +94,33 @@ const page = (
 
 const makeRegistry = ({
   listValidators,
+  preferred,
+  preferredOrder,
   requestedValidator,
 }: {
   readonly listValidators: (
     request: ValidatorDirectoryRequest
   ) => Effect.Effect<unknown>;
-  readonly requestedValidator: string;
+  readonly preferred?: ReadonlyArray<string>;
+  readonly preferredOrder?: "listed";
+  readonly requestedValidator: string | null;
 }) =>
   AtomRegistry.make({
     initialValues: [
-      applicationRuntimeInitInitialValue(),
+      applicationRuntimeInitInitialValue({
+        apiKey: "test-api-key",
+        variant: "default",
+        ...(preferred
+          ? {
+              validatorsConfig: {
+                ethereum: {
+                  preferred: [...preferred],
+                  ...(preferredOrder ? { preferredOrder } : {}),
+                },
+              },
+            }
+          : {}),
+      }),
       Atom.initialValue(earnEntryAtom, entry(requestedValidator)),
       Atom.initialValue(
         appRuntime.layer,
@@ -144,7 +173,96 @@ const selectedAddresses = (registry: AtomRegistry.AtomRegistry) =>
     .get(earnSelectionViewAtom)
     .selection.validators.map((selected) => selected.address);
 
+/** A directory with one API Preferred Validator, answering address lookups. */
+const policyDirectory = (request: ValidatorDirectoryRequest) => {
+  const all = [apiPreferred, first, requested, hostFirst];
+  if (request.address) {
+    return page(
+      request,
+      all.filter((item) => item.address === request.address)
+    );
+  }
+  if (request.name) return page(request, []);
+  if (request.preferred) return page(request, [apiPreferred]);
+  return page(request, [first, requested, hostFirst]);
+};
+
 describe("Earn initial validator", () => {
+  it("starts on the API's first preferred validator without a listed order", async () => {
+    const registry = makeRegistry({
+      listValidators: policyDirectory,
+      preferred: [hostFirst.address, requested.address],
+      requestedValidator: null,
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(selectedAddresses(registry)).toEqual([apiPreferred.address])
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("starts on the Validator Policy's first preferred validator", async () => {
+    const registry = makeRegistry({
+      listValidators: policyDirectory,
+      preferred: [hostFirst.address, requested.address],
+      preferredOrder: "listed",
+      requestedValidator: null,
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(selectedAddresses(registry)).toEqual([hostFirst.address])
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("starts on the policy's next preferred validator when its first is unlisted", async () => {
+    const registry = makeRegistry({
+      listValidators: policyDirectory,
+      preferred: [unlisted, hostFirst.address],
+      preferredOrder: "listed",
+      requestedValidator: null,
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(selectedAddresses(registry)).toEqual([hostFirst.address])
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
+  it("starts on the requested validator over the policy's preferred ones", async () => {
+    const registry = makeRegistry({
+      listValidators: policyDirectory,
+      preferred: [hostFirst.address],
+      preferredOrder: "listed",
+      requestedValidator: requested.address,
+    });
+    const unmount = registry.mount(earnSelectionViewAtom);
+
+    try {
+      await vi.waitFor(() =>
+        expect(selectedAddresses(registry)).toEqual([requested.address])
+      );
+    } finally {
+      unmount();
+      registry.dispose();
+    }
+  });
+
   it("keeps the requested validator after the amount changes", async () => {
     const registry = makeRegistry({
       listValidators: (request) =>

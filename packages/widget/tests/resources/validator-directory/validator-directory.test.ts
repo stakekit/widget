@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   preferredValidatorsResourceAtom,
-  ValidatorByAddressKey,
+  ValidatorsAtAddressKey,
   ValidatorsKey,
-  validatorByAddressAtom,
+  validatorsAtAddressAtom,
   validatorsPullAtom,
 } from "../../../src/resources/validator-directory/validator-directory";
 import { appRuntime } from "../../../src/runtime/app-runtime";
@@ -261,62 +261,83 @@ describe("Validator resources", () => {
     ).toBe(true);
   });
 
-  it("resolves an address with one bounded request", () => {
-    const requested = makeValidator("validator-address");
+  const resolveAddress = (
+    listValidators: (
+      request: ValidatorDirectoryRequest
+    ) => Effect.Effect<unknown>,
+    address: string,
+    status: "active" | null
+  ) =>
+    AsyncResult.getOrThrow(
+      makeRegistry(listValidators as never).get(
+        validatorsAtAddressAtom(
+          new ValidatorsAtAddressKey({
+            address: address as never,
+            status,
+            yieldId,
+          })
+        )
+      )
+    ).map((validator) => validator.key);
+
+  it("resolves every validator at an address, one per subnet, in one bounded request", () => {
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
       Effect.succeed({
-        items: [requested],
+        items: [
+          { ...makeValidator("validator-address"), key: "subnet-1" },
+          { ...makeValidator("validator-address"), key: "subnet-2" },
+          // The API matches addresses by substring.
+          makeValidator("validator-address-longer"),
+        ],
         limit: request.limit,
         offset: request.offset,
         total: 200,
       })
     );
-    const registry = makeRegistry(listValidators as never);
 
     expect(
-      AsyncResult.getOrThrow(
-        registry.get(
-          validatorByAddressAtom(
-            new ValidatorByAddressKey({
-              address: requested.address as never,
-              yieldId,
-            })
-          )
-        )
-      ).address
-    ).toBe(requested.address);
+      resolveAddress(listValidators, "validator-address", "active")
+    ).toEqual(["subnet-1", "subnet-2"]);
     expect(listValidators).toHaveBeenCalledOnce();
     expect(listValidators.mock.calls[0]?.[0]).toMatchObject({
-      address: requested.address,
+      address: "validator-address",
       offset: 0,
+      status: "active",
     });
   });
 
-  it("matches hex validator addresses case-insensitively and other encodings exactly", () => {
-    const resolve = (listed: string, requested: string) => {
-      const registry = makeRegistry((() =>
-        Effect.succeed({
-          items: [makeValidator(listed)],
-          limit: 1,
-          offset: 0,
-          total: 1,
-        })) as never);
-
-      return AsyncResult.getOrThrow(
-        registry.get(
-          validatorByAddressAtom(
-            new ValidatorByAddressKey({
-              address: requested as never,
-              yieldId,
-            })
-          )
-        )
-      ).address;
-    };
-
-    expect(resolve("0xAbCd", "0xaBcD")).toBe("0xAbCd");
-    expect(resolve("cosmosvaloper1AbCd", "cosmosvaloper1aBcD")).toBe(
-      "cosmosvaloper1aBcD"
+  it("resolves no validator when the directory lists none at the address", () => {
+    const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
+      Effect.succeed({
+        items: [makeValidator("validator-address-longer")],
+        limit: request.limit,
+        offset: request.offset,
+        total: 1,
+      })
     );
+
+    expect(resolveAddress(listValidators, "validator-address", null)).toEqual(
+      []
+    );
+    expect(listValidators.mock.calls[0]?.[0]).not.toHaveProperty("status");
+  });
+
+  it("matches hex validator addresses case-insensitively and other encodings exactly", () => {
+    const resolve = (listed: string, requested: string) =>
+      resolveAddress(
+        vi.fn(() =>
+          Effect.succeed({
+            items: [makeValidator(listed)],
+            limit: 1,
+            offset: 0,
+            total: 1,
+          })
+        ),
+        requested,
+        null
+      );
+
+    expect(resolve("0xAbCd", "0xaBcD")).toEqual(["0xAbCd"]);
+    expect(resolve("cosmosvaloper1AbCd", "cosmosvaloper1aBcD")).toEqual([]);
   });
 });

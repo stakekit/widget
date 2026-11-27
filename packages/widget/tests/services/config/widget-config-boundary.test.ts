@@ -344,6 +344,54 @@ describe("decodeHostConfiguration", () => {
     }
   });
 
+  it("drops an unknown preferred order and keeps the rest of the validator policy", () => {
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      validatorsConfig: {
+        ethereum: { preferred: ["0xvalidator"], preferredOrder: "listed" },
+        solana: {
+          allowed: ["validator"],
+          preferred: ["validator"],
+          preferredOrder: "apr",
+        },
+      },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      // Dropping the whole policy would lift its allowlist.
+      expect(result.success.configuration.validatorsConfig).toEqual({
+        ethereum: { preferred: ["0xvalidator"], preferredOrder: "listed" },
+        solana: { allowed: ["validator"], preferred: ["validator"] },
+      });
+      expect(result.success.warnings).toEqual([
+        {
+          _tag: "InvalidEntry",
+          field: "validatorsConfig",
+          path: "solana.preferredOrder",
+        },
+      ]);
+    }
+  });
+
+  it("keeps a policy's allowlist however the host defines it when its preferred order is unknown", () => {
+    const solana = { preferredOrder: "apr" };
+    Object.defineProperty(solana, "allowed", { value: ["validator"] });
+    const result = decodeHostConfiguration({
+      apiKey: "api-key",
+      validatorsConfig: { solana },
+      variant: "default",
+    } as unknown as SKHostConfiguration);
+
+    expect(Result.isSuccess(result)).toBe(true);
+    if (Result.isSuccess(result)) {
+      expect(result.success.configuration.validatorsConfig).toEqual({
+        solana: { allowed: ["validator"] },
+      });
+    }
+  });
+
   it("decodes preferred token yields as yield IDs or the default choice, dropping an invalid one", () => {
     const result = decodeHostConfiguration({
       apiKey: "api-key",

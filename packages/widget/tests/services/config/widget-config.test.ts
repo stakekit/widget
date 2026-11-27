@@ -173,6 +173,7 @@ describe("WidgetConfigService", () => {
                 allowed: ["0xAbC", "0xabc"],
                 blocked: ["0xDeF", "0xdef"],
                 preferred: ["0xF00", "0xf00"],
+                preferredOrder: "listed",
               },
             },
             variant: "default",
@@ -187,13 +188,15 @@ describe("WidgetConfigService", () => {
         mergePreferredWithDefault: true,
         preferred: undefined,
         preferredOnly: false,
+        preferredOrder: "rewardRate",
       });
       expect(current.validatorsConfig.get("ethereum")).toEqual({
         allowed: new Set(["0xabc"]),
         blocked: new Set(["0xdef"]),
         mergePreferredWithDefault: true,
-        preferred: new Set(["0xf00"]),
+        preferred: ["0xf00"],
         preferredOnly: false,
+        preferredOrder: "listed",
       });
     })
   );
