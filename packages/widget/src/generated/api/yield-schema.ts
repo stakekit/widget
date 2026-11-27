@@ -821,6 +821,7 @@ export const YieldStatisticsDto = Schema.Struct({
 export type YieldRiskEntryDto = {
   readonly rating: string;
   readonly source: "credora" | "stakingRewards";
+  readonly score: number | null;
 };
 export const YieldRiskEntryDto = Schema.Struct({
   rating: Schema.String.annotate({
@@ -830,6 +831,11 @@ export const YieldRiskEntryDto = Schema.Struct({
   source: Schema.Literals(["credora", "stakingRewards"]).annotate({
     description: "Provider source label",
     examples: ["credora"],
+  }),
+  score: Schema.Union([Schema.Finite, Schema.Null]).annotate({
+    description:
+      "Risk score on a 1-5 scale, where 1 is the lowest risk; comparable across sources. Null when the provider's rating has no known score.",
+    examples: [1],
   }),
 }).annotate({ identifier: "YieldRiskEntryDto" });
 export type YieldStatusDto = {
@@ -8080,6 +8086,7 @@ export type YieldsControllerGetYieldValidatorsParams = {
   readonly limit?: number;
   readonly name?: string;
   readonly address?: string;
+  readonly addresses?: ReadonlyArray<string>;
   readonly provider?: string;
   readonly status?: string;
   readonly preferred?: boolean;
@@ -8110,6 +8117,7 @@ export const YieldsControllerGetYieldValidatorsParams = Schema.Struct({
   ),
   name: Schema.optionalKey(Schema.String),
   address: Schema.optionalKey(Schema.String),
+  addresses: Schema.optionalKey(Schema.Array(Schema.String)),
   provider: Schema.optionalKey(Schema.String),
   status: Schema.optionalKey(Schema.String),
   preferred: Schema.optionalKey(Schema.Boolean),

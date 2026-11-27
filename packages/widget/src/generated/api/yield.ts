@@ -324,6 +324,7 @@ export type YieldStatisticsDto = {
 export type YieldRiskEntryDto = {
   readonly rating: string;
   readonly source: "credora" | "stakingRewards";
+  readonly score: number | null;
 };
 export type YieldStatusDto = {
   readonly enter: boolean;
@@ -2588,6 +2589,7 @@ export type YieldsControllerGetYieldValidatorsParams = {
   readonly limit?: number;
   readonly name?: string;
   readonly address?: string;
+  readonly addresses?: ReadonlyArray<string>;
   readonly provider?: string;
   readonly status?: string;
   readonly preferred?: boolean;
@@ -3640,6 +3642,7 @@ export const make = <E, R>(
               limit: options?.params?.["limit"] as any,
               name: options?.params?.["name"] as any,
               address: options?.params?.["address"] as any,
+              addresses: options?.params?.["addresses"] as any,
               provider: options?.params?.["provider"] as any,
               status: options?.params?.["status"] as any,
               preferred: options?.params?.["preferred"] as any,
