@@ -176,10 +176,10 @@ const selectedAddresses = (registry: AtomRegistry.AtomRegistry) =>
 /** A directory with one API Preferred Validator, answering address lookups. */
 const policyDirectory = (request: ValidatorDirectoryRequest) => {
   const all = [apiPreferred, first, requested, hostFirst];
-  if (request.address) {
+  if (request.addresses) {
     return page(
       request,
-      all.filter((item) => item.address === request.address)
+      all.filter((item) => request.addresses?.includes(item.address))
     );
   }
   if (request.name) return page(request, []);

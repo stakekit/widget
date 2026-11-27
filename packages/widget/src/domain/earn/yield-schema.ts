@@ -97,6 +97,14 @@ const EarnYieldRisk = Schema.Struct({
   ratings: Schema.Array(
     Schema.Struct({
       ...Struct.pick(YieldApi.YieldRiskEntryDto.fields, ["rating"]),
+      // Optional: an API from before Risk Scores leaves it out. An
+      // unreadable one leaves the rating unscored, not the yield undecoded.
+      score: Schema.optionalKey(
+        TolerantNullOr(Schema.Finite, {
+          operation: "yield-risk",
+          field: "score",
+        })
+      ),
       source: Schema.String,
     })
   ),

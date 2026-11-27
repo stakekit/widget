@@ -14,6 +14,8 @@ const yieldOf = ({
   readonly tvlUsd?: string | null;
   readonly ratings?: ReadonlyArray<{
     readonly rating: string;
+    /** Left out as an API without Risk Scores leaves it out. */
+    readonly score?: number | null;
     readonly source: "credora" | "stakingRewards";
   }>;
 }) =>
@@ -21,7 +23,7 @@ const yieldOf = ({
     id,
     rewardRate: { rateType: "APY", total: rate },
     statistics: { tvlUsd },
-    ...(ratings.length > 0 ? { risk: { ratings: [...ratings] } } : {}),
+    ...(ratings.length > 0 ? { risk: { ratings: [...ratings] as never } } : {}),
   });
 
 const ids = (yields: ReadonlyArray<{ readonly id: string }>) =>
@@ -75,32 +77,36 @@ describe("sortYields", () => {
     ]);
   });
 
-  it("lists the least risky first on one scale across raters, unrated last", () => {
+  it("lists the lowest Risk Score first across raters, then the unrated and unscored", () => {
     const yields = [
       yieldOf({ id: "unrated" }),
       yieldOf({
         id: "sr-bb",
-        ratings: [{ rating: "BB", source: "stakingRewards" }],
+        ratings: [{ rating: "BB", score: 3, source: "stakingRewards" }],
       }),
       yieldOf({
         id: "credora-c",
-        ratings: [{ rating: "C", source: "credora" }],
+        ratings: [{ rating: "C", score: 4, source: "credora" }],
       }),
       yieldOf({
         id: "unknown-grade",
-        ratings: [{ rating: "Z", source: "credora" }],
+        ratings: [{ rating: "Z", score: null, source: "credora" }],
       }),
       yieldOf({
         id: "sr-aa",
-        ratings: [{ rating: "aa", source: "stakingRewards" }],
+        ratings: [{ rating: "AA", score: 1, source: "stakingRewards" }],
+      }),
+      yieldOf({
+        id: "unscored",
+        ratings: [{ rating: "A", source: "credora" }],
       }),
       yieldOf({
         id: "credora-b",
-        ratings: [{ rating: "B", source: "credora" }],
+        ratings: [{ rating: "B", score: 3, source: "credora" }],
       }),
       yieldOf({
         id: "credora-a-minus",
-        ratings: [{ rating: " A- ", source: "credora" }],
+        ratings: [{ rating: "A-", score: 2, source: "credora" }],
       }),
     ];
 
@@ -113,7 +119,23 @@ describe("sortYields", () => {
       "credora-c",
       "unrated",
       "unknown-grade",
+      "unscored",
     ]);
+  });
+
+  it("orders by the Risk Score the API sends, whatever the grade", () => {
+    const yields = [
+      yieldOf({
+        id: "credora-a",
+        ratings: [{ rating: "A", score: 5, source: "credora" }],
+      }),
+      yieldOf({
+        id: "sr-ccc",
+        ratings: [{ rating: "CCC", score: 1, source: "stakingRewards" }],
+      }),
+    ];
+
+    expect(ids(sortYields(yields, "risk"))).toEqual(["sr-ccc", "credora-a"]);
   });
 
   it("ranks a yield by the rating it shows, its first", () => {
@@ -121,13 +143,13 @@ describe("sortYields", () => {
       yieldOf({
         id: "credora-first",
         ratings: [
-          { rating: "C", source: "credora" },
-          { rating: "AAA", source: "stakingRewards" },
+          { rating: "C", score: 4, source: "credora" },
+          { rating: "AAA", score: 1, source: "stakingRewards" },
         ],
       }),
       yieldOf({
         id: "credora-a",
-        ratings: [{ rating: "A", source: "credora" }],
+        ratings: [{ rating: "A", score: 1, source: "credora" }],
       }),
     ];
 

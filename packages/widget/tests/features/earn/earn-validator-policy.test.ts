@@ -47,8 +47,20 @@ const unavailable = new ApiRequestError({
   operation: "validators",
 });
 
-/** The directory as the API serves it: names and addresses match by substring. */
-const listed = ({ address, name, preferred }: ValidatorDirectoryRequest) => {
+/**
+ * The directory as the API serves it: names and an address match by
+ * substring, several addresses match exactly but in any case.
+ */
+const listed = ({
+  address,
+  addresses,
+  name,
+  preferred,
+}: ValidatorDirectoryRequest) => {
+  if (addresses !== undefined) {
+    const sought = new Set(addresses.map((item) => item.toLowerCase()));
+    return directory.filter((item) => sought.has(item.address.toLowerCase()));
+  }
   if (address !== undefined) {
     return directory.filter((item) => item.address.includes(address));
   }
@@ -59,7 +71,7 @@ const listed = ({ address, name, preferred }: ValidatorDirectoryRequest) => {
   return preferred ? apiPreferred : others;
 };
 const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
-  request.address === "unavailable"
+  request.addresses?.includes("unavailable")
     ? Effect.fail(unavailable)
     : Effect.succeed({
         items: listed(request).slice(
@@ -167,7 +179,10 @@ describe("Earn validators under a Validator Policy", () => {
       { address: "validator-0", preferred: false },
     ]);
     expect(listValidators).toHaveBeenCalledWith(
-      expect.objectContaining({ address: "validator-120", status: "active" })
+      expect.objectContaining({
+        addresses: ["validator-120", "validator-3"],
+        status: "active",
+      })
     );
   });
 
@@ -281,8 +296,22 @@ describe("Earn validators under a Validator Policy", () => {
     ]);
     expect(defaultsDone).toBe(true);
     expect(
-      listValidators.mock.calls.every(([request]) => request.address)
+      listValidators.mock.calls.every(([request]) => request.addresses)
     ).toBe(true);
+  });
+
+  it("looks an allowlist up 100 addresses at a time and lists it in the policy's order", async () => {
+    const allowed = others.map(({ address }) => address).toReversed();
+
+    const { initial } = await readInitial({
+      [token.network]: { allowed },
+    });
+
+    expect(initial.complete).toBe(true);
+    expect(initial.items.map(({ address }) => address)).toEqual(allowed);
+    expect(
+      listValidators.mock.calls.map(([request]) => request.addresses?.length)
+    ).toEqual([100, 50]);
   });
 
   it("keeps an allowlist incomplete when a lookup fails", async () => {
@@ -291,9 +320,28 @@ describe("Earn validators under a Validator Policy", () => {
     });
 
     expect(initial.complete).toBe(false);
-    expect(initial.items.map(({ address }) => address)).toEqual([
-      "validator-7",
-    ]);
+    expect(initial.items).toEqual([]);
+  });
+
+  it("keeps the validators of the batches that load when another fails", async () => {
+    const allowed = [
+      "unavailable",
+      ...others.map(({ address }) => address).toReversed(),
+    ];
+
+    const { initial } = await readInitial({
+      [token.network]: { allowed },
+    });
+
+    // 151 addresses: the failed batch held 100, among them "unavailable".
+    const listedAddresses: ReadonlyArray<string> = initial.items.map(
+      ({ address }) => address
+    );
+    expect(initial.complete).toBe(false);
+    expect(listedAddresses).toHaveLength(51);
+    expect(listedAddresses).toEqual(
+      allowed.filter((address) => listedAddresses.includes(address))
+    );
   });
 });
 

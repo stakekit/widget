@@ -2,7 +2,10 @@ import { Data, Effect, Array as EArray, Stream } from "effect";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 
-import type { EarnValidator } from "../../../domain/earn/validator";
+import {
+  type EarnValidator,
+  validatorAddressIdentity,
+} from "../../../domain/earn/validator";
 import {
   getValidatorPolicyListing,
   rankedEligibleValidators,
@@ -12,9 +15,9 @@ import type { Network } from "../../../domain/network/network";
 import {
   preferredValidatorsResourceAtom,
   type ValidatorsError,
-  ValidatorsAtAddressKey,
   ValidatorsKey,
-  validatorsAtAddressAtom,
+  validatorsAtAddressesAtom,
+  validatorsAtAddressesKeys,
   validatorsPullAtom,
 } from "../../../resources/validator-directory/validator-directory";
 import { appRuntime } from "../../../runtime/app-runtime";
@@ -40,36 +43,44 @@ export type PolicyValidators = {
 /**
  * The active validators a network's Validator Policy names, in the policy's
  * order, looked up by address because the directory's pages may not reach
- * them. A failed lookup leaves its validators out and the result incomplete.
+ * them. A failed batch of lookups leaves its validators out and the result
+ * incomplete.
  */
 export const policyValidatorsAtom = Atom.family((key: PolicyValidatorsKey) =>
   appRuntime
-    .atom((context) =>
-      Effect.forEach(
-        getValidatorPolicyListing({
-          network: key.network,
-          validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
-        }).named,
-        (address) =>
+    .atom((context) => {
+      const { named } = getValidatorPolicyListing({
+        network: key.network,
+        validatorsConfig: context.get(widgetConfigAtom).validatorsConfig,
+      });
+      return Effect.forEach(
+        validatorsAtAddressesKeys({
+          addresses: named,
+          status: "active",
+          yieldId: key.yieldId,
+        }),
+        (batch) =>
           context
-            .result(
-              validatorsAtAddressAtom.local(
-                new ValidatorsAtAddressKey({
-                  address,
-                  status: "active",
-                  yieldId: key.yieldId,
-                })
-              )
-            )
+            .result(validatorsAtAddressesAtom.local(batch))
             .pipe(Effect.orElseSucceed(() => null)),
         { concurrency: POLICY_LOOKUP_CONCURRENCY }
       ).pipe(
-        Effect.map((lookups): PolicyValidators => ({
-          complete: lookups.every((lookup) => lookup !== null),
-          validators: lookups.flatMap((lookup) => lookup ?? []),
-        }))
-      )
-    )
+        Effect.map((lookups): PolicyValidators => {
+          const atAddress = Map.groupBy(
+            lookups.flatMap((lookup) => lookup ?? []),
+            (validator) => validatorAddressIdentity(validator.address)
+          );
+          return {
+            complete: lookups.every((lookup) => lookup !== null),
+            // Back in the policy's order; its addresses are unique.
+            validators: named.flatMap(
+              (address) =>
+                atAddress.get(validatorAddressIdentity(address)) ?? []
+            ),
+          };
+        })
+      );
+    })
     .pipe(Atom.withLabel("policyValidatorsAtom"))
 );
 

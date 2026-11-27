@@ -83,7 +83,10 @@ export type YieldDirectoryRequest = {
 };
 
 export type ValidatorDirectoryRequest = {
+  /** Matches every validator whose address contains it. */
   readonly address?: string;
+  /** Matches the validators at exactly these addresses, in any case; at most 100. */
+  readonly addresses?: ReadonlyArray<string>;
   readonly limit: number;
   readonly name?: string;
   readonly offset: number;

@@ -7,6 +7,8 @@ import {
   ValidatorsAtAddressKey,
   ValidatorsKey,
   validatorsAtAddressAtom,
+  validatorsAtAddressesAtom,
+  validatorsAtAddressesKeys,
   validatorsPullAtom,
 } from "../../../src/resources/validator-directory/validator-directory";
 import { appRuntime } from "../../../src/runtime/app-runtime";
@@ -280,18 +282,16 @@ describe("Validator resources", () => {
       )
     ).map((validator) => validator.key);
 
-  it("resolves every validator at an address, one per subnet, in one bounded request", () => {
+  it("resolves every validator at an address, one per subnet, by its exact address", () => {
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
       Effect.succeed({
         items: [
           { ...makeValidator("validator-address"), key: "subnet-1" },
           { ...makeValidator("validator-address"), key: "subnet-2" },
-          // The API matches addresses by substring.
-          makeValidator("validator-address-longer"),
         ],
         limit: request.limit,
         offset: request.offset,
-        total: 200,
+        total: 2,
       })
     );
 
@@ -300,19 +300,20 @@ describe("Validator resources", () => {
     ).toEqual(["subnet-1", "subnet-2"]);
     expect(listValidators).toHaveBeenCalledOnce();
     expect(listValidators.mock.calls[0]?.[0]).toMatchObject({
-      address: "validator-address",
+      addresses: ["validator-address"],
       offset: 0,
       status: "active",
     });
+    expect(listValidators.mock.calls[0]?.[0]).not.toHaveProperty("address");
   });
 
   it("resolves no validator when the directory lists none at the address", () => {
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
       Effect.succeed({
-        items: [makeValidator("validator-address-longer")],
+        items: [],
         limit: request.limit,
         offset: request.offset,
-        total: 1,
+        total: 0,
       })
     );
 
@@ -320,6 +321,46 @@ describe("Validator resources", () => {
       []
     );
     expect(listValidators.mock.calls[0]?.[0]).not.toHaveProperty("status");
+  });
+
+  it("resolves every page of the validators at several addresses", () => {
+    // Two addresses with 75 subnets each: more rows than one page holds.
+    const listed = ["validator-a", "validator-b"].flatMap((address) =>
+      Array.from({ length: 75 }, (_, subnet) => ({
+        ...makeValidator(address),
+        key: `${address}-${subnet}`,
+      }))
+    );
+    const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
+      Effect.succeed({
+        items: listed.slice(request.offset, request.offset + request.limit),
+        limit: request.limit,
+        offset: request.offset,
+        total: listed.length,
+      })
+    );
+
+    const [batch] = validatorsAtAddressesKeys({
+      addresses: ["validator-b" as never, "validator-a" as never],
+      status: "active",
+      yieldId,
+    });
+    if (!batch) throw new Error("No batch");
+    const keys = AsyncResult.getOrThrow(
+      makeRegistry(listValidators as never).get(
+        validatorsAtAddressesAtom(batch)
+      )
+    ).map((validator) => validator.key);
+
+    expect(keys).toHaveLength(150);
+    expect(keys).toContain("validator-a-0");
+    expect(keys).toContain("validator-b-74");
+    expect(
+      listValidators.mock.calls.map(([request]) => request.offset)
+    ).toEqual([0, 100]);
+    expect(listValidators.mock.calls[0]?.[0]).toMatchObject({
+      addresses: ["validator-a", "validator-b"],
+    });
   });
 
   it("matches hex validator addresses case-insensitively and other encodings exactly", () => {

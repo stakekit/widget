@@ -353,16 +353,14 @@ const pagedActivity =
     });
 
 const validatorPage = (request: ValidatorDirectoryRequest) => ({
-  items: [
+  items: (request.addresses ?? [undefined]).map((address) =>
     Schema.decodeSync(EarnValidator)(
-      yieldApiValidatorFixture(
-        request.address === undefined ? {} : { address: request.address }
-      )
-    ),
-  ],
+      yieldApiValidatorFixture(address === undefined ? {} : { address })
+    )
+  ),
   limit: request.limit,
   offset: request.offset,
-  total: 1,
+  total: request.addresses?.length ?? 1,
 });
 
 describe("activity enrichment per loaded page", () => {
@@ -399,7 +397,7 @@ describe("activity enrichment per loaded page", () => {
         : Effect.succeed(seenYield)
     );
     const listValidators = vi.fn((request: ValidatorDirectoryRequest) =>
-      request.address === "unseen-validator"
+      request.addresses?.includes("unseen-validator")
         ? Effect.promise(() => unseenGate).pipe(
             Effect.as(validatorPage(request))
           )
@@ -468,8 +466,8 @@ describe("activity enrichment per loaded page", () => {
       getOpportunity.mock.calls.filter(([yieldId]) => yieldId === seenYield.id)
     ).toHaveLength(1);
     expect(
-      listValidators.mock.calls.filter(
-        ([request]) => request.address === "seen-validator"
+      listValidators.mock.calls.filter(([request]) =>
+        request.addresses?.includes("seen-validator")
       )
     ).toHaveLength(1);
 

@@ -130,6 +130,7 @@ const yieldRiskEntryFixture = (
   overrides?: Partial<YieldRiskEntryDto>
 ): YieldRiskEntryDto => ({
   rating: "A-",
+  score: 2,
   source: "credora",
   ...overrides,
 });

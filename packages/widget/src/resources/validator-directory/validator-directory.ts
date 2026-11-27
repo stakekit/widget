@@ -1,8 +1,16 @@
-import { Data, Duration, Effect, Option, Stream } from "effect";
+import {
+  Data,
+  Duration,
+  Effect,
+  Array as EArray,
+  Option,
+  Stream,
+} from "effect";
 import * as Atom from "effect/reactivity/Atom";
 
 import {
   type EarnValidator,
+  validatorAddressIdentities,
   validatorAddressIdentity,
 } from "../../domain/earn/validator";
 import type {
@@ -216,6 +224,21 @@ export const preferredValidatorsResourceAtom = makePresentableResourceFamily(
   preferredValidatorsCanonicalAtom
 );
 
+/** The most addresses one validator lookup takes. */
+const API_MAX_VALIDATOR_ADDRESSES = 100;
+
+/** The validators listed at exactly one of these addresses. */
+const listedAt = (
+  addresses: ReadonlyArray<ValidatorAddress>,
+  validators: ReadonlyArray<EarnValidator>
+) => {
+  // The API matches addresses in any case; only hex ones ignore it.
+  const sought = new Set(validatorAddressIdentities(addresses));
+  return validators.filter((validator) =>
+    sought.has(validatorAddressIdentity(validator.address))
+  );
+};
+
 export class ValidatorsAtAddressKey extends Data.TaggedClass(
   "ValidatorsAtAddressKey"
 )<{
@@ -225,8 +248,8 @@ export class ValidatorsAtAddressKey extends Data.TaggedClass(
 }> {}
 
 /**
- * The validators at exactly this address, one per subnet where the network
- * has subnets; none when the directory lists none there.
+ * The validators at exactly this address on the directory's first page, one
+ * per subnet where the network has subnets; none when it lists none there.
  */
 const validatorsAtAddressCanonicalAtom = Atom.family(
   (key: ValidatorsAtAddressKey) =>
@@ -235,7 +258,7 @@ const validatorsAtAddressCanonicalAtom = Atom.family(
         YieldResourceSource.use((source) =>
           source
             .listValidators({
-              address: key.address,
+              addresses: [key.address],
               limit: API_MAX_PAGE_SIZE,
               offset: 0,
               yieldId: key.yieldId,
@@ -244,14 +267,7 @@ const validatorsAtAddressCanonicalAtom = Atom.family(
             .pipe(
               Effect.mapBoth({
                 onFailure: (cause) => new ValidatorsError({ cause }),
-                onSuccess: (page) => {
-                  // The API matches addresses by substring.
-                  const addressIdentity = validatorAddressIdentity(key.address);
-                  return (page.items ?? []).filter(
-                    (item) =>
-                      validatorAddressIdentity(item.address) === addressIdentity
-                  );
-                },
+                onSuccess: (page) => listedAt([key.address], page.items ?? []),
               })
             )
         )
@@ -265,4 +281,69 @@ const validatorsAtAddressCanonicalAtom = Atom.family(
 
 export const validatorsAtAddressAtom = makePresentableResourceFamily(
   validatorsAtAddressCanonicalAtom
+);
+
+type ValidatorsAtAddresses = {
+  readonly addresses: ReadonlyArray<ValidatorAddress>;
+  readonly status: "active" | null;
+  readonly yieldId: YieldId;
+};
+
+/** One batch of addresses to look up together; make it with `validatorsAtAddressesKeys`. */
+export class ValidatorsAtAddressesKey extends Data.TaggedClass(
+  "ValidatorsAtAddressesKey"
+)<ValidatorsAtAddresses> {}
+
+/**
+ * The batches that look these addresses up, each as many as one request
+ * takes. Sorted before batching, so reordering the addresses keeps the
+ * batches and their cached results.
+ */
+export const validatorsAtAddressesKeys = ({
+  addresses,
+  status,
+  yieldId,
+}: ValidatorsAtAddresses) =>
+  EArray.chunksOf(addresses.toSorted(), API_MAX_VALIDATOR_ADDRESSES).map(
+    (batch) =>
+      new ValidatorsAtAddressesKey({ addresses: batch, status, yieldId })
+  );
+
+/**
+ * Every page of the validators at exactly a batch's addresses, one per
+ * subnet where the network has subnets, in the directory's order.
+ */
+const validatorsAtAddressesCanonicalAtom = Atom.family(
+  (key: ValidatorsAtAddressesKey) =>
+    appRuntime
+      .atom(() =>
+        YieldResourceSource.use((source) =>
+          loadAllPages({
+            concurrency: CONCURRENCY,
+            fetchPage: (offset) =>
+              source.listValidators({
+                addresses: key.addresses,
+                limit: API_MAX_PAGE_SIZE,
+                offset,
+                yieldId: key.yieldId,
+                ...(key.status ? { status: key.status } : {}),
+              }),
+            pageSize: API_MAX_PAGE_SIZE,
+          }).pipe(
+            Effect.mapBoth({
+              onFailure: (cause) => new ValidatorsError({ cause }),
+              onSuccess: (validators) => listedAt(key.addresses, validators),
+            })
+          )
+        )
+      )
+      .pipe(
+        Atom.withReactivity(resourceInvalidationKeys.yieldCatalog()),
+        validatorPolicy,
+        Atom.withLabel("validatorsAtAddressesAtom")
+      )
+);
+
+export const validatorsAtAddressesAtom = makePresentableResourceFamily(
+  validatorsAtAddressesCanonicalAtom
 );

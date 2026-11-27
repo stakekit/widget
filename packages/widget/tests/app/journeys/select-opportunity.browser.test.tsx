@@ -101,6 +101,8 @@ describe("Select opportunity", () => {
                       integrationId === "ethereum-eth-lido-staking"
                         ? "A-"
                         : "B-",
+                    score:
+                      integrationId === "ethereum-eth-lido-staking" ? 2 : 5,
                     source:
                       integrationId === "ethereum-eth-lido-staking"
                         ? "credora"

@@ -49,7 +49,9 @@ describe("getRiskRatingTone", () => {
     ["F", "danger"],
     ["NR", "neutral"],
   ] as const)("reads %s in the %s tone", (rating, tone) => {
-    expect(getRiskRatingTone({ rating, source: "credora" })).toBe(tone);
+    expect(getRiskRatingTone({ rating, score: null, source: "credora" })).toBe(
+      tone
+    );
   });
 });
 

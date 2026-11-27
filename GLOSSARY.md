@@ -220,6 +220,17 @@ _Avoid_: dashboard category
 each Yield Category, ordering that category's yields and its default yield.
 It ranks yields, never validators.
 
+**Risk Rating**: A Rater's own grade for a yield, such as Credora `A-` or
+Staking Rewards `BB`. A yield shows its first Risk Rating.
+_Avoid_: risk level
+
+**Risk Score**: Yield.xyz's 1 to 5 normalisation of a Risk Rating, 1 the least
+risky, so Risk Ratings from different Raters compare. A Risk Rating can have
+none.
+_Avoid_: safety score
+
+**Rater**: The source of a Risk Rating.
+
 **Eligible Validator**: A validator satisfying the selected yield's
 requirements and current Validator Policy.
 

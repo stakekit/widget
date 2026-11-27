@@ -59,6 +59,7 @@ const yieldOf = ({
   readonly type: "staking" | "lending";
   readonly risk?: {
     readonly rating: string;
+    readonly score: number | null;
     readonly source: "credora" | "stakingRewards";
   };
 }): EarnYieldWithProvider => {
@@ -238,7 +239,7 @@ describe("select yield sheet", () => {
         rateType: "APY",
         total: 0.05,
         type: "lending",
-        risk: { rating: "A", source: "credora" },
+        risk: { rating: "A", score: 1, source: "credora" },
       }),
     ];
 
